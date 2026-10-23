@@ -22,7 +22,10 @@
             </p>
         </div>
 
-        <div style="display: flex; gap: 0.5rem; align-items: center;">
+        <div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
+            <a href="{{ url_for('voice_assistant') }}" class="btn btn-primary btn-sm" style="background: linear-gradient(135deg, #1e3a8a, #4338ca); border: none;">
+                🎙️ AI Voice Assistant
+            </a>
             {% if session.get('role') in ['Admin', 'Department Coordinator'] %}
             <a href="{{ url_for('import_students') }}" class="btn btn-secondary btn-sm">
                 📁 Import Excel/CSV

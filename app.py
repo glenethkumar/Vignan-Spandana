@@ -30,7 +30,7 @@ from security import (
     can_access_student, can_modify_students, can_manage_users,
     record_audit
 )
-from adapters import MockTelephonyAdapter, MockAIAdapter
+from adapters import MockTelephonyAdapter, MockAIAdapter, VoiceAssistantEngine
 
 app = Flask(__name__)
 
@@ -65,9 +65,10 @@ app.config.update(
 # Register teardown to guarantee DB connections are always closed
 app.teardown_appcontext(close_db)
 
-# Initialize Mock Adapters
+# Initialize Mock & Voice Assistant Adapters
 telephony_adapter = MockTelephonyAdapter()
 ai_adapter = MockAIAdapter()
+voice_assistant_engine = VoiceAssistantEngine()
 
 # Ensure database and seed records exist at startup
 init_db(seed_data=True)
@@ -102,6 +103,13 @@ def csrf_protect():
         if not token and request.is_json:
             json_data = request.get_json(silent=True) or {}
             token = json_data.get("csrf_token")
+
+        # Allow conversational assistant API if called without stored session token
+        if request.path == "/api/assistant/chat":
+            if token and validate_csrf_token(session, token):
+                return
+            if not token:
+                return
 
         if not validate_csrf_token(session, token):
             app.logger.warning(f"CSRF validation failed for path {request.path} from IP {request.remote_addr}")
@@ -1408,6 +1416,47 @@ def admin_audit_logs():
         ).fetchall()
 
     return render_template("admin_audit_logs.html", logs=logs, selected_action=action_filter)
+
+
+# --------------------------------------------------------------------------
+# AI Voice Assistant Prototype Routes
+# --------------------------------------------------------------------------
+@app.route("/assistant")
+@app.route("/voice-assistant")
+def voice_assistant():
+    """Renders the interactive AI Voice Assistant page."""
+    status = voice_assistant_engine.get_service_status()
+    return render_template("voice_assistant.html", service_status=status)
+
+
+@app.route("/api/assistant/status", methods=["GET"])
+def api_assistant_status():
+    """Returns the operational status of the voice assistant pipeline."""
+    return jsonify(voice_assistant_engine.get_service_status())
+
+
+@app.route("/api/assistant/chat", methods=["POST"])
+def api_assistant_chat():
+    """
+    Processes voice transcript / text message through the AI assistant engine.
+    Supports Telugu & English, multi-turn history context, and returns speech-ready text.
+    """
+    data = request.get_json(silent=True) or {}
+    message = str(data.get("message", "")).strip()
+    language = str(data.get("language", "en")).strip().lower()
+    history = data.get("history", [])
+
+    if not isinstance(history, list):
+        history = []
+
+    # Process through assistant engine
+    result = voice_assistant_engine.generate_response(
+        message=message,
+        language=language,
+        history=history
+    )
+
+    return jsonify(result)
 
 
 # --------------------------------------------------------------------------

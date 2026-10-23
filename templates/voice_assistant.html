@@ -1,0 +1,149 @@
+{% extends "base.html" %}
+
+{% block title %}AI Voice Assistant - Vignan Spandana{% endblock %}
+
+{% block content %}
+<div class="card" style="margin-bottom: 1.25rem;">
+    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+        <div>
+            <h2>🎙️ AI Voice Assistant Prototype</h2>
+            <p style="color: var(--text-muted); font-size: 0.92rem; margin-top: 2px;">
+                Interactive speech-to-speech conversational agent supporting Telugu and English with real microphone capture and multi-turn context.
+            </p>
+        </div>
+
+        <div style="display: flex; align-items: center; gap: 0.75rem;">
+            {% if service_status.mode == 'live' %}
+                <span class="badge" style="background: #dcfce7; color: #15803d; border: 1px solid #bbf7d0; font-size: 0.85rem; padding: 5px 10px;">
+                    🟢 Live AI: {{ service_status.provider | upper }}
+                </span>
+            {% else %}
+                <span class="badge" style="background: #fef3c7; color: #92400e; border: 1px solid #fde68a; font-size: 0.85rem; padding: 5px 10px;">
+                    🟡 Demo Simulation Mode
+                </span>
+            {% endif %}
+            <a href="{{ url_for('dashboard') }}" class="btn btn-secondary btn-sm">
+                &larr; Back to Directory
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Clear Status & Error Alerts -->
+<div id="vaErrorAlert" class="va-alert-card va-alert-warning" style="display: none;">
+    <strong>⚠️ Notice:</strong> <span id="vaErrorText"></span>
+</div>
+
+{% if service_status.mode == 'demo' %}
+<div class="va-alert-card va-alert-info" style="margin-bottom: 1.25rem;">
+    <strong>💡 Demonstration Mode Active:</strong> You are interacting with the intelligent demonstration personality engine. Speech recognition and speech synthesis run directly through your browser. To connect live Google Gemini, add <code>GEMINI_API_KEY=your_key</code> in <code>.env</code>.
+</div>
+{% endif %}
+
+<!-- Main Voice Assistant Two-Column Layout -->
+<div class="va-layout">
+    <!-- Left Stage: Interactive Controls & Microphone Visualizer -->
+    <div class="va-panel">
+        <div class="va-panel-header" style="display: flex; justify-content: space-between; align-items: center;">
+            <div class="va-panel-title">Voice Control</div>
+            <div id="vaStatusPill" class="va-status-pill ready">
+                <span class="va-status-dot"></span>
+                <span id="vaStatusText">Ready (Click Start)</span>
+            </div>
+        </div>
+
+        <div class="va-stage">
+            <!-- Large Interactive Mic Button -->
+            <div class="va-mic-wrapper">
+                <button type="button" id="vaMicBtn" class="va-mic-btn" title="Click to speak or toggle microphone">
+                    <span id="vaMicIcon">🎙️</span>
+                </button>
+                <div class="va-mic-ripple"></div>
+            </div>
+
+            <!-- Real Acoustic Audio Waveform Canvas -->
+            <div class="va-waveform-container" title="Audio waveform reacts directly to incoming microphone sound energy">
+                <canvas id="vaWaveformCanvas" class="va-waveform-canvas"></canvas>
+            </div>
+
+            <!-- Start / End Conversation Action Controls -->
+            <div class="va-actions">
+                <button type="button" id="vaStartBtn" class="va-btn va-btn-primary">
+                    ▶ Start Conversation
+                </button>
+                <button type="button" id="vaEndBtn" class="va-btn va-btn-danger">
+                    ⏹ End Conversation
+                </button>
+                <button type="button" id="vaStopAudioBtn" class="va-btn va-btn-stop-audio" style="display: none;">
+                    🔇 Stop Audio
+                </button>
+            </div>
+
+            <!-- Language Selector Dropdown -->
+            <div class="va-lang-box">
+                <label for="vaLangSelect">🌐 Conversation Language</label>
+                <select id="vaLangSelect" class="va-lang-select">
+                    <option value="en" selected>English (India / US)</option>
+                    <option value="te">తెలుగు (Telugu - te-IN)</option>
+                </select>
+                <div style="font-size: 0.78rem; color: var(--text-muted); margin-top: 5px;">
+                    Supports native Telugu speech recognition & synthesis. Natural mixed Telugu-English is supported.
+                </div>
+            </div>
+
+            <!-- Quick Demo Prompts Help -->
+            <div style="margin-top: 1.25rem; text-align: left; width: 100%; border-top: 1px solid var(--border-color); padding-top: 0.85rem;">
+                <div style="font-size: 0.82rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase;">Try Asking:</div>
+                <ul style="font-size: 0.82rem; color: var(--text-main); margin-left: 1.25rem; margin-top: 0.35rem; line-height: 1.5;">
+                    <li><em>"Why was the student marked absent?"</em></li>
+                    <li><em>"How does this AI voice assistant work?"</em></li>
+                    <li><em>"Tell me about Vignan Institute."</em></li>
+                    <li><em>"విద్యార్థి హాజరు శాతం ఎంత?"</em> (In Telugu)</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- Right Stage: Multi-Turn Conversation Transcript -->
+    <div class="va-transcript-card">
+        <div class="va-transcript-header">
+            <span style="font-weight: 600; font-size: 0.95rem; color: var(--primary-color);">
+                💬 Conversation Transcript
+            </span>
+            <button type="button" id="vaClearBtn" class="btn btn-secondary btn-sm" style="font-size: 0.8rem; padding: 4px 8px;">
+                🗑️ Clear
+            </button>
+        </div>
+
+        <!-- Chat Bubbles Stream -->
+        <div id="vaTranscriptBody" class="va-transcript-body">
+            <!-- Initial placeholder instruction -->
+            <div style="text-align: center; color: var(--text-muted); font-size: 0.88rem; margin: auto; padding: 2rem;">
+                <div style="font-size: 2.2rem; margin-bottom: 0.5rem;">🎙️</div>
+                <strong>Click "Start Conversation" or the Microphone button to begin.</strong>
+                <p style="margin-top: 0.35rem; font-size: 0.82rem;">
+                    Speak naturally in English or Telugu. Your speech will be transcribed and answered by the AI agent.
+                </p>
+            </div>
+        </div>
+
+        <!-- Alternative Text Input Form -->
+        <form id="vaTextForm" class="va-input-bar">
+            <input
+                type="text"
+                id="vaTextInput"
+                class="va-input-field"
+                placeholder="Type a message as an alternative to speaking..."
+                autocomplete="off"
+            />
+            <button type="submit" id="vaSendBtn" class="va-send-btn">
+                Send ✈️
+            </button>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="{{ url_for('static', filename='js/voice_assistant.js') }}"></script>
+{% endblock %}
