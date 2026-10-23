@@ -4,83 +4,292 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>{% block title %}Vignan Spandana{% endblock %} - AI Parent Communication System</title>
+    <title>{% block title %}Vignan Spandana{% endblock %} - VIIT Institutional Portal</title>
+    
+    <!-- Google Fonts: Lora (Headings) & Source Sans 3 (UI & Body) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,500;0,600;0,700;1,400;1,600&family=Source+Sans+3:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
+    
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     {% block extra_head %}{% endblock %}
 </head>
 <body>
-    <header class="site-header">
-        <div class="header-container">
-            <div class="brand-wrapper">
-                <div class="brand-logo">VS</div>
-                <div class="brand-text">
-                    <h1>Vignan Spandana</h1>
-                    <div class="brand-subtitle">AI Parent Communication System</div>
+    <div class="{% if session.get('user_id') %}app-shell{% else %}login-view-wrapper{% endif %}">
+        {% if session.get('user_id') %}
+        <!-- Backdrop for mobile drawer -->
+        <div class="sidebar-backdrop" id="sidebarBackdrop" onclick="toggleMobileSidebar()"></div>
+
+        <!-- Left Institutional Sidebar -->
+        <aside class="app-sidebar" id="appSidebar">
+            <!-- Institutional Header & VIIT Emblem -->
+            <div class="sidebar-brand">
+                <div class="sidebar-brand-crest">
+                    <svg class="viit-emblem" viewBox="0 0 48 48" width="40" height="40" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="VIIT College Seal">
+                        <circle cx="24" cy="24" r="23" fill="#17263C" stroke="#B49A62" stroke-width="1.8"/>
+                        <circle cx="24" cy="24" r="20" fill="none" stroke="#B49A62" stroke-width="0.75" stroke-dasharray="2 1.5"/>
+                        <!-- Open Book -->
+                        <path d="M14 28.5C17 27 21 27.5 24 29C27 27.5 31 27 34 28.5V19C31 17.5 27 18 24 19.5C21 18 17 17.5 14 19V28.5Z" fill="#F7F5F0" stroke="#B49A62" stroke-width="1" stroke-linejoin="round"/>
+                        <line x1="24" y1="19.5" x2="24" y2="29" stroke="#17263C" stroke-width="1"/>
+                        <!-- Torch of Enlightenment -->
+                        <path d="M24 10C24 10 26.5 13 25.5 15C24.5 16 23.5 16 22.5 15C21.5 13.5 24 10 24 10Z" fill="#C9363E"/>
+                        <path d="M24 12C24 12 25 13.5 24.5 14.5C24 15 23.5 15 23 14.5C22.5 13.8 24 12 24 12Z" fill="#B49A62"/>
+                        <!-- VIIT Monogram -->
+                        <text x="24" y="36.5" text-anchor="middle" font-family="'Lora', Georgia, serif" font-size="6.5" font-weight="700" fill="#B49A62" letter-spacing="1">VIIT</text>
+                        <text x="24" y="41.5" text-anchor="middle" font-family="'Source Sans 3', sans-serif" font-size="3.2" font-weight="600" fill="#E4E1DA" letter-spacing="0.5">ESTD 2002</text>
+                    </svg>
+                </div>
+                <div class="sidebar-brand-text">
+                    <h1 class="sidebar-brand-title">VIGNAN SPANDANA</h1>
+                    <div class="sidebar-brand-subtitle">Student Attendance &amp; Parent Communication</div>
                 </div>
             </div>
 
-            {% if session.get('user_id') %}
-            <nav class="nav-links">
-                <a href="{{ url_for('dashboard') }}" class="{% if request.endpoint == 'dashboard' %}active{% endif %}">Directory</a>
-                <a href="{{ url_for('attendance_mark') }}" class="{% if request.endpoint == 'attendance_mark' %}active{% endif %}">📋 Attendance</a>
-                <a href="{{ url_for('voice_assistant') }}" class="{% if request.endpoint == 'voice_assistant' %}active{% endif %}" style="font-weight: 600; color: #2563eb;">🎙️ Voice Assistant</a>
-                <a href="{{ url_for('telugu_speech_lab') }}" class="{% if request.endpoint == 'telugu_speech_lab' %}active{% endif %}" style="font-weight: 600; color: #0284c7;">🗣️ Telugu AI Speech</a>
-                <a href="{{ url_for('call_history') }}" class="{% if request.endpoint in ['call_history', 'call_detail'] %}active{% endif %}">Call History</a>
-                <a href="{{ url_for('follow_ups_list') }}" class="{% if request.endpoint == 'follow_ups_list' %}active{% endif %}">Follow-Ups</a>
-                
+            <!-- Navigation Links with SVG Outline Icons (No Emojis) -->
+            <nav class="sidebar-nav-container" aria-label="Main Navigation">
+                <div class="sidebar-group-label">Academic Workspace</div>
+
+                <!-- Dashboard -->
+                <a href="{{ url_for('dashboard') }}" class="sidebar-nav-link {% if request.endpoint == 'dashboard' %}active{% endif %}">
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="3" y="3" width="7" height="9"></rect>
+                        <rect x="14" y="3" width="7" height="5"></rect>
+                        <rect x="14" y="12" width="7" height="9"></rect>
+                        <rect x="3" y="16" width="7" height="5"></rect>
+                    </svg>
+                    <span>Dashboard</span>
+                </a>
+
+                <!-- Students Directory -->
+                <a href="{{ url_for('dashboard') }}#studentsTable" class="sidebar-nav-link">
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="9" cy="7" r="4"></circle>
+                        <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                        <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                    </svg>
+                    <span>Student Directory</span>
+                </a>
+
+                <!-- Daily Attendance Marking -->
+                <a href="{{ url_for('attendance_mark') }}" class="sidebar-nav-link {% if request.endpoint == 'attendance_mark' %}active{% endif %}">
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                        <line x1="16" y1="2" x2="16" y2="6"></line>
+                        <line x1="8" y1="2" x2="8" y2="6"></line>
+                        <line x1="3" y1="10" x2="21" y2="10"></line>
+                        <polyline points="9 16 12 19 16 14"></polyline>
+                    </svg>
+                    <span>Daily Attendance</span>
+                </a>
+
+                <!-- Parent Calling Queue -->
+                <a href="{{ url_for('attendance_mark') }}#queue-section" class="sidebar-nav-link">
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
+                        <line x1="18" y1="2" x2="23" y2="2"></line>
+                        <line x1="23" y1="2" x2="23" y2="7"></line>
+                        <line x1="15" y1="9" x2="23" y2="2"></line>
+                    </svg>
+                    <span>Parent Calling Queue</span>
+                </a>
+
+                <div class="sidebar-group-label">Communication &amp; AI</div>
+
+                <!-- AI Voice Assistant -->
+                <a href="{{ url_for('voice_assistant') }}" class="sidebar-nav-link {% if request.endpoint == 'voice_assistant' %}active{% endif %}">
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
+                        <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+                        <line x1="12" y1="19" x2="12" y2="23"></line>
+                        <line x1="8" y1="23" x2="16" y2="23"></line>
+                    </svg>
+                    <span>AI Voice Assistant</span>
+                </a>
+
+                <!-- Telugu AI Speech -->
+                <a href="{{ url_for('telugu_speech_lab') }}" class="sidebar-nav-link {% if request.endpoint == 'telugu_speech_lab' %}active{% endif %}">
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+                        <path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path>
+                        <path d="M19.07 4.93a10 10 0 0 1 0 14.14"></path>
+                    </svg>
+                    <span>Telugu AI Speech</span>
+                    <span class="sidebar-pill-badge">Sarvam</span>
+                </a>
+
+                <!-- Call History -->
+                <a href="{{ url_for('call_history') }}" class="sidebar-nav-link {% if request.endpoint in ['call_history', 'call_detail'] %}active{% endif %}">
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <polyline points="12 6 12 12 16 14"></polyline>
+                    </svg>
+                    <span>Call History</span>
+                </a>
+
+                <!-- Faculty Follow-ups -->
+                <a href="{{ url_for('follow_ups_list') }}" class="sidebar-nav-link {% if request.endpoint == 'follow_ups_list' %}active{% endif %}">
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path>
+                        <rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect>
+                        <path d="M9 14l2 2 4-4"></path>
+                    </svg>
+                    <span>Faculty Follow-ups</span>
+                </a>
+
+                <!-- Role-Scoped Academic Operations -->
                 {% if session.get('role') in ['Admin', 'Department Coordinator', 'Faculty'] %}
-                <a href="{{ url_for('add_student') }}" class="{% if request.endpoint == 'add_student' %}active{% endif %}">➕ Add Student</a>
+                <div class="sidebar-group-label">Academic Operations</div>
+                <a href="{{ url_for('add_student') }}" class="sidebar-nav-link {% if request.endpoint == 'add_student' %}active{% endif %}">
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="8.5" cy="7" r="4"></circle>
+                        <line x1="20" y1="8" x2="20" y2="14"></line>
+                        <line x1="23" y1="11" x2="17" y2="11"></line>
+                    </svg>
+                    <span>Add Student</span>
+                </a>
                 {% endif %}
+
                 {% if session.get('role') in ['Admin', 'Department Coordinator'] %}
-                <a href="{{ url_for('import_students') }}" class="{% if request.endpoint == 'import_students' %}active{% endif %}">Import Data</a>
+                <a href="{{ url_for('import_students') }}" class="sidebar-nav-link {% if request.endpoint == 'import_students' %}active{% endif %}">
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                        <polyline points="17 8 12 3 7 8"></polyline>
+                        <line x1="12" y1="3" x2="12" y2="15"></line>
+                    </svg>
+                    <span>Import Students</span>
+                </a>
                 {% endif %}
 
                 {% if session.get('role') == 'Admin' %}
-                <a href="{{ url_for('admin_users') }}" class="{% if request.endpoint in ['admin_users', 'admin_audit_logs'] %}active{% endif %}">Admin Controls</a>
+                <div class="sidebar-group-label">Governance</div>
+                <a href="{{ url_for('admin_users') }}" class="sidebar-nav-link {% if request.endpoint in ['admin_users', 'admin_audit_logs'] %}active{% endif %}">
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                    </svg>
+                    <span>Administration</span>
+                </a>
                 {% endif %}
-
-                <div class="user-badge">
-                    <span>{{ session.get('full_name', session.get('username')) }}</span>
-                    <span class="role-pill">{{ session.get('role', 'User') }}{% if session.get('department') and session.get('department') != 'All' %} - {{ session.get('department') }}{% endif %}</span>
-                </div>
-
-                <a href="{{ url_for('logout') }}" class="btn-logout">Logout</a>
             </nav>
-            {% else %}
-            <nav class="nav-links">
-                <a href="{{ url_for('voice_assistant') }}" class="{% if request.endpoint == 'voice_assistant' %}active{% endif %}" style="font-weight: 600; color: #2563eb;">🎙️ AI Voice Assistant</a>
-                <a href="{{ url_for('telugu_speech_lab') }}" class="{% if request.endpoint == 'telugu_speech_lab' %}active{% endif %}" style="font-weight: 600; color: #0284c7;">🗣️ Telugu AI Speech</a>
-                <a href="{{ url_for('login') }}">Staff Login</a>
-            </nav>
-            {% endif %}
-        </div>
-    </header>
 
-    <main class="main-content">
-        <!-- Flash messages -->
-        {% with messages = get_flashed_messages(with_categories=true) %}
-            {% if messages %}
-            <div class="flash-messages">
-                {% for category, message in messages %}
-                <div class="alert alert-{{ category }}">
-                    <span>{{ message }}</span>
+            <!-- Sidebar Footer with User Profile and Sign Out -->
+            <div class="sidebar-footer">
+                <div class="sidebar-user-card">
+                    <div class="sidebar-user-avatar">
+                        {{ (session.get('full_name') or session.get('username') or 'U')[:1]|upper }}
+                    </div>
+                    <div class="sidebar-user-info">
+                        <div class="sidebar-user-name" title="{{ session.get('full_name', session.get('username')) }}">
+                            {{ session.get('full_name', session.get('username')) }}
+                        </div>
+                        <div class="sidebar-user-role">
+                            {{ session.get('role', 'Faculty') }}{% if session.get('department') and session.get('department') != 'All' %} &bull; {{ session.get('department') }}{% endif %}
+                        </div>
+                    </div>
+                    <a href="{{ url_for('logout') }}" class="sidebar-btn-logout" title="Sign Out">
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                            <polyline points="16 17 21 12 16 7"></polyline>
+                            <line x1="21" y1="12" x2="9" y2="12"></line>
+                        </svg>
+                    </a>
                 </div>
-                {% endfor %}
             </div>
-            {% endif %}
-        {% endwith %}
+        </aside>
 
-        {% block content %}{% endblock %}
-    </main>
+        <!-- Right Main Workspace Area -->
+        <div class="app-main-area">
+            <!-- Institutional Workspace Topbar -->
+            <header class="workspace-topbar">
+                <div class="topbar-institution-tag">
+                    <button type="button" class="topbar-mobile-toggle" onclick="toggleMobileSidebar()" aria-label="Toggle Navigation Menu">
+                        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="3" y1="12" x2="21" y2="12"></line>
+                            <line x1="3" y1="6" x2="21" y2="6"></line>
+                            <line x1="3" y1="18" x2="21" y2="18"></line>
+                        </svg>
+                    </button>
+                    <div>
+                        <span class="topbar-inst-name">Vignan's Institute of Information Technology (Autonomous)</span>
+                        <span class="topbar-inst-sub">&bull; Duvvada, Visakhapatnam</span>
+                    </div>
+                </div>
 
-    <footer class="site-footer">
-        <div><strong>Vignan Spandana</strong> &bull; Institutional AI Parent Communication System</div>
-        <div style="font-size: 0.8rem; margin-top: 4px; color: #94a3b8;">
-            Role-Scoped Campus Access &bull; Stage 1 Security Hardened &bull; Multilingual Ready (Telugu / English)
-        </div>
-    </footer>
+                <div class="topbar-meta-right">
+                    <span class="topbar-date-pill">Academic Year 2026-27 &bull; Sem I</span>
+                    <span class="topbar-role-badge">{{ session.get('role') }} Scope</span>
+                </div>
+            </header>
+        {% else %}
+        <!-- Unauthenticated View Header -->
+        <header class="login-topbar">
+            <div class="login-topbar-brand">
+                <svg class="viit-emblem" viewBox="0 0 48 48" width="36" height="36" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <circle cx="24" cy="24" r="23" fill="#17263C" stroke="#B49A62" stroke-width="1.8"/>
+                    <circle cx="24" cy="24" r="20" fill="none" stroke="#B49A62" stroke-width="0.75" stroke-dasharray="2 1.5"/>
+                    <path d="M14 28.5C17 27 21 27.5 24 29C27 27.5 31 27 34 28.5V19C31 17.5 27 18 24 19.5C21 18 17 17.5 14 19V28.5Z" fill="#F7F5F0" stroke="#B49A62" stroke-width="1" stroke-linejoin="round"/>
+                    <line x1="24" y1="19.5" x2="24" y2="29" stroke="#17263C" stroke-width="1"/>
+                    <path d="M24 10C24 10 26.5 13 25.5 15C24.5 16 23.5 16 22.5 15C21.5 13.5 24 10 24 10Z" fill="#C9363E"/>
+                    <path d="M24 12C24 12 25 13.5 24.5 14.5C24 15 23.5 15 23 14.5C22.5 13.8 24 12 24 12Z" fill="#B49A62"/>
+                    <text x="24" y="36.5" text-anchor="middle" font-family="'Lora', Georgia, serif" font-size="6.5" font-weight="700" fill="#B49A62" letter-spacing="1">VIIT</text>
+                    <text x="24" y="41.5" text-anchor="middle" font-family="'Source Sans 3', sans-serif" font-size="3.2" font-weight="600" fill="#E4E1DA" letter-spacing="0.5">ESTD 2002</text>
+                </svg>
+                <div>
+                    <h1 class="login-topbar-title">VIGNAN SPANDANA</h1>
+                    <div class="login-topbar-subtitle">Vignan's Institute of Information Technology, Visakhapatnam</div>
+                </div>
+            </div>
+            <div>
+                <a href="{{ url_for('voice_assistant') }}" style="color: #FFFFFF; font-size: 0.85rem; font-weight: 500; margin-right: 14px;">Voice Assistant</a>
+                <a href="{{ url_for('telugu_speech_lab') }}" style="color: var(--muted-gold); font-size: 0.85rem; font-weight: 500;">Telugu Speech Lab</a>
+            </div>
+        </header>
+        {% endif %}
+
+        <!-- Unified Content Container (Appears Exactly Once for Jinja2 Compilation) -->
+        <main class="{% if session.get('user_id') %}workspace-content{% else %}login-main-container{% endif %}">
+            <!-- Flash Messages -->
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                <div class="flash-messages" style="margin-bottom: 1.25rem;">
+                    {% for category, message in messages %}
+                    <div class="alert alert-{{ category }}">
+                        <span>{{ message }}</span>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+            {% endwith %}
+
+            {% block content %}{% endblock %}
+        </main>
+
+        <!-- Institutional Footer -->
+        <footer class="institutional-footer">
+            <div class="footer-campus-credit">
+                <strong>Vignan Spandana</strong> &bull; Institutional AI Attendance &amp; Parent Communication System
+            </div>
+            <div>
+                VIIT Duvvada, Visakhapatnam &bull; Accredited by NAAC with 'A+' Grade &bull; Autonomous
+            </div>
+        </footer>
+
+        {% if session.get('user_id') %}
+        </div> <!-- End app-main-area -->
+        {% endif %}
+    </div>
 
     {% include 'call_modal.html' %}
+
+    <script>
+        function toggleMobileSidebar() {
+            var sb = document.getElementById('appSidebar');
+            var bd = document.getElementById('sidebarBackdrop');
+            if (sb) sb.classList.toggle('sidebar-open');
+            if (bd) bd.classList.toggle('active');
+        }
+    </script>
     <script src="{{ url_for('static', filename='js/main.js') }}"></script>
     {% block extra_scripts %}{% endblock %}
 </body>

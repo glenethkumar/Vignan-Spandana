@@ -268,13 +268,93 @@ def dashboard():
 
     total_calls = total_calls_row["count"] if total_calls_row else 0
 
+    # 1. Attendance Overview (Today's date or latest recorded session)
+    today_str = datetime.now().strftime("%Y-%m-%d")
+    dept_filter_sql = "AND UPPER(s.department) = UPPER(?)" if (user_role in ["Department Coordinator", "Faculty"] and user_dept != "All") else ""
+    dept_param = (user_dept,) if dept_filter_sql else ()
+
+    today_stats = conn.execute(f"""
+        SELECT 
+            SUM(CASE WHEN ar.status = 'Present' THEN 1 ELSE 0 END) as present_count,
+            SUM(CASE WHEN ar.status = 'Absent' THEN 1 ELSE 0 END) as absent_count,
+            COUNT(*) as total_marked
+        FROM attendance_records ar
+        JOIN students s ON ar.student_id = s.id
+        WHERE ar.attendance_date = ? {dept_filter_sql}
+    """, (today_str,) + dept_param).fetchone()
+
+    today_present = (today_stats["present_count"] or 0) if today_stats else 0
+    today_absent = (today_stats["absent_count"] or 0) if today_stats else 0
+    today_marked = (today_stats["total_marked"] or 0) if today_stats else 0
+    attendance_date_display = today_str
+    is_today_record = True
+
+    if today_marked == 0:
+        # Check latest recorded attendance date across accessible students
+        latest_date_row = conn.execute(f"""
+            SELECT ar.attendance_date,
+                   SUM(CASE WHEN ar.status = 'Present' THEN 1 ELSE 0 END) as present_count,
+                   SUM(CASE WHEN ar.status = 'Absent' THEN 1 ELSE 0 END) as absent_count,
+                   COUNT(*) as total_marked
+            FROM attendance_records ar
+            JOIN students s ON ar.student_id = s.id
+            WHERE 1=1 {dept_filter_sql}
+            GROUP BY ar.attendance_date
+            ORDER BY ar.attendance_date DESC
+            LIMIT 1
+        """, dept_param).fetchone()
+        if latest_date_row and latest_date_row["total_marked"] > 0:
+            today_present = latest_date_row["present_count"] or 0
+            today_absent = latest_date_row["absent_count"] or 0
+            today_marked = latest_date_row["total_marked"] or 0
+            attendance_date_display = latest_date_row["attendance_date"]
+            is_today_record = False
+
+    # 2. Recent parent call activity (last 5 records for accessible students)
+    recent_calls = conn.execute(f"""
+        SELECT cr.id, cr.call_time, cr.status, cr.duration_seconds, cr.summary, cr.language,
+               s.id as student_id, s.name as student_name, s.roll_number, s.department
+        FROM call_records cr
+        JOIN students s ON cr.student_id = s.id
+        WHERE 1=1 {dept_filter_sql}
+        ORDER BY cr.id DESC
+        LIMIT 5
+    """, dept_param).fetchall()
+
+    # 3. Pending faculty follow-ups
+    pending_followups_count_row = conn.execute(f"""
+        SELECT COUNT(*) as count
+        FROM follow_ups f
+        JOIN students s ON f.student_id = s.id
+        WHERE LOWER(f.status) != 'closed' {dept_filter_sql}
+    """, dept_param).fetchone()
+    pending_followups_count = pending_followups_count_row["count"] if pending_followups_count_row else 0
+
+    recent_followups = conn.execute(f"""
+        SELECT f.id, f.teacher_name, f.status, f.due_date, f.notes, f.action_required, f.created_at,
+               s.id as student_id, s.name as student_name, s.roll_number, s.department
+        FROM follow_ups f
+        JOIN students s ON f.student_id = s.id
+        WHERE LOWER(f.status) != 'closed' {dept_filter_sql}
+        ORDER BY f.id DESC
+        LIMIT 4
+    """, dept_param).fetchall()
+
     return render_template(
         "dashboard.html",
         students=students,
         total_students=total_students,
         low_attendance_count=low_attendance_count,
         total_calls=total_calls,
-        user_dept=user_dept
+        user_dept=user_dept,
+        today_present=today_present,
+        today_absent=today_absent,
+        today_marked=today_marked,
+        attendance_date_display=attendance_date_display,
+        is_today_record=is_today_record,
+        recent_calls=recent_calls,
+        pending_followups_count=pending_followups_count,
+        recent_followups=recent_followups
     )
 
 

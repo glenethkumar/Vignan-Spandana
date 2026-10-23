@@ -3,219 +3,418 @@
 {% block title %}Dashboard - Vignan Spandana{% endblock %}
 
 {% block content %}
-<div class="card" style="margin-bottom: 1.25rem;">
+<!-- Institutional Header & Quick Action Toolbar -->
+<div class="card" style="margin-bottom: 1.5rem; padding: 1.25rem 1.5rem;">
     <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
         <div>
-            <h2>Student Communication Directory</h2>
-            <p style="color: var(--text-muted); font-size: 0.92rem; margin-top: 2px;">
+            <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                <h2 style="margin: 0; font-size: 1.35rem;">Student Communication Directory &amp; Attendance</h2>
                 {% if user_dept and user_dept != 'All' %}
-                    <span class="badge badge-dept" style="font-size: 0.85rem; padding: 4px 8px;">
+                    <span class="badge badge-dept" style="font-size: 0.76rem; padding: 3px 8px;">
                         Department Scope: <strong>{{ user_dept }}</strong>
                     </span>
-                    &bull; Displaying student records registered under your assigned department.
                 {% else %}
-                    <span class="badge badge-lang" style="font-size: 0.85rem; padding: 4px 8px;">
-                        Campus-Wide View ({{ session.get('role') }})
+                    <span class="badge badge-lang" style="font-size: 0.76rem; padding: 3px 8px;">
+                        Campus-Wide Administration ({{ session.get('role') }})
                     </span>
-                    &bull; Displaying student records across all institutional departments.
                 {% endif %}
+            </div>
+            <p style="color: var(--text-secondary); font-size: 0.88rem; margin-top: 4px; margin-bottom: 0;">
+                Real-time student attendance monitoring, parent outreach records, and AI-assisted communication workflows.
             </p>
         </div>
 
-        <div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
-            <a href="{{ url_for('attendance_mark') }}" class="btn btn-secondary btn-sm">
-                📋 Mark Attendance
+        <div style="display: flex; gap: 0.6rem; align-items: center; flex-wrap: wrap;">
+            <a href="{{ url_for('attendance_mark') }}" class="btn btn-primary btn-sm">
+                <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                    <line x1="16" y1="2" x2="16" y2="6"></line>
+                    <line x1="8" y1="2" x2="8" y2="6"></line>
+                    <line x1="3" y1="10" x2="21" y2="10"></line>
+                    <polyline points="9 16 12 19 16 14"></polyline>
+                </svg>
+                <span>Mark Attendance</span>
             </a>
-            <a href="{{ url_for('voice_assistant') }}" class="btn btn-primary btn-sm" style="background: linear-gradient(135deg, #1e3a8a, #4338ca); border: none;">
-                🎙️ AI Voice Assistant
+            <a href="{{ url_for('voice_assistant') }}" class="btn btn-secondary btn-sm" style="border-color: var(--border-dark);">
+                <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
+                    <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+                    <line x1="12" y1="19" x2="12" y2="23"></line>
+                    <line x1="8" y1="23" x2="16" y2="23"></line>
+                </svg>
+                <span>AI Assistant</span>
             </a>
             {% if session.get('role') in ['Admin', 'Department Coordinator', 'Faculty'] %}
-            <a href="{{ url_for('add_student') }}" class="btn btn-primary btn-sm" id="btnAddStudent">
-                ➕ Add Student
+            <a href="{{ url_for('add_student') }}" class="btn btn-secondary btn-sm" id="btnAddStudent">
+                <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                    <circle cx="8.5" cy="7" r="4"></circle>
+                    <line x1="20" y1="8" x2="20" y2="14"></line>
+                    <line x1="23" y1="11" x2="17" y2="11"></line>
+                </svg>
+                <span>Add Student</span>
             </a>
             {% endif %}
             {% if session.get('role') in ['Admin', 'Department Coordinator'] %}
             <a href="{{ url_for('import_students') }}" class="btn btn-secondary btn-sm">
-                📁 Import Excel/CSV
+                <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                    <polyline points="17 8 12 3 7 8"></polyline>
+                    <line x1="12" y1="3" x2="12" y2="15"></line>
+                </svg>
+                <span>Import Excel</span>
             </a>
             {% elif session.get('role') == 'Principal' %}
-            <span style="font-size: 0.82rem; color: #7c3aed; background: #f5f3ff; border: 1px solid #ddd6fe; padding: 4px 8px; border-radius: 4px; font-weight: 500;">
-                👓 Read-Only Administrative Oversight
+            <span style="font-size: 0.78rem; color: var(--primary-navy); background: #FAF7EE; border: 1px solid var(--muted-gold); padding: 4px 10px; border-radius: 4px; font-weight: 600;">
+                Campus Executive Oversight
             </span>
             {% endif %}
         </div>
     </div>
 </div>
 
-<!-- Quick Stats Row -->
+<!-- Restrained Academic Metric Panels (4 Cards) -->
 <div class="stats-grid">
+    <!-- Card 1: Total Accessible Students -->
     <div class="stat-card">
-        <div class="stat-label">Accessible Students</div>
+        <div class="stat-label">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                <circle cx="9" cy="7" r="4"></circle>
+            </svg>
+            <span>Enrolled Students</span>
+        </div>
         <div class="stat-number">{{ total_students }}</div>
         <div class="stat-hint">
-            {% if user_dept and user_dept != 'All' %}In Department {{ user_dept }}{% else %}All departments combined{% endif %}
-        </div>
-    </div>
-    <div class="stat-card alert-border">
-        <div class="stat-label">Attendance &lt; 75%</div>
-        <div class="stat-number" style="color: var(--danger);">{{ low_attendance_count }}</div>
-        <div class="stat-hint">Requires parent notification</div>
-    </div>
-    <div class="stat-card success-border">
-        <div class="stat-label">Total Call Records</div>
-        <div class="stat-number" style="color: var(--success);">{{ total_calls }}</div>
-        <div class="stat-hint">Logged in database</div>
-    </div>
-    <div class="stat-card">
-        <div class="stat-label">Active Institutional Role</div>
-        <div class="stat-number" style="font-size: 1.25rem; margin-top: 8px;">
-            {{ session.get('role') }}
-        </div>
-        <div class="stat-hint">Scope: {{ user_dept or 'All' }}</div>
-    </div>
-</div>
-
-<!-- Instant Filter / Search Bar -->
-<div class="filter-bar">
-    <div class="search-box">
-        <input 
-            type="text" 
-            id="studentSearch" 
-            class="form-control" 
-            placeholder="🔍 Search student name or roll number..." 
-            onkeyup="filterStudents()"
-        >
-    </div>
-    {% if not user_dept or user_dept == 'All' %}
-    <div>
-        <select id="deptFilter" class="form-select" onchange="filterStudents()">
-            <option value="">All Departments</option>
-            <option value="cse">CSE</option>
-            <option value="ece">ECE</option>
-            <option value="it">IT</option>
-            <option value="mech">MECH</option>
-        </select>
-    </div>
-    {% endif %}
-    <div>
-        <select id="langFilter" class="form-select" onchange="filterStudents()">
-            <option value="">All Languages</option>
-            <option value="telugu">Telugu</option>
-            <option value="hindi">Hindi</option>
-            <option value="english">English</option>
-        </select>
-    </div>
-    <div style="font-size: 0.85rem; color: var(--text-muted); margin-left: auto;">
-        Showing <strong id="visibleCount" style="color: var(--text-main);">{{ students|length }}</strong> of {{ total_students }} accessible students
-    </div>
-</div>
-
-<!-- Students Table -->
-<div class="table-responsive">
-    <table class="data-table" id="studentsTable">
-        <thead>
-            <tr>
-                <th>Roll No</th>
-                <th>Student Name</th>
-                <th>Dept & Section</th>
-                <th>Parent Name & Phone</th>
-                <th>Voice Language</th>
-                <th>Attendance</th>
-                <th style="text-align: right;">Actions</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for s in students %}
-            <tr 
-                data-roll="{{ s['roll_number']|lower }}" 
-                data-name="{{ s['name']|lower }}" 
-                data-dept="{{ s['department']|lower }}" 
-                data-lang="{{ s['preferred_language']|lower }}"
-            >
-                <td>
-                    <a href="{{ url_for('student_detail', student_id=s['id']) }}" style="font-weight: 600;">
-                        {{ s['roll_number'] }}
-                    </a>
-                </td>
-                <td>
-                    <strong>{{ s['name'] }}</strong>
-                    <div style="font-size: 0.78rem; color: var(--text-muted);">{{ s['year_semester'] }}</div>
-                    {% if s['student_phone'] %}
-                    <div style="font-size: 0.76rem; color: #475569; font-family: monospace; margin-top: 1px;">
-                        📱 {{ s['student_phone'] }}
-                    </div>
-                    {% endif %}
-                </td>
-                <td>
-                    <span class="badge badge-dept">{{ s['department'] }} - Sec {{ s['section'] }}</span>
-                </td>
-                <td>
-                    <div>
-                        {{ s['parent_name'] }}
-                        {% if s['parent_relationship'] %}
-                            <span class="badge badge-dept" style="font-size: 0.72rem; padding: 2px 6px;">{{ s['parent_relationship'] }}</span>
-                        {% endif %}
-                    </div>
-                    <div style="font-size: 0.82rem; color: var(--text-muted); font-family: monospace;">
-                        📞 {{ s['parent_phone'] }}
-                    </div>
-                </td>
-                <td>
-                    <span class="badge badge-lang">{{ s['preferred_language'] }}</span>
-                </td>
-                <td>
-                    {% if s['attendance_percentage'] is not none %}
-                        {% if s['attendance_percentage'] < 75.0 %}
-                            <span class="badge badge-danger">
-                                ⚠️ {{ s['attendance_percentage'] }}% (Low)
-                            </span>
-                        {% else %}
-                            <span class="badge badge-success">
-                                ✓ {{ s['attendance_percentage'] }}%
-                            </span>
-                        {% endif %}
-                    {% else %}
-                        <span class="badge badge-dept" style="color: var(--text-muted); background: #f1f5f9;">
-                            Pending
-                        </span>
-                    {% endif %}
-                </td>
-                <td style="text-align: right; white-space: nowrap;">
-                    <a href="{{ url_for('student_detail', student_id=s['id']) }}" class="btn btn-secondary btn-sm" title="View details and call history">
-                        View
-                    </a>
-                    {% if session.get('role') != 'Principal' %}
-                    <a href="{{ url_for('edit_student', student_id=s['id']) }}" class="btn btn-secondary btn-sm" title="Edit student record">
-                        ✏️ Edit
-                    </a>
-                    <button 
-                        type="button" 
-                        class="btn btn-call btn-sm" 
-                        onclick="triggerCallParent({{ s['id'] }}, '{{ s['name']|escape }}', '{{ s['roll_number']|escape }}', '{{ s['department']|escape }}', '{{ s['parent_phone']|escape }}', '{{ s['attendance_percentage'] }}', '{{ s['preferred_language']|escape }}')"
-                        title="AI Voice Call Simulation Demo"
-                    >
-                        📞 Call
-                    </button>
-                    {% endif %}
-                </td>
-            </tr>
+            {% if user_dept and user_dept != 'All' %}
+                Department {{ user_dept }} Roster
             {% else %}
-            <tr class="no-records-row">
-                <td colspan="7">
-                    <div class="empty-state">
-                        <div class="empty-state-icon">📋</div>
-                        <h3>No Students Found</h3>
-                        <p>No student records are currently accessible for your assigned scope.</p>
-                        {% if session.get('role') in ['Admin', 'Department Coordinator'] %}
-                        <a href="{{ url_for('import_students') }}" class="btn btn-primary btn-sm" style="margin-top: 10px;">
-                            Import Students
-                        </a>
-                        {% endif %}
+                Total Institutional Roster
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Card 2: Attendance Overview (Primary Visual Priority) -->
+    <div class="stat-card success-border">
+        <div class="stat-label">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                <line x1="16" y1="2" x2="16" y2="6"></line>
+                <line x1="8" y1="2" x2="8" y2="6"></line>
+                <line x1="3" y1="10" x2="21" y2="10"></line>
+            </svg>
+            <span>Daily Attendance Overview</span>
+        </div>
+        {% if today_marked and today_marked > 0 %}
+            <div style="display: flex; align-items: baseline; gap: 10px; margin-top: 6px;">
+                <div class="stat-number" style="color: var(--success-green); margin-top: 0;">{{ today_present }}</div>
+                <div style="font-size: 0.85rem; color: var(--text-secondary); font-weight: 600;">
+                    Present / <span style="color: var(--secondary-red);">{{ today_absent }} Absent</span>
+                </div>
+            </div>
+            <div class="stat-hint">
+                Session: <strong>{{ attendance_date_display }}</strong> &bull; 
+                <span style="color: var(--success-green); font-weight: 600;">
+                    {{ ((today_present / today_marked) * 100)|round(1) }}% Present
+                </span>
+            </div>
+        {% else %}
+            <div class="stat-number" style="font-size: 1.25rem; color: var(--warning-amber); margin-top: 6px;">
+                Pending Session
+            </div>
+            <div class="stat-hint">
+                <a href="{{ url_for('attendance_mark') }}" style="color: var(--primary-navy); font-weight: 600; text-decoration: underline;">
+                    Mark attendance for {{ attendance_date_display }} &rarr;
+                </a>
+            </div>
+        {% endif %}
+    </div>
+
+    <!-- Card 3: Attendance Under 75% Alert -->
+    <div class="stat-card alert-border">
+        <div class="stat-label">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+                <line x1="12" y1="9" x2="12" y2="13"></line>
+                <line x1="12" y1="17" x2="12.01" y2="17"></line>
+            </svg>
+            <span>Low Attendance (&lt;75%)</span>
+        </div>
+        <div class="stat-number" style="color: var(--secondary-red);">{{ low_attendance_count }}</div>
+        <div class="stat-hint">Students requiring parent notification</div>
+    </div>
+
+    <!-- Card 4: Communication Records & Pending Follow-ups -->
+    <div class="stat-card gold-border">
+        <div class="stat-label">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
+            </svg>
+            <span>Parent Outreach Records</span>
+        </div>
+        <div class="stat-number">{{ total_calls }}</div>
+        <div class="stat-hint">
+            Simulated calls &bull; <strong>{{ pending_followups_count }}</strong> pending follow-up tickets
+        </div>
+    </div>
+</div>
+
+<!-- Main Section: Two-Column Layout (Student Directory & Activity Stream) -->
+<div style="display: grid; grid-template-columns: 2.1fr 1fr; gap: 1.5rem; align-items: start;">
+    <!-- Left Column: Search & Student Directory Table -->
+    <div>
+        <!-- Instant Search / Filter Bar -->
+        <div class="filter-bar">
+            <div class="search-box">
+                <input 
+                    type="text" 
+                    id="studentSearch" 
+                    class="form-control" 
+                    placeholder="Search by student name or roll number..." 
+                    onkeyup="filterStudents()"
+                >
+            </div>
+            {% if not user_dept or user_dept == 'All' %}
+            <div>
+                <select id="deptFilter" class="form-select" onchange="filterStudents()">
+                    <option value="">All Departments</option>
+                    <option value="cse">CSE</option>
+                    <option value="ece">ECE</option>
+                    <option value="it">IT</option>
+                    <option value="mech">MECH</option>
+                </select>
+            </div>
+            {% endif %}
+            <div>
+                <select id="langFilter" class="form-select" onchange="filterStudents()">
+                    <option value="">All Languages</option>
+                    <option value="telugu">Telugu</option>
+                    <option value="hindi">Hindi</option>
+                    <option value="english">English</option>
+                </select>
+            </div>
+            <div style="font-size: 0.82rem; color: var(--text-secondary); margin-left: auto;">
+                Showing <strong id="visibleCount" style="color: var(--primary-navy);">{{ students|length }}</strong> of {{ total_students }}
+            </div>
+        </div>
+
+        <!-- Student Directory Table -->
+        <div class="table-responsive">
+            <table class="data-table" id="studentsTable">
+                <thead>
+                    <tr>
+                        <th>Roll No</th>
+                        <th>Student Name</th>
+                        <th>Dept &amp; Section</th>
+                        <th>Parent Contact</th>
+                        <th>Language</th>
+                        <th>Attendance</th>
+                        <th style="text-align: right;">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for s in students %}
+                    <tr 
+                        data-roll="{{ s['roll_number']|lower }}" 
+                        data-name="{{ s['name']|lower }}" 
+                        data-dept="{{ s['department']|lower }}" 
+                        data-lang="{{ s['preferred_language']|lower }}"
+                    >
+                        <td>
+                            <a href="{{ url_for('student_detail', student_id=s['id']) }}" style="font-weight: 700; color: var(--primary-navy); font-family: var(--font-mono);">
+                                {{ s['roll_number'] }}
+                            </a>
+                        </td>
+                        <td>
+                            <strong style="color: var(--text-main);">{{ s['name'] }}</strong>
+                            <div style="font-size: 0.76rem; color: var(--text-secondary);">{{ s['year_semester'] }}</div>
+                            {% if s['student_phone'] %}
+                            <div style="font-size: 0.74rem; color: #475569; font-family: var(--font-mono); margin-top: 2px;">
+                                <span>Phone:</span> {{ s['student_phone'] }}
+                            </div>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <span class="badge badge-dept">{{ s['department'] }} - Sec {{ s['section'] }}</span>
+                        </td>
+                        <td>
+                            <div style="font-weight: 500;">
+                                {{ s['parent_name'] }}
+                                {% if s['parent_relationship'] %}
+                                    <span class="badge badge-dept" style="font-size: 0.7rem; padding: 1px 5px;">{{ s['parent_relationship'] }}</span>
+                                {% endif %}
+                            </div>
+                            <div style="font-size: 0.78rem; color: var(--text-secondary); font-family: var(--font-mono); margin-top: 2px;">
+                                {{ s['parent_phone'] or 'No phone listed' }}
+                            </div>
+                        </td>
+                        <td>
+                            <span class="badge badge-lang">{{ s['preferred_language'] }}</span>
+                        </td>
+                        <td>
+                            {% if s['attendance_percentage'] is not none %}
+                                {% if s['attendance_percentage'] < 75.0 %}
+                                    <span class="badge badge-danger" title="Below institutional 75% threshold">
+                                        &#9888; {{ s['attendance_percentage'] }}% (Low)
+                                    </span>
+                                {% else %}
+                                    <span class="badge badge-success" title="Compliant attendance">
+                                        &#10003; {{ s['attendance_percentage'] }}%
+                                    </span>
+                                {% endif %}
+                            {% else %}
+                                <span class="badge badge-dept" style="color: var(--text-secondary);">
+                                    Pending
+                                </span>
+                            {% endif %}
+                        </td>
+                        <td style="text-align: right; white-space: nowrap;">
+                            <a href="{{ url_for('student_detail', student_id=s['id']) }}" class="btn btn-secondary btn-sm" title="View Student Academic Profile">
+                                View
+                            </a>
+                            {% if session.get('role') != 'Principal' %}
+                            <a href="{{ url_for('edit_student', student_id=s['id']) }}" class="btn btn-secondary btn-sm" title="Edit Student Record">
+                                Edit
+                            </a>
+                            <button 
+                                type="button" 
+                                class="btn btn-call btn-sm" 
+                                onclick="triggerCallParent({{ s['id'] }}, '{{ s['name']|escape }}', '{{ s['roll_number']|escape }}', '{{ s['department']|escape }}', '{{ s['parent_phone']|escape }}', '{{ s['attendance_percentage'] }}', '{{ s['preferred_language']|escape }}')"
+                                title="Launch AI Voice Simulation Demo for Parent"
+                            >
+                                Call
+                            </button>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr class="no-records-row">
+                        <td colspan="7">
+                            <div class="empty-state">
+                                <div class="empty-state-icon">📋</div>
+                                <h3>No Student Records Accessible</h3>
+                                <p>No student records are currently registered under your assigned department scope.</p>
+                                {% if session.get('role') in ['Admin', 'Department Coordinator'] %}
+                                <a href="{{ url_for('import_students') }}" class="btn btn-primary btn-sm" style="margin-top: 10px;">
+                                    Import Students via Excel/CSV
+                                </a>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Right Column: Institutional Activity Feeds & Follow-ups -->
+    <div>
+        <!-- Notice Banner for Calling Queue if Absents exist -->
+        {% if today_absent and today_absent > 0 %}
+        <div class="card" style="border-top: 3px solid var(--secondary-red); padding: 1.15rem 1.25rem; margin-bottom: 1.25rem;">
+            <div style="font-size: 0.74rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--secondary-red); margin-bottom: 4px;">
+                Action Required &bull; Absent Queue
+            </div>
+            <div style="font-size: 0.95rem; font-weight: 700; color: var(--primary-navy); margin-bottom: 6px;">
+                {{ today_absent }} Student(s) Marked Absent
+            </div>
+            <p style="font-size: 0.82rem; color: var(--text-secondary); line-height: 1.4; margin-bottom: 12px;">
+                Sequential parent outreach is available for absent students recorded on {{ attendance_date_display }}.
+            </p>
+            <a href="{{ url_for('attendance_mark') }}#queue-section" class="btn btn-danger btn-sm" style="width: 100%;">
+                <span>Review &amp; Launch Call Queue</span>
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                    <polyline points="12 5 19 12 12 19"></polyline>
+                </svg>
+            </a>
+        </div>
+        {% endif %}
+
+        <!-- Recent Parent Communication Activity Panel -->
+        <div class="card" style="padding: 1.25rem 1.35rem; margin-bottom: 1.25rem;">
+            <div class="card-header" style="margin-bottom: 0.85rem; padding-bottom: 0.6rem;">
+                <div style="font-family: var(--font-serif); font-size: 0.98rem; font-weight: 700; color: var(--primary-navy);">
+                    Recent Parent Outreach
+                </div>
+                <a href="{{ url_for('call_history') }}" style="font-size: 0.78rem; font-weight: 600; color: var(--muted-gold);">
+                    View All &rarr;
+                </a>
+            </div>
+
+            {% if recent_calls and recent_calls|length > 0 %}
+            <div style="display: flex; flex-direction: column; gap: 10px;">
+                {% for call in recent_calls %}
+                <div style="padding-bottom: 10px; border-bottom: 1px solid var(--border-subtle);">
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 8px;">
+                        <div>
+                            <strong style="font-size: 0.86rem; color: var(--primary-navy);">{{ call['student_name'] }}</strong>
+                            <span style="font-size: 0.74rem; color: var(--text-secondary); font-family: var(--font-mono);">({{ call['roll_number'] }})</span>
+                        </div>
+                        <span class="badge {% if call['status'] == 'Completed' %}badge-success{% elif call['status'] == 'Scheduled' %}badge-dept{% else %}badge-warning{% endif %}" style="font-size: 0.68rem; padding: 1px 6px;">
+                            {{ call['status'] }}
+                        </span>
                     </div>
-                </td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+                    {% if call['summary'] %}
+                    <div style="font-size: 0.78rem; color: var(--text-secondary); margin-top: 3px; line-height: 1.35;">
+                        {{ call['summary']|truncate(70) }}
+                    </div>
+                    {% endif %}
+                    <div style="font-size: 0.72rem; color: #94A3B8; margin-top: 3px;">
+                        {{ call['call_time'] }} &bull; {{ call['language'] or 'English' }}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div style="text-align: center; padding: 1.25rem 0.5rem; color: var(--text-secondary); font-size: 0.84rem;">
+                No parent outreach calls recorded yet.
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Pending Faculty Follow-up Tickets Panel -->
+        <div class="card" style="padding: 1.25rem 1.35rem;">
+            <div class="card-header" style="margin-bottom: 0.85rem; padding-bottom: 0.6rem;">
+                <div style="font-family: var(--font-serif); font-size: 0.98rem; font-weight: 700; color: var(--primary-navy);">
+                    Pending Faculty Follow-ups
+                </div>
+                <a href="{{ url_for('follow_ups_list') }}" style="font-size: 0.78rem; font-weight: 600; color: var(--muted-gold);">
+                    View All &rarr;
+                </a>
+            </div>
+
+            {% if recent_followups and recent_followups|length > 0 %}
+            <div style="display: flex; flex-direction: column; gap: 10px;">
+                {% for f in recent_followups %}
+                <div style="padding-bottom: 10px; border-bottom: 1px solid var(--border-subtle);">
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 8px;">
+                        <div>
+                            <strong style="font-size: 0.86rem; color: var(--primary-navy);">{{ f['student_name'] }}</strong>
+                            <span style="font-size: 0.74rem; color: var(--text-secondary); font-family: var(--font-mono);">({{ f['roll_number'] }})</span>
+                        </div>
+                        <span class="badge {% if f['status'] == 'open' %}badge-danger{% else %}badge-warning{% endif %}" style="font-size: 0.68rem; padding: 1px 6px; text-transform: capitalize;">
+                            {{ f['status'] }}
+                        </span>
+                    </div>
+                    <div style="font-size: 0.78rem; color: var(--text-main); margin-top: 3px; line-height: 1.35;">
+                        {{ f['notes']|truncate(75) }}
+                    </div>
+                    {% if f['due_date'] %}
+                    <div style="font-size: 0.72rem; color: var(--secondary-red); margin-top: 3px; font-weight: 600;">
+                        Due: {{ f['due_date'] }}
+                    </div>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div style="text-align: center; padding: 1.25rem 0.5rem; color: var(--text-secondary); font-size: 0.84rem;">
+                No pending faculty follow-up tickets.
+            </div>
+            {% endif %}
+        </div>
+    </div>
 </div>
 {% endblock %}
