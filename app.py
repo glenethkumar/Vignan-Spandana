@@ -369,9 +369,34 @@ def simulate_call_demo(student_id):
             "error": f"Access Denied: You cannot initiate calls for students outside your department ({user_dept})."
         }), 403
 
-    # Determine requested language
+    # Determine requested language and optional attendance_date
     req_data = request.get_json(silent=True) or {}
     lang = req_data.get("language") or request.form.get("language") or student["preferred_language"] or "English"
+    attendance_date = (req_data.get("attendance_date") or request.form.get("attendance_date") or "").strip()
+
+    att_record = None
+    if attendance_date:
+        att_record = conn.execute(
+            "SELECT * FROM attendance_records WHERE student_id = ? AND attendance_date = ?",
+            (student_id, attendance_date)
+        ).fetchone()
+        if not att_record:
+            return jsonify({
+                "success": False,
+                "error": f"No attendance record found for {student['roll_number']} on {attendance_date}."
+            }), 400
+        if att_record["status"] != "Absent":
+            return jsonify({
+                "success": False,
+                "error": f"Student {student['roll_number']} is marked {att_record['status']} on {attendance_date}. Only Absent students can be processed for parent absence calls."
+            }), 400
+        if att_record["call_record_id"] is not None:
+            return jsonify({
+                "success": False,
+                "error": f"Duplicate processing prevented: {student['name']} ({student['roll_number']}) was already processed for attendance on {attendance_date} (CallRecord #{att_record['call_record_id']}).",
+                "duplicate": True,
+                "call_record_id": att_record["call_record_id"]
+            }), 409
 
     # Prevent double-click spam / duplicate call collision (debounce within 2 seconds)
     now = datetime.now()
@@ -418,7 +443,7 @@ def simulate_call_demo(student_id):
     telephony_adapter.initiate_call(
         to_phone=student["parent_phone"] or "Unavailable / Campus Demo Line",
         call_id=f"sim_demo_{student_id}_{int(os.times().elapsed)}",
-        metadata={"student_id": student_id, "language": script_data["language"]}
+        metadata={"student_id": student_id, "language": script_data["language"], "attendance_date": attendance_date}
     )
 
     cursor = conn.cursor()
@@ -426,6 +451,9 @@ def simulate_call_demo(student_id):
     # Create FollowUp record (since parent asked question beyond AI scope)
     due_date_str = (now + timedelta(days=2)).strftime("%Y-%m-%d")
     assigned_faculty = f"Dr. {student['department']} Mentor"
+    action_text = f"Faculty callback regarding absence on {attendance_date} (Attendance: {student['attendance_percentage']}%)" if attendance_date else f"Faculty callback regarding exam evaluation for {student['name']}"
+    escalation_text = script_data.get("escalation_notes", f"Parent informed of absence on {attendance_date}. Question beyond AI scope escalated.") if attendance_date else script_data.get("escalation_notes", "Parent inquired regarding exam marks during AI call.")
+
     cursor.execute("""
         INSERT INTO follow_ups (
             student_id, teacher_name, assigned_to, due_date, status, notes, action_required
@@ -436,17 +464,20 @@ def simulate_call_demo(student_id):
         assigned_faculty,
         due_date_str,
         "open",
-        script_data.get("escalation_notes", "Parent inquired regarding exam marks during AI call."),
-        script_data.get("action_required", f"Faculty callback regarding exam evaluation for {student['name']}")
+        escalation_text,
+        action_text
     ))
     followup_id = cursor.lastrowid
 
-    # Save CallRecord with all required fields including linked followup_id and explicit call_time
+    sim_notes = f"SIMULATED — NO REAL TELEPHONE CALL WAS PLACED. Attendance absence outreach for {attendance_date}." if attendance_date else "Demo mode: simulated call"
+    sim_summary = f"[SIMULATED — NO REAL TELEPHONE CALL WAS PLACED] {script_data['summary']}" if attendance_date else script_data["summary"]
+
+    # Save CallRecord with all required fields including linked followup_id, explicit call_time, and attendance_date
     cursor.execute("""
         INSERT INTO call_records (
             student_id, status, language, duration_seconds, start_time, end_time,
-            transcript, summary, notes, initiated_by, followup_id, call_time
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            transcript, summary, notes, initiated_by, followup_id, call_time, attendance_date
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     """, (
         student_id,
         "Completed",
@@ -455,16 +486,19 @@ def simulate_call_demo(student_id):
         start_time_str,
         end_time_str,
         script_data["transcript"],
-        script_data["summary"],
-        "Demo mode: simulated call",
+        sim_summary,
+        sim_notes,
         session.get("full_name", session.get("username")),
         followup_id,
-        now.strftime("%Y-%m-%d %H:%M:%S")
+        now.strftime("%Y-%m-%d %H:%M:%S"),
+        attendance_date or None
     ))
     call_record_id = cursor.lastrowid
 
-    # Link call_record_id back into follow_ups
+    # Link call_record_id back into follow_ups and attendance_records
     cursor.execute("UPDATE follow_ups SET call_record_id = ? WHERE id = ?", (call_record_id, followup_id))
+    if att_record:
+        cursor.execute("UPDATE attendance_records SET call_record_id = ? WHERE id = ?", (call_record_id, att_record["id"]))
 
     # Record institutional security audit
     record_audit(
@@ -487,14 +521,246 @@ def simulate_call_demo(student_id):
             "parent_phone": student["parent_phone"],
             "attendance_percentage": student["attendance_percentage"]
         },
+        "attendance_date": attendance_date,
         "language": script_data["language"],
         "status": "Completed",
         "start_time": start_time_str,
         "end_time": end_time_str,
         "duration_seconds": duration_seconds,
-        "summary": script_data["summary"],
+        "summary": sim_summary,
         "transcript": script_data["transcript"],
-        "lines": script_data["lines"]
+        "lines": script_data["lines"],
+        "label": "SIMULATED — NO REAL TELEPHONE CALL WAS PLACED"
+    })
+
+
+# --------------------------------------------------------------------------
+# Routes: Daily Attendance Parent Calling Queue
+# --------------------------------------------------------------------------
+@app.route("/attendance/queue", methods=["GET"])
+@login_required()
+def attendance_queue():
+    """
+    Returns sequential call queue of absent students for the selected date.
+    Excludes Present students.
+    Shows queue count and filters out already processed students.
+    """
+    user_role = session.get("role")
+    user_dept = session.get("department", "All")
+    conn = get_db_connection()
+
+    req_dept = request.args.get("dept") or request.args.get("department")
+    if user_dept and user_dept != "All":
+        selected_dept = user_dept
+    else:
+        selected_dept = req_dept or "CSE"
+
+    if user_dept and user_dept != "All" and req_dept and req_dept != user_dept:
+        abort(403, description=f"Access Denied: You cannot view queue for department {req_dept}.")
+
+    selected_date = (request.args.get("date") or request.args.get("attendance_date") or "").strip()
+    if not selected_date:
+        selected_date = datetime.now().strftime("%Y-%m-%d")
+
+    rows = conn.execute("""
+        SELECT s.id, s.roll_number, s.name, s.department, s.year_semester, s.section,
+               s.parent_name, s.parent_phone, s.preferred_language, s.attendance_percentage,
+               ar.id as attendance_record_id, ar.status, ar.call_record_id, ar.attendance_date
+        FROM students s
+        JOIN attendance_records ar ON s.id = ar.student_id
+        WHERE ar.attendance_date = ? AND s.department = ? AND ar.status = 'Absent'
+        ORDER BY s.roll_number ASC
+    """, (selected_date, selected_dept)).fetchall()
+
+    queue = []
+    already_called = []
+
+    for r in rows:
+        item = {
+            "id": r["id"],
+            "student_id": r["id"],
+            "roll_number": r["roll_number"],
+            "name": r["name"],
+            "department": r["department"],
+            "year_semester": r["year_semester"],
+            "section": r["section"],
+            "parent_name": r["parent_name"],
+            "parent_phone": r["parent_phone"] or "Unavailable",
+            "preferred_language": r["preferred_language"] or "Telugu",
+            "attendance_percentage": r["attendance_percentage"],
+            "attendance_record_id": r["attendance_record_id"],
+            "attendance_date": r["attendance_date"],
+            "call_record_id": r["call_record_id"],
+            "already_processed": bool(r["call_record_id"])
+        }
+        if r["call_record_id"]:
+            already_called.append(item)
+        else:
+            queue.append(item)
+
+    return jsonify({
+        "success": True,
+        "department": selected_dept,
+        "attendance_date": selected_date,
+        "total_absent": len(rows),
+        "queue_count": len(queue),
+        "queue": queue,
+        "already_called_count": len(already_called),
+        "already_called": already_called,
+        "label": "SIMULATED — NO REAL TELEPHONE CALL WAS PLACED"
+    })
+
+
+@app.route("/attendance/queue/process", methods=["POST"])
+@login_required()
+def attendance_queue_process():
+    """
+    Processes one absent student from the daily attendance queue sequentially.
+    Enforces:
+    - Scoping and Principal read-only block
+    - Student must be marked Absent on attendance_date (excludes Present)
+    - Prevents duplicate calls for the same attendance date
+    - Simulates call via MockTelephonyAdapter and MockAIAdapter
+    - Creates CallRecord with explicit 'SIMULATED — NO REAL TELEPHONE CALL WAS PLACED'
+    - Creates FollowUp ticket for human faculty callback
+    - Updates attendance_records.call_record_id
+    """
+    if session.get("role") == "Principal":
+        return jsonify({
+            "success": False,
+            "error": "Principal role is read-only and cannot process call queue."
+        }), 403
+
+    user_role = session.get("role")
+    user_dept = session.get("department", "All")
+    data = request.get_json(silent=True) or request.form.to_dict()
+
+    student_id = data.get("student_id")
+    attendance_date = (data.get("attendance_date") or data.get("date") or "").strip()
+    selected_lang = data.get("language")
+
+    if not student_id or not attendance_date:
+        return jsonify({"success": False, "error": "student_id and attendance_date are required."}), 400
+
+    conn = get_db_connection()
+    student = conn.execute("SELECT * FROM students WHERE id = ?", (student_id,)).fetchone()
+    if not student:
+        return jsonify({"success": False, "error": "Student record not found."}), 404
+
+    if not can_access_student(user_role, user_dept, student["department"]):
+        return jsonify({"success": False, "error": f"Access Denied: You cannot call students outside your department ({user_dept})."}), 403
+
+    att_record = conn.execute(
+        "SELECT * FROM attendance_records WHERE student_id = ? AND attendance_date = ?",
+        (student_id, attendance_date)
+    ).fetchone()
+
+    if not att_record:
+        return jsonify({"success": False, "error": f"No attendance record found for {student['roll_number']} on {attendance_date}."}), 400
+
+    if att_record["status"] != "Absent":
+        return jsonify({
+            "success": False,
+            "error": f"Student {student['roll_number']} is marked {att_record['status']} on {attendance_date}. Only Absent students can enter the call queue."
+        }), 400
+
+    if att_record["call_record_id"] is not None:
+        return jsonify({
+            "success": False,
+            "error": f"Duplicate processing prevented: {student['name']} ({student['roll_number']}) was already processed for attendance on {attendance_date} (CallRecord #{att_record['call_record_id']}).",
+            "duplicate": True,
+            "call_record_id": att_record["call_record_id"]
+        }), 409
+
+    lang = selected_lang or student["preferred_language"] or "Telugu"
+    script_data = ai_adapter.generate_simulated_call_script(dict(student), lang)
+
+    now = datetime.now()
+    duration_seconds = script_data.get("duration_seconds", 45)
+    start_time = now - timedelta(seconds=duration_seconds)
+    end_time = now
+    start_time_str = start_time.strftime("%Y-%m-%d %H:%M:%S")
+    end_time_str = end_time.strftime("%Y-%m-%d %H:%M:%S")
+
+    telephony_adapter.initiate_call(
+        to_phone=student["parent_phone"] or "Unavailable / Demo Line",
+        call_id=f"sim_queue_{student_id}_{int(os.times().elapsed)}",
+        metadata={"student_id": student_id, "language": script_data["language"], "attendance_date": attendance_date}
+    )
+
+    cursor = conn.cursor()
+    due_date_str = (now + timedelta(days=2)).strftime("%Y-%m-%d")
+    assigned_faculty = f"Dr. {student['department']} Mentor"
+    cursor.execute("""
+        INSERT INTO follow_ups (
+            student_id, teacher_name, assigned_to, due_date, status, notes, action_required
+        ) VALUES (?, ?, ?, ?, ?, ?, ?)
+    """, (
+        student_id,
+        f"AI System (Escalated to {student['department']} Faculty)",
+        assigned_faculty,
+        due_date_str,
+        "open",
+        script_data.get("escalation_notes", f"Parent informed of absence on {attendance_date}. Question beyond AI scope escalated."),
+        f"Faculty callback: Student absent on {attendance_date} (Attendance: {student['attendance_percentage']}%)"
+    ))
+    followup_id = cursor.lastrowid
+
+    sim_notes = f"SIMULATED — NO REAL TELEPHONE CALL WAS PLACED. Attendance absence outreach for {attendance_date}."
+    sim_summary = f"[SIMULATED — NO REAL TELEPHONE CALL WAS PLACED] {script_data['summary']}"
+
+    cursor.execute("""
+        INSERT INTO call_records (
+            student_id, status, language, duration_seconds, start_time, end_time,
+            transcript, summary, notes, initiated_by, followup_id, call_time, attendance_date
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    """, (
+        student_id,
+        "Completed",
+        script_data["language"],
+        duration_seconds,
+        start_time_str,
+        end_time_str,
+        script_data["transcript"],
+        sim_summary,
+        sim_notes,
+        session.get("full_name", session.get("username")),
+        followup_id,
+        now.strftime("%Y-%m-%d %H:%M:%S"),
+        attendance_date
+    ))
+    call_record_id = cursor.lastrowid
+
+    cursor.execute("UPDATE follow_ups SET call_record_id = ? WHERE id = ?", (call_record_id, followup_id))
+    cursor.execute("UPDATE attendance_records SET call_record_id = ? WHERE id = ?", (call_record_id, att_record["id"]))
+
+    record_audit(
+        conn, session.get("user_id"), session.get("username"),
+        "call_simulated", f"student_{student_id}",
+        f"Queue call processed for {student['roll_number']} (Absent on {attendance_date}); Call #{call_record_id}, Follow-up #{followup_id} created.",
+        request.remote_addr
+    )
+    conn.commit()
+
+    return jsonify({
+        "success": True,
+        "call_record_id": call_record_id,
+        "followup_id": followup_id,
+        "student": {
+            "id": student["id"],
+            "name": student["name"],
+            "roll_number": student["roll_number"],
+            "department": student["department"],
+            "parent_phone": student["parent_phone"],
+            "attendance_percentage": student["attendance_percentage"]
+        },
+        "attendance_date": attendance_date,
+        "language": script_data["language"],
+        "duration_seconds": duration_seconds,
+        "summary": sim_summary,
+        "transcript": script_data["transcript"],
+        "lines": script_data.get("lines", []),
+        "label": "SIMULATED — NO REAL TELEPHONE CALL WAS PLACED"
     })
 
 
@@ -644,13 +910,13 @@ def attendance_mark():
 
     students = conn.execute(student_query, student_params).fetchall()
 
-    # Fetch existing attendance records for these students on selected_date
+    # Fetch existing attendance records for these students on selected_date (including call_record_id)
     student_ids = [s["id"] for s in students]
     records_by_student = {}
     if student_ids:
         placeholders = ",".join("?" for _ in student_ids)
         rec_query = f"""
-            SELECT student_id, status, marked_by, updated_at
+            SELECT student_id, status, marked_by, updated_at, call_record_id
             FROM attendance_records
             WHERE attendance_date = ? AND student_id IN ({placeholders})
         """
@@ -677,10 +943,14 @@ def attendance_mark():
         s_dict["date_status"] = status
         s_dict["is_recorded"] = is_recorded
         s_dict["marked_by"] = rec["marked_by"] if is_recorded else None
+        s_dict["call_record_id"] = rec["call_record_id"] if is_recorded else None
         students_data.append(s_dict)
 
         if is_recorded and status == "Absent":
             absent_students.append(s_dict)
+
+    queue_pending_count = sum(1 for s in absent_students if not s.get("call_record_id"))
+    queue_processed_count = sum(1 for s in absent_students if s.get("call_record_id"))
 
     return render_template(
         "attendance_mark.html",
@@ -696,6 +966,8 @@ def attendance_mark():
         total_students=len(students_data),
         present_count=present_total,
         absent_count=absent_total,
+        queue_pending_count=queue_pending_count,
+        queue_processed_count=queue_processed_count,
         has_saved_records=bool(records_by_student),
         user_role=user_role
     )

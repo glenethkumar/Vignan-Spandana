@@ -158,6 +158,8 @@ def init_db(seed_data=True, db_path=None):
         cursor.execute("ALTER TABLE call_records ADD COLUMN summary TEXT")
     if "followup_id" not in call_cols:
         cursor.execute("ALTER TABLE call_records ADD COLUMN followup_id INTEGER")
+    if "attendance_date" not in call_cols:
+        cursor.execute("ALTER TABLE call_records ADD COLUMN attendance_date TEXT")
 
     # Migration helper for students table upgrades (marks_info)
     cursor.execute("PRAGMA table_info(students)")
@@ -204,6 +206,7 @@ def init_db(seed_data=True, db_path=None):
         attendance_date TEXT NOT NULL,
         status TEXT NOT NULL CHECK(status IN ('Present', 'Absent')),
         marked_by TEXT NOT NULL,
+        call_record_id INTEGER REFERENCES call_records(id) ON DELETE SET NULL,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         UNIQUE(student_id, attendance_date)
@@ -211,6 +214,12 @@ def init_db(seed_data=True, db_path=None):
     """)
     cursor.execute("CREATE INDEX IF NOT EXISTS idx_attendance_date ON attendance_records(attendance_date);")
     cursor.execute("CREATE INDEX IF NOT EXISTS idx_attendance_student ON attendance_records(student_id);")
+
+    # Migration helper for attendance_records schema upgrades
+    cursor.execute("PRAGMA table_info(attendance_records)")
+    att_cols = [col[1] for col in cursor.fetchall()]
+    if "call_record_id" not in att_cols:
+        cursor.execute("ALTER TABLE attendance_records ADD COLUMN call_record_id INTEGER REFERENCES call_records(id)")
 
     conn.commit()
 

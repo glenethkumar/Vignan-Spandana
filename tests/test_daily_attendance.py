@@ -301,3 +301,163 @@ def test_csrf_protection_on_attendance_post():
     finally:
         app.config["TESTING_SKIP_CSRF"] = prev_skip
         app.config["WTF_CSRF_ENABLED"] = prev_csrf
+
+
+def test_call_parents_five_students_workflow(auth_faculty_cse):
+    """
+    Complete end-to-end test of the daily attendance to parent-calling workflow:
+    1. Create five fictional students.
+    2. Mark three Present and two Absent on a given date.
+    3. Save attendance to SQLite.
+    4. Verify 'CALL PARENTS' queue receives exactly the 2 Absent students (3 Present excluded).
+    5. Run simulated calls sequentially.
+    6. Verify call history contains the correct students with 'SIMULATED' notice.
+    7. Verify follow-up tickets are created for faculty callback.
+    8. Verify duplicate processing of the same student for the same attendance date is prevented.
+    9. Verify calling a Present student is rejected with HTTP 400.
+    """
+    conn = get_db_connection()
+    test_date = "2026-10-29"
+
+    fictional_data = [
+        ("211FA04901", "Student One (Present)", "CSE", "III Year - Sem 1", "A", "Parent One", "9876543201", "English", 85.0),
+        ("211FA04902", "Student Two (Present)", "CSE", "III Year - Sem 1", "A", "Parent Two", "9876543202", "Telugu", 88.0),
+        ("211FA04903", "Student Three (Present)", "CSE", "III Year - Sem 1", "A", "Parent Three", "9876543203", "English", 90.0),
+        ("211FA04904", "Student Four (Absent)", "CSE", "III Year - Sem 1", "A", "Parent Four", "9876543204", "Telugu", 72.0),
+        ("211FA04905", "Student Five (Absent)", "CSE", "III Year - Sem 1", "A", "Parent Five", "9876543205", "English", 70.0),
+    ]
+
+    try:
+        # 1. Insert five fictional students
+        for s in fictional_data:
+            conn.execute("""
+                INSERT OR REPLACE INTO students (
+                    roll_number, name, department, year_semester, section,
+                    parent_name, parent_phone, preferred_language, attendance_percentage
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """, s)
+        conn.commit()
+
+        s1 = conn.execute("SELECT id FROM students WHERE roll_number = '211FA04901'").fetchone()["id"]
+        s2 = conn.execute("SELECT id FROM students WHERE roll_number = '211FA04902'").fetchone()["id"]
+        s3 = conn.execute("SELECT id FROM students WHERE roll_number = '211FA04903'").fetchone()["id"]
+        s4 = conn.execute("SELECT id FROM students WHERE roll_number = '211FA04904'").fetchone()["id"]
+        s5 = conn.execute("SELECT id FROM students WHERE roll_number = '211FA04905'").fetchone()["id"]
+
+        # 2 & 3. Mark 3 Present and 2 Absent, save attendance
+        post_data = {
+            "department": "CSE",
+            "section": "A",
+            "year_semester": "III Year - Sem 1",
+            "attendance_date": test_date,
+            f"status_{s1}": "Present",
+            f"status_{s2}": "Present",
+            f"status_{s3}": "Present",
+            f"status_{s4}": "Absent",
+            f"status_{s5}": "Absent"
+        }
+        resp_save = auth_faculty_cse.post("/attendance/mark", data=post_data, follow_redirects=True)
+        assert resp_save.status_code == 200
+
+        # Verify page renders the CALL PARENTS button
+        resp_page = auth_faculty_cse.get(f"/attendance/mark?dept=CSE&section=A&year=III+Year+-+Sem+1&date={test_date}")
+        assert resp_page.status_code == 200
+        html = resp_page.data.decode("utf-8")
+        assert "CALL PARENTS" in html
+        assert "btnCallParents" in html
+
+        # 4. Prepare sequential queue: Verify exactly two students enter the queue (3 Present excluded)
+        resp_q = auth_faculty_cse.get(f"/attendance/queue?dept=CSE&date={test_date}")
+        assert resp_q.status_code == 200
+        q_data = resp_q.get_json()
+        assert q_data["success"] is True
+        assert q_data["attendance_date"] == test_date
+        assert q_data["queue_count"] == 2
+        queue_rolls = [item["roll_number"] for item in q_data["queue"]]
+        assert queue_rolls == ["211FA04904", "211FA04905"]
+        assert "211FA04901" not in queue_rolls
+        assert "211FA04902" not in queue_rolls
+        assert "211FA04903" not in queue_rolls
+
+        # 5. Run simulated calls sequentially
+        call_resp4 = auth_faculty_cse.post("/attendance/queue/process", json={
+            "student_id": s4,
+            "attendance_date": test_date,
+            "language": "Telugu"
+        })
+        assert call_resp4.status_code == 200
+        res4 = call_resp4.get_json()
+        assert res4["success"] is True
+        assert "SIMULATED — NO REAL TELEPHONE CALL WAS PLACED" in res4["label"]
+        call_id_4 = res4["call_record_id"]
+        followup_id_4 = res4["followup_id"]
+
+        call_resp5 = auth_faculty_cse.post("/attendance/queue/process", json={
+            "student_id": s5,
+            "attendance_date": test_date,
+            "language": "English"
+        })
+        assert call_resp5.status_code == 200
+        res5 = call_resp5.get_json()
+        assert res5["success"] is True
+        call_id_5 = res5["call_record_id"]
+        followup_id_5 = res5["followup_id"]
+
+        # 6. Verify call history contains the correct students and transparent simulation notes
+        rec4 = conn.execute("SELECT * FROM call_records WHERE id = ?", (call_id_4,)).fetchone()
+        assert rec4 is not None
+        assert rec4["student_id"] == s4
+        assert rec4["status"] == "Completed"
+        assert rec4["attendance_date"] == test_date
+        assert "SIMULATED — NO REAL TELEPHONE CALL WAS PLACED" in rec4["notes"]
+
+        rec5 = conn.execute("SELECT * FROM call_records WHERE id = ?", (call_id_5,)).fetchone()
+        assert rec5 is not None
+        assert rec5["student_id"] == s5
+        assert rec5["status"] == "Completed"
+        assert rec5["attendance_date"] == test_date
+        assert "SIMULATED — NO REAL TELEPHONE CALL WAS PLACED" in rec5["notes"]
+
+        # 7. Verify follow-up tickets created for faculty attention
+        fu4 = conn.execute("SELECT * FROM follow_ups WHERE id = ?", (followup_id_4,)).fetchone()
+        assert fu4 is not None
+        assert fu4["student_id"] == s4
+        assert fu4["status"] == "open"
+        assert "Faculty callback" in fu4["action_required"]
+
+        fu5 = conn.execute("SELECT * FROM follow_ups WHERE id = ?", (followup_id_5,)).fetchone()
+        assert fu5 is not None
+        assert fu5["student_id"] == s5
+        assert fu5["status"] == "open"
+        assert "Faculty callback" in fu5["action_required"]
+
+        # 8. Verify duplicate processing is prevented
+        dup_resp = auth_faculty_cse.post("/attendance/queue/process", json={
+            "student_id": s4,
+            "attendance_date": test_date
+        })
+        assert dup_resp.status_code == 409
+        dup_data = dup_resp.get_json()
+        assert dup_data["success"] is False
+        assert dup_data["duplicate"] is True
+        assert "Duplicate processing prevented" in dup_data["error"]
+
+        # Verify queue after calling has 0 pending items and 2 already contacted
+        resp_q_after = auth_faculty_cse.get(f"/attendance/queue?dept=CSE&date={test_date}")
+        q_after = resp_q_after.get_json()
+        assert q_after["queue_count"] == 0
+        assert q_after["already_called_count"] >= 2
+
+        # 9. Verify that calling a Present student is rejected
+        present_call = auth_faculty_cse.post("/attendance/queue/process", json={
+            "student_id": s1,
+            "attendance_date": test_date
+        })
+        assert present_call.status_code == 400
+        assert "Only Absent students" in present_call.get_json()["error"]
+
+    finally:
+        # Cleanup fictional test records
+        conn.execute("DELETE FROM students WHERE roll_number IN ('211FA04901','211FA04902','211FA04903','211FA04904','211FA04905')")
+        conn.execute("DELETE FROM attendance_records WHERE attendance_date = ?", (test_date,))
+        conn.commit()

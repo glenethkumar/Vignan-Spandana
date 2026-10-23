@@ -1,0 +1,139 @@
+<!-- Automated Parent Calling Queue Modal (Simulation Prototype) -->
+<div id="callQueueModalOverlay" class="modal-overlay" style="display: none;" onclick="handleQueueOverlayClick(event)">
+    <div class="modal-card" style="max-width: 760px; max-height: 90vh;" onclick="event.stopPropagation()">
+        <!-- Header -->
+        <div class="modal-header" style="background: #f8fafc;">
+            <div>
+                <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                    <h3 style="margin: 0; font-size: 1.15rem; color: var(--primary-color);">
+                        📞 Automated Parent Calling Queue
+                    </h3>
+                    <span class="badge badge-warning" style="font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.5px; padding: 3px 8px; font-weight: 700;">
+                        SIMULATED — NO REAL TELEPHONE CALL WAS PLACED
+                    </span>
+                </div>
+                <div style="font-size: 0.82rem; color: var(--text-muted); margin-top: 4px;">
+                    Department: <strong id="queueDeptLabel">-</strong> &bull; 
+                    Attendance Date: <strong id="queueDateLabel">-</strong>
+                </div>
+            </div>
+            <button type="button" id="btnQueueModalClose" class="modal-close-btn" onclick="closeCallQueueModal()" title="Close">&times;</button>
+        </div>
+
+        <div style="padding: 1.25rem; overflow-y: auto; flex: 1;">
+            <!-- Simulation Transparency Alert -->
+            <div style="background: #fffbeb; border: 1px solid #fde68a; border-radius: 6px; padding: 10px 14px; margin-bottom: 14px; font-size: 0.82rem; color: #92400e;">
+                <div style="font-weight: 700; margin-bottom: 2px; display: flex; align-items: center; gap: 6px;">
+                    <span>⚠️</span>
+                    <span>DEMONSTRATION NOTICE: NO LIVE TELEPHONE CALLS ARE PLACED</span>
+                </div>
+                <div>
+                    All phone events and parent dialogues are generated locally via <code>MockTelephonyAdapter</code> and <code>MockAIAdapter</code>. 
+                    The system does not dial external numbers or incur telephony charges.
+                </div>
+            </div>
+
+            <!-- Metrics Bar -->
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; margin-bottom: 16px;">
+                <div style="background: #f8fafc; border: 1px solid var(--border-color); border-radius: 6px; padding: 10px; text-align: center;">
+                    <div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; font-weight: 600;">Total Absent</div>
+                    <div id="queueTotalAbsentCount" style="font-size: 1.4rem; font-weight: 700; color: var(--text-main); margin-top: 2px;">0</div>
+                </div>
+                <div style="background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 6px; padding: 10px; text-align: center;">
+                    <div style="font-size: 0.75rem; color: #1e40af; text-transform: uppercase; font-weight: 600;">Pending In Queue</div>
+                    <div id="queuePendingCountDisplay" style="font-size: 1.4rem; font-weight: 700; color: #1d4ed8; margin-top: 2px;">0</div>
+                </div>
+                <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 6px; padding: 10px; text-align: center;">
+                    <div style="font-size: 0.75rem; color: #166534; text-transform: uppercase; font-weight: 600;">Already Contacted</div>
+                    <div id="queueProcessedCountDisplay" style="font-size: 1.4rem; font-weight: 700; color: #15803d; margin-top: 2px;">0</div>
+                </div>
+            </div>
+
+            <!-- Confirmation & Execution Controls -->
+            <div id="queueControlCard" style="background: #ffffff; border: 1px solid var(--border-color); border-radius: 6px; padding: 12px 16px; margin-bottom: 16px;">
+                <div id="queueConfirmMessage" style="font-size: 0.88rem; color: var(--text-main); margin-bottom: 10px;">
+                    <strong>Faculty Confirmation Required:</strong> The sequential call queue contains <span id="queueCountConfirm" style="color: var(--primary-color); font-weight: 700;">0</span> student(s). 
+                    Each absent student will be processed one at a time. Click below to confirm and start.
+                </div>
+
+                <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+                    <button type="button" id="btnStartQueueExec" class="btn btn-call" onclick="startQueueExecution()" style="font-weight: 600;">
+                        ▶️ Confirm & Start Calling Queue
+                    </button>
+                    <button type="button" id="btnStopQueueExec" class="btn btn-danger" onclick="stopQueueExecution()" style="display: none; font-weight: 600;">
+                        ⏹️ Stop Queue
+                    </button>
+                    <span id="queueProgressBadge" class="badge badge-dept" style="display: none; padding: 6px 12px; font-size: 0.82rem;">
+                        Ready
+                    </span>
+                </div>
+            </div>
+
+            <!-- Progress Bar (Active during queue run) -->
+            <div id="queueProgressSection" style="display: none; margin-bottom: 16px;">
+                <div style="display: flex; justify-content: space-between; font-size: 0.82rem; font-weight: 600; margin-bottom: 4px;">
+                    <span id="queueStatusProgressText">Processing call queue...</span>
+                    <span id="queuePercentText">0%</span>
+                </div>
+                <div style="background: #e2e8f0; border-radius: 9999px; height: 10px; overflow: hidden;">
+                    <div id="queueProgressBar" style="background: var(--primary-color); height: 100%; width: 0%; transition: width 0.3s ease;"></div>
+                </div>
+            </div>
+
+            <!-- Active Live Call Display (Active student stream) -->
+            <div id="queueActiveCallCard" style="display: none; background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 6px; padding: 12px; margin-bottom: 16px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e2e8f0; padding-bottom: 6px; margin-bottom: 8px;">
+                    <div style="font-size: 0.85rem; font-weight: 600; color: var(--text-main);">
+                        📞 Currently Contacting: <span id="queueActiveStudentName">-</span> (<span id="queueActiveRoll">-</span>)
+                    </div>
+                    <span id="queueActiveStepBadge" class="badge badge-warning" style="font-size: 0.72rem;">Dialing...</span>
+                </div>
+                <div style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 6px;">
+                    Phone: <span id="queueActivePhone" style="font-family: monospace; color: var(--text-main);">-</span> &bull;
+                    Language: <span id="queueActiveLang" class="badge badge-lang">-</span>
+                </div>
+                <div id="queueActiveTranscript" style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 4px; padding: 8px; font-size: 0.82rem; max-height: 100px; overflow-y: auto; color: #334155; font-style: italic;">
+                    Connecting to simulated parent speech adapter...
+                </div>
+            </div>
+
+            <!-- Queue Roster Table -->
+            <div>
+                <h4 style="font-size: 0.92rem; color: var(--text-main); margin: 0 0 8px 0;">
+                    Sequential Outreach Roster
+                </h4>
+                <div class="table-responsive" style="max-height: 240px; overflow-y: auto; border: 1px solid var(--border-color); border-radius: 6px;">
+                    <table class="data-table" style="margin: 0; font-size: 0.82rem;">
+                        <thead style="position: sticky; top: 0; background: #f1f5f9; z-index: 2;">
+                            <tr>
+                                <th style="width: 40px;">#</th>
+                                <th>Roll Number</th>
+                                <th>Student Name</th>
+                                <th>Parent Phone</th>
+                                <th>Language</th>
+                                <th>Queue Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="queueTableBody">
+                            <tr>
+                                <td colspan="6" style="text-align: center; color: var(--text-muted); padding: 1.5rem;">
+                                    Loading absent students queue...
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="modal-footer" style="background: #f8fafc; border-top: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center;">
+            <span style="font-size: 0.78rem; color: var(--text-muted);">
+                🛡️ MockTelephonyAdapter &bull; MockAIAdapter &bull; SQLite Persistence
+            </span>
+            <button type="button" id="btnQueueDone" class="btn btn-secondary btn-sm" onclick="closeCallQueueModal()">
+                Close
+            </button>
+        </div>
+    </div>
+</div>

@@ -36,7 +36,7 @@ function getCsrfToken() {
  * - triggerCallParent(studentId, name, roll, dept, phone, attendance, lang)
  * - or fallback: triggerCallParent(name, phone, lang)
  */
-function triggerCallParent(studentIdOrName, nameOrPhone, rollOrLang, dept, phone, attendance, lang) {
+function triggerCallParent(studentIdOrName, nameOrPhone, rollOrLang, dept, phone, attendance, lang, attendanceDate) {
     if (simState.inProgress) {
         return; // Guard against double-clicking call buttons
     }
@@ -67,6 +67,7 @@ function triggerCallParent(studentIdOrName, nameOrPhone, rollOrLang, dept, phone
     simState.dept = department;
     simState.phone = parentPhone;
     simState.attendance = attendancePct;
+    simState.attendanceDate = attendanceDate || '';
     simState.callCompleted = false;
 
     // Reset UI elements
@@ -211,6 +212,7 @@ async function startSimulatedCall() {
             },
             body: JSON.stringify({
                 language: selectedLang,
+                attendance_date: simState.attendanceDate || '',
                 csrf_token: getCsrfToken()
             })
         });
@@ -443,3 +445,378 @@ function filterStudents() {
         countDisplay.textContent = visibleCount;
     }
 }
+
+/* ==========================================================================
+   Automated Parent Calling Queue Engine (Simulation Demonstration)
+   ========================================================================== */
+const queueState = {
+    department: '',
+    date: '',
+    items: [],
+    currentIndex: 0,
+    inProgress: false,
+    stopped: false,
+    activeTimeout: null
+};
+
+async function openCallQueueModal(dept, date) {
+    if (queueState.inProgress) {
+        alert('A calling queue is currently in progress.');
+        return;
+    }
+
+    queueState.department = dept;
+    queueState.date = date;
+    queueState.items = [];
+    queueState.currentIndex = 0;
+    queueState.inProgress = false;
+    queueState.stopped = false;
+
+    const modal = document.getElementById('callQueueModalOverlay');
+    if (!modal) return;
+
+    document.getElementById('queueDeptLabel').textContent = dept || 'General';
+    document.getElementById('queueDateLabel').textContent = date || 'Today';
+
+    const tbody = document.getElementById('queueTableBody');
+    tbody.innerHTML = `
+        <tr>
+            <td colspan="6" style="text-align: center; color: var(--text-muted); padding: 1.5rem;">
+                ⏳ Loading absent students queue for ${date}...
+            </td>
+        </tr>
+    `;
+
+    document.getElementById('queueProgressSection').style.display = 'none';
+    document.getElementById('queueActiveCallCard').style.display = 'none';
+    document.getElementById('btnStartQueueExec').style.display = 'inline-block';
+    document.getElementById('btnStartQueueExec').disabled = true;
+    document.getElementById('btnStopQueueExec').style.display = 'none';
+    document.getElementById('queueProgressBadge').style.display = 'none';
+
+    modal.style.display = 'flex';
+
+    try {
+        const resp = await fetch(`/attendance/queue?dept=${encodeURIComponent(dept)}&date=${encodeURIComponent(date)}`);
+        if (!resp.ok) {
+            throw new Error('Failed to load attendance call queue.');
+        }
+        const data = await resp.json();
+
+        const pendingItems = data.queue || [];
+        const alreadyCalled = data.already_called || [];
+        queueState.items = pendingItems;
+
+        document.getElementById('queueTotalAbsentCount').textContent = data.total_absent || 0;
+        document.getElementById('queuePendingCountDisplay').textContent = pendingItems.length;
+        document.getElementById('queueProcessedCountDisplay').textContent = alreadyCalled.length;
+        document.getElementById('queueCountConfirm').textContent = pendingItems.length;
+
+        renderQueueTable(pendingItems, alreadyCalled);
+
+        const btnStart = document.getElementById('btnStartQueueExec');
+        const confirmMsg = document.getElementById('queueConfirmMessage');
+
+        if (pendingItems.length === 0) {
+            btnStart.disabled = true;
+            btnStart.textContent = '✅ All Absent Students Already Contacted';
+            if (confirmMsg) {
+                confirmMsg.innerHTML = `<strong>Queue Completed:</strong> All ${alreadyCalled.length} absent student(s) on ${date} have already been contacted. Duplicate processing is prevented.`;
+            }
+        } else {
+            btnStart.disabled = false;
+            btnStart.textContent = `▶️ Confirm & Start Calling Queue (${pendingItems.length})`;
+            if (confirmMsg) {
+                confirmMsg.innerHTML = `<strong>Faculty Confirmation Required:</strong> The sequential call queue contains <strong style="color: var(--primary-color);">${pendingItems.length}</strong> absent student(s). Each student will be called one at a time. Click below to confirm and begin.`;
+            }
+        }
+    } catch (err) {
+        console.error('Queue Load Error:', err);
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="6" style="text-align: center; color: var(--danger); padding: 1.5rem;">
+                    Failed to fetch queue data: ${err.message}
+                </td>
+            </tr>
+        `;
+    }
+}
+
+function renderQueueTable(pendingItems, alreadyCalled) {
+    const tbody = document.getElementById('queueTableBody');
+    if (!tbody) return;
+
+    if (pendingItems.length === 0 && alreadyCalled.length === 0) {
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="6" style="text-align: center; color: var(--text-muted); padding: 1.5rem;">
+                    No absent students recorded for this date.
+                </td>
+            </tr>
+        `;
+        return;
+    }
+
+    let html = '';
+    let idx = 1;
+
+    pendingItems.forEach(s => {
+        html += `
+            <tr id="qrow-${s.id}">
+                <td style="color: var(--text-muted);">${idx++}</td>
+                <td style="font-family: monospace; font-weight: 600;">${s.roll_number}</td>
+                <td><strong>${s.name}</strong></td>
+                <td style="font-family: monospace;">${s.parent_phone}</td>
+                <td><span class="badge badge-lang">${s.preferred_language}</span></td>
+                <td>
+                    <span id="qstatus-${s.id}" class="badge badge-warning">
+                        ⏳ In Queue (Pending)
+                    </span>
+                </td>
+            </tr>
+        `;
+    });
+
+    alreadyCalled.forEach(s => {
+        html += `
+            <tr id="qrow-${s.id}" style="opacity: 0.75; background: #fafafa;">
+                <td style="color: var(--text-muted);">${idx++}</td>
+                <td style="font-family: monospace; font-weight: 600;">${s.roll_number}</td>
+                <td><strong>${s.name}</strong></td>
+                <td style="font-family: monospace;">${s.parent_phone}</td>
+                <td><span class="badge badge-lang">${s.preferred_language}</span></td>
+                <td>
+                    <span id="qstatus-${s.id}" class="badge badge-success">
+                        ✅ Contacted (#${s.call_record_id})
+                    </span>
+                </td>
+            </tr>
+        `;
+    });
+
+    tbody.innerHTML = html;
+}
+
+function handleQueueOverlayClick(event) {
+    if (!queueState.inProgress) {
+        closeCallQueueModal();
+    }
+}
+
+function closeCallQueueModal() {
+    if (queueState.inProgress && !queueState.stopped) {
+        if (!confirm('A simulated call queue is currently running. Stop the queue and exit?')) {
+            return;
+        }
+        stopQueueExecution();
+    }
+    const modal = document.getElementById('callQueueModalOverlay');
+    if (modal) modal.style.display = 'none';
+
+    // If calls were completed, refresh page to show updated badges and statistics
+    if (queueState.currentIndex > 0) {
+        window.location.reload();
+    }
+}
+
+function stopQueueExecution() {
+    queueState.stopped = true;
+    const btnStop = document.getElementById('btnStopQueueExec');
+    if (btnStop) {
+        btnStop.disabled = true;
+        btnStop.textContent = '⏹️ Stopping after current call...';
+    }
+    const badge = document.getElementById('queueProgressBadge');
+    if (badge) {
+        badge.textContent = '⏹️ Halting Queue...';
+        badge.className = 'badge badge-danger';
+    }
+}
+
+async function startQueueExecution() {
+    if (queueState.inProgress || queueState.items.length === 0) return;
+
+    queueState.inProgress = true;
+    queueState.stopped = false;
+    queueState.currentIndex = 0;
+
+    // Update UI controls
+    document.getElementById('btnStartQueueExec').style.display = 'none';
+    const btnStop = document.getElementById('btnStopQueueExec');
+    btnStop.style.display = 'inline-block';
+    btnStop.disabled = false;
+    btnStop.textContent = '⏹️ Stop Queue';
+
+    const btnClose = document.getElementById('btnQueueModalClose');
+    const btnDone = document.getElementById('btnQueueDone');
+    if (btnClose) btnClose.disabled = true;
+    if (btnDone) btnDone.disabled = true;
+
+    const progressSec = document.getElementById('queueProgressSection');
+    progressSec.style.display = 'block';
+
+    const badge = document.getElementById('queueProgressBadge');
+    badge.style.display = 'inline-block';
+    badge.className = 'badge badge-call';
+    badge.textContent = '▶️ Queue Running';
+
+    await runNextStudentInQueue();
+}
+
+async function runNextStudentInQueue() {
+    if (queueState.stopped) {
+        finishQueue(false, 'Queue stopped by faculty member.');
+        return;
+    }
+
+    if (queueState.currentIndex >= queueState.items.length) {
+        finishQueue(true, 'All queued calls completed.');
+        return;
+    }
+
+    const student = queueState.items[queueState.currentIndex];
+    const total = queueState.items.length;
+    const currentNum = queueState.currentIndex + 1;
+
+    // Update progress bar
+    const percent = Math.round(((currentNum - 1) / total) * 100);
+    document.getElementById('queueProgressBar').style.width = `${percent}%`;
+    document.getElementById('queuePercentText').textContent = `${percent}%`;
+    document.getElementById('queueStatusProgressText').textContent = `Processing student ${currentNum} of ${total}: ${student.name}`;
+
+    // Mark current student as Calling in roster
+    const statusPill = document.getElementById(`qstatus-${student.id}`);
+    if (statusPill) {
+        statusPill.className = 'badge badge-call';
+        statusPill.textContent = '📞 Calling... (Active)';
+    }
+
+    // Display Active Call Card
+    const card = document.getElementById('queueActiveCallCard');
+    card.style.display = 'block';
+    document.getElementById('queueActiveStudentName').textContent = student.name;
+    document.getElementById('queueActiveRoll').textContent = student.roll_number;
+    document.getElementById('queueActivePhone').textContent = student.parent_phone;
+    document.getElementById('queueActiveLang').textContent = student.preferred_language;
+
+    const stepBadge = document.getElementById('queueActiveStepBadge');
+    stepBadge.className = 'badge badge-warning';
+    stepBadge.textContent = 'Dialing... (ringing)';
+
+    const transcriptBox = document.getElementById('queueActiveTranscript');
+    transcriptBox.innerHTML = `<em>Dialing +91 ${student.parent_phone}... [MockTelephonyAdapter]</em>`;
+
+    try {
+        // Step 1: Simulate dialing delay (1 second)
+        await new Promise(r => setTimeout(r, 1000));
+        if (queueState.stopped) {
+            finishQueue(false, 'Queue stopped by faculty member.');
+            return;
+        }
+
+        stepBadge.className = 'badge badge-call';
+        stepBadge.textContent = '🟢 Connected • AI Dialogue Active';
+        transcriptBox.innerHTML = `<em>Connected to +91 ${student.parent_phone}. AI generating dialogue in ${student.preferred_language}...</em>`;
+
+        // Step 2: Call backend API to execute simulated call & persist records
+        const resp = await fetch('/attendance/queue/process', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCsrfToken()
+            },
+            body: JSON.stringify({
+                student_id: student.id,
+                attendance_date: queueState.date,
+                language: student.preferred_language,
+                csrf_token: getCsrfToken()
+            })
+        });
+
+        if (!resp.ok) {
+            const err = await resp.json().catch(() => ({ error: 'Error processing call.' }));
+            if (resp.status === 409) {
+                // Duplicate call prevented
+                if (statusPill) {
+                    statusPill.className = 'badge badge-success';
+                    statusPill.textContent = `⏭️ Already Contacted (#${err.call_record_id || 'Done'})`;
+                }
+                transcriptBox.innerHTML = `<span style="color: var(--warning);">ℹ️ Duplicate prevented: Student was already contacted for attendance on ${queueState.date}.</span>`;
+            } else {
+                throw new Error(err.error || 'Server error processing queue item.');
+            }
+        } else {
+            const callData = await resp.json();
+
+            // Display completed dialogue summary
+            stepBadge.className = 'badge badge-success';
+            stepBadge.textContent = `✅ Completed • Record #${callData.call_record_id}`;
+
+            transcriptBox.innerHTML = `
+                <div style="font-weight: 600; color: #166534; margin-bottom: 2px;">
+                    ✅ Call Completed (Duration: 0:${callData.duration_seconds}s)
+                </div>
+                <div style="font-size: 0.8rem; color: #334155;">
+                    ${callData.summary}
+                </div>
+                <div style="font-size: 0.76rem; color: #15803d; margin-top: 4px; font-weight: 600;">
+                    Follow-Up #${callData.followup_id} created for Faculty review.
+                </div>
+            `;
+
+            // Update row status
+            if (statusPill) {
+                statusPill.className = 'badge badge-success';
+                statusPill.textContent = `✅ Completed (#${callData.call_record_id})`;
+            }
+
+            // Update metrics
+            const pendingEl = document.getElementById('queuePendingCountDisplay');
+            const processedEl = document.getElementById('queueProcessedCountDisplay');
+            if (pendingEl) pendingEl.textContent = Math.max(0, parseInt(pendingEl.textContent || '1') - 1);
+            if (processedEl) processedEl.textContent = parseInt(processedEl.textContent || '0') + 1;
+        }
+
+        // Delay 1.2s before advancing to next student
+        await new Promise(r => setTimeout(r, 1200));
+
+        queueState.currentIndex++;
+        await runNextStudentInQueue();
+    } catch (err) {
+        console.error('Queue Processing Error:', err);
+        if (statusPill) {
+            statusPill.className = 'badge badge-danger';
+            statusPill.textContent = '❌ Error';
+        }
+        transcriptBox.innerHTML = `<span style="color: var(--danger);">Error: ${err.message}</span>`;
+        await new Promise(r => setTimeout(r, 1500));
+        queueState.currentIndex++;
+        await runNextStudentInQueue();
+    }
+}
+
+function finishQueue(success, message) {
+    queueState.inProgress = false;
+
+    const btnStop = document.getElementById('btnStopQueueExec');
+    if (btnStop) btnStop.style.display = 'none';
+
+    const btnClose = document.getElementById('btnQueueModalClose');
+    const btnDone = document.getElementById('btnQueueDone');
+    if (btnClose) btnClose.disabled = false;
+    if (btnDone) btnDone.disabled = false;
+
+    const badge = document.getElementById('queueProgressBadge');
+    if (badge) {
+        badge.className = success ? 'badge badge-success' : 'badge badge-warning';
+        badge.textContent = success ? '✅ Queue Complete' : '⏹️ Stopped';
+    }
+
+    const total = queueState.items.length;
+    const processed = queueState.currentIndex;
+    const percent = total > 0 ? Math.round((processed / total) * 100) : 100;
+    document.getElementById('queueProgressBar').style.width = `${percent}%`;
+    document.getElementById('queuePercentText').textContent = `${percent}%`;
+    document.getElementById('queueStatusProgressText').textContent = message || (success ? 'Queue processing completed.' : 'Queue halted.');
+}
+
