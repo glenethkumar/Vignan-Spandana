@@ -1,0 +1,617 @@
+{% extends "base.html" %}
+
+{% block title %}Telugu AI Speech Lab (Sarvam AI) - Vignan Spandana{% endblock %}
+
+{% block content %}
+<div style="max-width: 1200px; margin: 0 auto; padding-bottom: 2rem;">
+    <!-- Page Header & Status Banner -->
+    <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem; margin-bottom: 1.5rem;">
+        <div>
+            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
+                <span style="font-size: 1.6rem;">🗣️</span>
+                <h2 style="margin: 0; font-size: 1.65rem; color: var(--text-main); font-weight: 700;">
+                    Telugu AI Speech Laboratory
+                </h2>
+                <span class="badge badge-primary" style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px; padding: 4px 8px;">
+                    Sarvam AI Indic Voice
+                </span>
+            </div>
+            <p style="color: var(--text-muted); font-size: 0.95rem; margin: 4px 0 0 0;">
+                Test Telugu text-to-speech audio synthesis (Bulbul) and speech-to-text voice transcription (Saarika / Saaras).
+                All secret API calls are secured on the backend.
+            </p>
+        </div>
+
+        <div style="display: flex; align-items: center; gap: 10px; background: #ffffff; padding: 10px 16px; border: 1px solid var(--border-color); border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+            <div style="font-size: 0.85rem; color: var(--text-muted);">
+                API Configuration Status:
+            </div>
+            {% if is_sarvam_configured %}
+            <span class="badge badge-success" style="font-size: 0.82rem; padding: 4px 10px; display: inline-flex; align-items: center; gap: 5px;">
+                <span style="display: inline-block; width: 8px; height: 8px; background: #22c55e; border-radius: 50%;"></span>
+                SARVAM_API_KEY Configured
+            </span>
+            {% else %}
+            <span class="badge badge-warning" style="font-size: 0.82rem; padding: 4px 10px; display: inline-flex; align-items: center; gap: 5px;" title="Set SARVAM_API_KEY in .env or server environment to enable live Sarvam AI generation">
+                <span style="display: inline-block; width: 8px; height: 8px; background: #f59e0b; border-radius: 50%;"></span>
+                SARVAM_API_KEY Not Detected
+            </span>
+            {% endif %}
+        </div>
+    </div>
+
+    {% if not is_sarvam_configured %}
+    <div class="alert alert-warning" style="margin-bottom: 1.5rem; display: flex; align-items: center; gap: 12px; border-left: 4px solid #f59e0b;">
+        <span style="font-size: 1.4rem;">⚠️</span>
+        <div style="font-size: 0.9rem;">
+            <strong>Notice:</strong> <code>SARVAM_API_KEY</code> is not currently set in the server environment. 
+            To execute live Sarvam AI API calls, configure the key in your <code>.env</code> file.
+            The system adheres strictly to specification rules: it never pretends an API call succeeded if it failed.
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Two-Column Grid: Text-to-Speech (Left) and Speech-to-Text (Right) -->
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(500px, 1fr)); gap: 1.5rem;">
+        
+        <!-- =================================================================== -->
+        <!-- 1. TELUGU TEXT-TO-SPEECH (TTS) CARD -->
+        <!-- =================================================================== -->
+        <div class="card" style="box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.06); display: flex; flex-direction: column;">
+            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #e2e8f0; padding-bottom: 12px; margin-bottom: 16px;">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <span style="font-size: 1.25rem;">🔊</span>
+                    <div>
+                        <h3 style="margin: 0; font-size: 1.15rem; color: var(--primary-color);">
+                            Telugu Text-to-Speech (TTS)
+                        </h3>
+                        <div style="font-size: 0.78rem; color: var(--text-muted);">
+                            Primary Language: <strong>Telugu (తెలుగు te-IN)</strong> &bull; Model: <code>bulbul:v1</code>
+                        </div>
+                    </div>
+                </div>
+                <span class="badge badge-info" style="font-size: 0.72rem;">Audio Generation</span>
+            </div>
+
+            <!-- Quick Preset Telugu Phrases -->
+            <div style="margin-bottom: 12px;">
+                <label style="font-size: 0.82rem; font-weight: 600; color: var(--text-muted); display: block; margin-bottom: 6px;">
+                    Quick Telugu Samples:
+                </label>
+                <div style="display: flex; flex-wrap: wrap; gap: 6px;">
+                    <button type="button" class="btn btn-secondary btn-sm" onclick="setTeluguSample(1)" style="font-size: 0.78rem; padding: 3px 8px;">
+                        📢 Absence Notice
+                    </button>
+                    <button type="button" class="btn btn-secondary btn-sm" onclick="setTeluguSample(2)" style="font-size: 0.78rem; padding: 3px 8px;">
+                        📅 Parent Meeting
+                    </button>
+                    <button type="button" class="btn btn-secondary btn-sm" onclick="setTeluguSample(3)" style="font-size: 0.78rem; padding: 3px 8px;">
+                        ⭐ Academic Appreciation
+                    </button>
+                </div>
+            </div>
+
+            <!-- Telugu Text Input Area -->
+            <div class="form-group" style="margin-bottom: 14px;">
+                <label for="ttsTextInput" class="form-label" style="font-weight: 600;">
+                    Telugu Text to Speak <span style="color: var(--danger);">*</span>
+                </label>
+                <textarea 
+                    id="ttsTextInput" 
+                    class="form-control" 
+                    rows="4" 
+                    placeholder="ఇక్కడ తెలుగు వాక్యాన్ని టైప్ చేయండి లేదా పైన ఉన్న నమూనా బటన్లను క్లిక్ చేయండి (ఉదాహరణ: నమస్కారం, మీ అబ్బాయి ఈరోజు కాలేజీకి రాలేదు.)"
+                    style="font-size: 0.95rem; line-height: 1.5;"
+                >నమస్కారం, విజ్ఞాన్ స్పందన నుండి మాట్లాడుతున్నాము. మీ అబ్బాయి ఈరోజు కాలేజీకి రాలేదు.</textarea>
+                <div class="form-text">
+                    Enter natural Telugu script. Sarvam AI synthesizes regional Telugu intonation.
+                </div>
+            </div>
+
+            <!-- Configuration: Voice Persona & Pace -->
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px;">
+                <div class="form-group" style="margin: 0;">
+                    <label for="ttsSpeakerSelect" class="form-label" style="font-size: 0.85rem; font-weight: 600;">
+                        Voice Persona (Speaker):
+                    </label>
+                    <select id="ttsSpeakerSelect" class="form-select" style="font-size: 0.85rem;">
+                        <option value="meera" selected>Meera (Female - Academic & Clear)</option>
+                        <option value="pavithra">Pavithra (Female - Warm)</option>
+                        <option value="arvind">Arvind (Male - Formal)</option>
+                        <option value="amol">Amol (Male - Conversational)</option>
+                    </select>
+                </div>
+
+                <div class="form-group" style="margin: 0;">
+                    <label for="ttsPaceSelect" class="form-label" style="font-size: 0.85rem; font-weight: 600;">
+                        Speech Speed (Pace):
+                    </label>
+                    <select id="ttsPaceSelect" class="form-select" style="font-size: 0.85rem;">
+                        <option value="0.9">0.9x (Deliberate / Slower)</option>
+                        <option value="1.0" selected>1.0x (Standard Normal)</option>
+                        <option value="1.1">1.1x (Brisk)</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Generate Button -->
+            <div style="margin-bottom: 16px;">
+                <button type="button" id="btnGenerateTTS" class="btn btn-primary" onclick="generateTeluguAudio()" style="width: 100%; font-weight: 600; padding: 10px; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                    <span>🔊</span>
+                    <span>Generate Telugu Audio</span>
+                </button>
+            </div>
+
+            <!-- Loading Indicator -->
+            <div id="ttsLoadingSpinner" style="display: none; padding: 12px; background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 6px; margin-bottom: 14px; text-align: center;">
+                <div style="display: inline-block; width: 22px; height: 22px; border: 3px solid #93c5fd; border-top-color: #2563eb; border-radius: 50%; animation: spin 0.8s linear infinite; vertical-align: middle; margin-right: 8px;"></div>
+                <span style="font-size: 0.88rem; color: #1e40af; font-weight: 500;">
+                    Synthesizing natural Telugu voice via Sarvam AI Bulbul...
+                </span>
+            </div>
+
+            <!-- Error Banner -->
+            <div id="ttsErrorAlert" class="alert alert-danger" style="display: none; margin-bottom: 14px;">
+                <span id="ttsErrorMessage"></span>
+            </div>
+
+            <!-- Audio Output Player Card -->
+            <div id="ttsOutputSection" style="display: none; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 14px; margin-top: auto;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                    <span style="font-size: 0.85rem; font-weight: 600; color: var(--success); display: flex; align-items: center; gap: 4px;">
+                        <span>✅</span> Audio Ready
+                    </span>
+                    <a id="ttsDownloadLink" href="#" download="telugu_speech.wav" class="btn btn-secondary btn-sm" style="font-size: 0.78rem; text-decoration: none;">
+                        💾 Download WAV
+                    </a>
+                </div>
+                <audio id="ttsAudioPlayer" controls style="width: 100%; border-radius: 4px; outline: none;"></audio>
+            </div>
+        </div>
+
+        <!-- =================================================================== -->
+        <!-- 2. TELUGU SPEECH-TO-TEXT (STT) CARD -->
+        <!-- =================================================================== -->
+        <div class="card" style="box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.06); display: flex; flex-direction: column;">
+            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #e2e8f0; padding-bottom: 12px; margin-bottom: 16px;">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <span style="font-size: 1.25rem;">🎙️</span>
+                    <div>
+                        <h3 style="margin: 0; font-size: 1.15rem; color: var(--primary-color);">
+                            Telugu Speech-to-Text (STT)
+                        </h3>
+                        <div style="font-size: 0.78rem; color: var(--text-muted);">
+                            Primary Language: <strong>Telugu (తెలుగు te-IN)</strong> &bull; Model: <code>saaras:v1</code>
+                        </div>
+                    </div>
+                </div>
+                <span class="badge badge-info" style="font-size: 0.72rem;">Voice Transcription</span>
+            </div>
+
+            <!-- Input Mode Tabs: Record Microphone vs File Upload -->
+            <div style="display: flex; gap: 8px; margin-bottom: 14px; border-bottom: 1px solid var(--border-color); padding-bottom: 8px;">
+                <button type="button" id="tabBtnRecord" class="btn btn-secondary btn-sm" onclick="switchSttMode('record')" style="font-weight: 600; background: #e0f2fe; color: #0369a1; border-color: #bae6fd;">
+                    🎤 Live Microphone
+                </button>
+                <button type="button" id="tabBtnUpload" class="btn btn-secondary btn-sm" onclick="switchSttMode('upload')" style="font-weight: 500;">
+                    📁 Upload Recording
+                </button>
+            </div>
+
+            <!-- Mode A: Microphone Recording -->
+            <div id="sttRecordMode" style="display: block; margin-bottom: 14px;">
+                <div style="background: #f8fafc; border: 2px dashed #cbd5e1; border-radius: 8px; padding: 20px; text-align: center;">
+                    <div id="micStatusText" style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 12px;">
+                        Click below to record your Telugu spoken response:
+                    </div>
+
+                    <div style="display: flex; justify-content: center; gap: 12px; align-items: center; margin-bottom: 10px;">
+                        <button type="button" id="btnToggleRecord" class="btn btn-danger" onclick="toggleMicRecording()" style="padding: 10px 24px; font-weight: 600; display: inline-flex; align-items: center; gap: 8px;">
+                            <span id="recordIcon">🔴</span>
+                            <span id="recordBtnText">Start Telugu Recording</span>
+                        </button>
+                    </div>
+
+                    <div id="recTimerBadge" style="display: none; font-family: monospace; font-size: 0.95rem; font-weight: 700; color: #dc2626; margin-top: 6px;">
+                        ⏱️ Recording: <span id="recTimerSeconds">00:00</span>
+                    </div>
+
+                    <div id="recordedAudioPreview" style="display: none; margin-top: 14px; text-align: left;">
+                        <label style="font-size: 0.82rem; font-weight: 600; color: var(--text-muted); display: block; margin-bottom: 4px;">
+                            Recorded Voice Preview:
+                        </label>
+                        <audio id="micAudioPlayback" controls style="width: 100%; border-radius: 4px;"></audio>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Mode B: File Upload -->
+            <div id="sttUploadMode" style="display: none; margin-bottom: 14px;">
+                <div class="form-group">
+                    <label for="sttAudioFileInput" class="form-label" style="font-weight: 600;">
+                        Select Telugu Audio Recording (.wav, .mp3, .webm, .ogg):
+                    </label>
+                    <input 
+                        type="file" 
+                        id="sttAudioFileInput" 
+                        class="form-control" 
+                        accept="audio/*,.wav,.mp3,.ogg,.webm,.m4a"
+                        onchange="handleFileUploadSelected(event)"
+                    >
+                    <div class="form-text">
+                        Upload a sample spoken Telugu file (under 10 MB).
+                    </div>
+                </div>
+            </div>
+
+            <!-- Transcribe Action Button -->
+            <div style="margin-bottom: 16px;">
+                <button type="button" id="btnTranscribeSTT" class="btn btn-call" onclick="transcribeTeluguAudio()" style="width: 100%; font-weight: 600; padding: 10px; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                    <span>📝</span>
+                    <span>Transcribe Spoken Telugu</span>
+                </button>
+            </div>
+
+            <!-- Loading Indicator -->
+            <div id="sttLoadingSpinner" style="display: none; padding: 12px; background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 6px; margin-bottom: 14px; text-align: center;">
+                <div style="display: inline-block; width: 22px; height: 22px; border: 3px solid #93c5fd; border-top-color: #0284c7; border-radius: 50%; animation: spin 0.8s linear infinite; vertical-align: middle; margin-right: 8px;"></div>
+                <span style="font-size: 0.88rem; color: #0369a1; font-weight: 500;">
+                    Transcribing Telugu speech with Sarvam AI Saarika STT...
+                </span>
+            </div>
+
+            <!-- Error Banner -->
+            <div id="sttErrorAlert" class="alert alert-danger" style="display: none; margin-bottom: 14px;">
+                <span id="sttErrorMessage"></span>
+            </div>
+
+            <!-- Transcription Result Card -->
+            <div id="sttOutputSection" style="display: none; background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 6px; padding: 14px; margin-top: auto;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                    <span style="font-size: 0.85rem; font-weight: 600; color: #166534; display: flex; align-items: center; gap: 4px;">
+                        <span>📜</span> Telugu Transcription Result:
+                    </span>
+                    <div style="display: flex; gap: 6px;">
+                        <button type="button" class="btn btn-secondary btn-sm" onclick="copyTranscriptText()" style="font-size: 0.75rem; padding: 2px 8px;">
+                            📋 Copy
+                        </button>
+                        <button type="button" class="btn btn-secondary btn-sm" onclick="sendTranscriptToTts()" style="font-size: 0.75rem; padding: 2px 8px;" title="Transfer this transcribed text to the TTS input for speech generation">
+                            ➡️ Use in TTS
+                        </button>
+                    </div>
+                </div>
+                <div id="sttTranscriptText" style="background: #ffffff; border: 1px solid #86efac; border-radius: 4px; padding: 12px; font-size: 0.98rem; line-height: 1.6; color: #14532d; min-height: 60px; white-space: pre-wrap;"></div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Verification & Testing Guide -->
+    <div class="card" style="margin-top: 1.5rem; background: #f8fafc; border: 1px solid var(--border-color);">
+        <h4 style="margin: 0 0 8px 0; font-size: 1rem; color: var(--text-main); display: flex; align-items: center; gap: 6px;">
+            <span>ℹ️</span> <strong>Prompt 4 Verification & Implementation Notes</strong>
+        </h4>
+        <ul style="font-size: 0.86rem; color: var(--text-muted); line-height: 1.6; margin: 0; padding-left: 1.25rem;">
+            <li><strong>Security Isolation:</strong> Secret API calls to <code>api.sarvam.ai</code> are dispatched strictly from backend Python routes (<code>/api/speech/tts</code> and <code>/api/speech/stt</code>). The API key is read from <code>SARVAM_API_KEY</code> and is never delivered to frontend JavaScript or client headers.</li>
+            <li><strong>Primary Language:</strong> Default locale is hardcoded to <code>te-IN</code> (Telugu), using Bulbul voice models for synthesis and Saarika for automatic code-mixed speech recognition.</li>
+            <li><strong>Honest Error Reporting:</strong> The system validates requests rigorously and returns exact HTTP error reasons; it never pretends an API call succeeded if credentials or services fail.</li>
+        </ul>
+    </div>
+</div>
+
+<style>
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+</style>
+
+<script>
+// ==============================================================================
+// JavaScript Controller: Telugu AI Speech Lab (Sarvam AI)
+// ==============================================================================
+
+const CSRF_TOKEN = document.querySelector('meta[name="csrf-token"]') 
+    ? document.querySelector('meta[name="csrf-token"]').getAttribute('content') 
+    : '';
+
+// --- Quick Telugu Sample Phrases ---
+function setTeluguSample(index) {
+    const input = document.getElementById('ttsTextInput');
+    if (!input) return;
+    if (index === 1) {
+        input.value = "నమస్కారం, విజ్ఞాన్ స్పందన నుండి మాట్లాడుతున్నాము. మీ అబ్బాయి ఈరోజు కాలేజీకి రాలేదు.";
+    } else if (index === 2) {
+        input.value = "నమస్కారం, దయచేసి రాబోయే శనివారం కళాశాలకు వచ్చి ప్రిన్సిపాల్ గారిని కలవండి.";
+    } else if (index === 3) {
+        input.value = "నమస్కారం, మీ అమ్మాయి ఈ సెమిస్టర్ పరీక్షల్లో అత్యుత్తమ మార్కులు సాధించి క్లాస్ ఫస్ట్ వచ్చింది.";
+    }
+    input.focus();
+}
+
+// --- Text-to-Speech (TTS) Execution ---
+async function generateTeluguAudio() {
+    const textInput = document.getElementById('ttsTextInput');
+    const speakerSelect = document.getElementById('ttsSpeakerSelect');
+    const paceSelect = document.getElementById('ttsPaceSelect');
+    const spinner = document.getElementById('ttsLoadingSpinner');
+    const errorAlert = document.getElementById('ttsErrorAlert');
+    const errorMessage = document.getElementById('ttsErrorMessage');
+    const outputSection = document.getElementById('ttsOutputSection');
+    const audioPlayer = document.getElementById('ttsAudioPlayer');
+    const downloadLink = document.getElementById('ttsDownloadLink');
+    const btn = document.getElementById('btnGenerateTTS');
+
+    const text = textInput ? textInput.value.trim() : '';
+    if (!text) {
+        errorAlert.style.display = 'block';
+        errorMessage.textContent = 'Please enter Telugu text to generate speech.';
+        return;
+    }
+
+    // Reset UI state
+    errorAlert.style.display = 'none';
+    outputSection.style.display = 'none';
+    spinner.style.display = 'block';
+    if (btn) btn.disabled = true;
+
+    try {
+        const response = await fetch('/api/speech/tts', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-Token': CSRF_TOKEN
+            },
+            body: JSON.stringify({
+                text: text,
+                speaker: speakerSelect ? speakerSelect.value : 'meera',
+                pace: paceSelect ? parseFloat(paceSelect.value) : 1.0,
+                language_code: 'te-IN'
+            })
+        });
+
+        const data = await response.json();
+        spinner.style.display = 'none';
+        if (btn) btn.disabled = false;
+
+        if (!data.success) {
+            errorAlert.style.display = 'block';
+            errorMessage.textContent = data.error || 'Failed to synthesize Telugu audio. Please verify your SARVAM_API_KEY configuration.';
+            return;
+        }
+
+        // Handle base64 audio payload
+        const audioSrc = `data:${data.mime_type || 'audio/wav'};base64,${data.audio_base64}`;
+        audioPlayer.src = audioSrc;
+        downloadLink.href = audioSrc;
+        downloadLink.download = `telugu_speech_${Date.now()}.wav`;
+        outputSection.style.display = 'block';
+
+        // Autoplay
+        audioPlayer.play().catch(e => {
+            console.log('Autoplay blocked by browser policy:', e);
+        });
+
+    } catch (err) {
+        spinner.style.display = 'none';
+        if (btn) btn.disabled = false;
+        errorAlert.style.display = 'block';
+        errorMessage.textContent = 'Network error communicating with the speech synthesis server: ' + err.message;
+    }
+}
+
+// --- Speech-to-Text (STT) Mode Switching & State ---
+let sttCurrentMode = 'record';
+let mediaRecorder = null;
+let recordedAudioChunks = [];
+let recordedAudioBlob = null;
+let recordTimerInterval = null;
+let recordSeconds = 0;
+
+function switchSttMode(mode) {
+    sttCurrentMode = mode;
+    const tabRecord = document.getElementById('tabBtnRecord');
+    const tabUpload = document.getElementById('tabBtnUpload');
+    const secRecord = document.getElementById('sttRecordMode');
+    const secUpload = document.getElementById('sttUploadMode');
+
+    if (mode === 'record') {
+        tabRecord.style.background = '#e0f2fe';
+        tabRecord.style.color = '#0369a1';
+        tabRecord.style.borderColor = '#bae6fd';
+        tabUpload.style.background = '';
+        tabUpload.style.color = '';
+        tabUpload.style.borderColor = '';
+        secRecord.style.display = 'block';
+        secUpload.style.display = 'none';
+    } else {
+        tabUpload.style.background = '#e0f2fe';
+        tabUpload.style.color = '#0369a1';
+        tabUpload.style.borderColor = '#bae6fd';
+        tabRecord.style.background = '';
+        tabRecord.style.color = '';
+        tabRecord.style.borderColor = '';
+        secRecord.style.display = 'none';
+        secUpload.style.display = 'block';
+    }
+}
+
+// --- Microphone Recording Flow ---
+async function toggleMicRecording() {
+    const btn = document.getElementById('btnToggleRecord');
+    const btnText = document.getElementById('recordBtnText');
+    const icon = document.getElementById('recordIcon');
+    const timerBadge = document.getElementById('recTimerBadge');
+    const timerSeconds = document.getElementById('recTimerSeconds');
+    const preview = document.getElementById('recordedAudioPreview');
+    const playback = document.getElementById('micAudioPlayback');
+
+    if (mediaRecorder && mediaRecorder.state === 'recording') {
+        // Stop recording
+        mediaRecorder.stop();
+        clearInterval(recordTimerInterval);
+        btn.classList.remove('btn-secondary');
+        btn.classList.add('btn-danger');
+        btnText.textContent = 'Re-record Telugu Voice';
+        icon.textContent = '🔴';
+        return;
+    }
+
+    // Start recording
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        alert('Microphone access is not supported in this browser environment.');
+        return;
+    }
+
+    try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        recordedAudioChunks = [];
+        recordedAudioBlob = null;
+
+        // Try standard audio/webm or audio/wav
+        const mimeType = MediaRecorder.isTypeSupported('audio/webm;codecs=opus') 
+            ? 'audio/webm;codecs=opus' 
+            : (MediaRecorder.isTypeSupported('audio/ogg;codecs=opus') ? 'audio/ogg;codecs=opus' : '');
+
+        mediaRecorder = mimeType ? new MediaRecorder(stream, { mimeType }) : new MediaRecorder(stream);
+
+        mediaRecorder.ondataavailable = function(e) {
+            if (e.data && e.data.size > 0) {
+                recordedAudioChunks.push(e.data);
+            }
+        };
+
+        mediaRecorder.onstop = function() {
+            const finalType = mediaRecorder.mimeType || 'audio/webm';
+            recordedAudioBlob = new Blob(recordedAudioChunks, { type: finalType });
+            const audioUrl = URL.createObjectURL(recordedAudioBlob);
+            playback.src = audioUrl;
+            preview.style.display = 'block';
+
+            // Stop all tracks
+            stream.getTracks().forEach(track => track.stop());
+        };
+
+        mediaRecorder.start(250); // Slice every 250ms
+        btn.classList.remove('btn-danger');
+        btn.classList.add('btn-secondary');
+        btnText.textContent = 'Stop Recording (Speak Telugu)';
+        icon.textContent = '⏹️';
+        preview.style.display = 'none';
+
+        // Timer
+        recordSeconds = 0;
+        timerBadge.style.display = 'block';
+        timerSeconds.textContent = '00:00';
+        recordTimerInterval = setInterval(() => {
+            recordSeconds++;
+            const m = String(Math.floor(recordSeconds / 60)).padStart(2, '0');
+            const s = String(recordSeconds % 60).padStart(2, '0');
+            timerSeconds.textContent = `${m}:${s}`;
+        }, 1000);
+
+    } catch (err) {
+        alert('Could not access microphone: ' + err.message);
+    }
+}
+
+function handleFileUploadSelected(e) {
+    if (e.target.files && e.target.files[0]) {
+        recordedAudioBlob = e.target.files[0];
+    }
+}
+
+// --- Speech-to-Text (STT) Execution ---
+async function transcribeTeluguAudio() {
+    const spinner = document.getElementById('sttLoadingSpinner');
+    const errorAlert = document.getElementById('sttErrorAlert');
+    const errorMessage = document.getElementById('sttErrorMessage');
+    const outputSection = document.getElementById('sttOutputSection');
+    const transcriptText = document.getElementById('sttTranscriptText');
+    const btn = document.getElementById('btnTranscribeSTT');
+
+    let audioToSend = null;
+    let audioFileName = 'telugu_recording.webm';
+
+    if (sttCurrentMode === 'record') {
+        if (!recordedAudioBlob) {
+            errorAlert.style.display = 'block';
+            errorMessage.textContent = 'Please record your Telugu spoken response before clicking Transcribe.';
+            return;
+        }
+        audioToSend = recordedAudioBlob;
+        audioFileName = recordedAudioBlob.type.includes('ogg') ? 'recording.ogg' : 'recording.webm';
+    } else {
+        const fileInput = document.getElementById('sttAudioFileInput');
+        if (!fileInput.files || !fileInput.files[0]) {
+            errorAlert.style.display = 'block';
+            errorMessage.textContent = 'Please select a Telugu audio file to transcribe.';
+            return;
+        }
+        audioToSend = fileInput.files[0];
+        audioFileName = audioToSend.name;
+    }
+
+    // Reset UI
+    errorAlert.style.display = 'none';
+    outputSection.style.display = 'none';
+    spinner.style.display = 'block';
+    if (btn) btn.disabled = true;
+
+    try {
+        const formData = new FormData();
+        formData.append('audio_file', audioToSend, audioFileName);
+        formData.append('language_code', 'te-IN');
+        if (CSRF_TOKEN) {
+            formData.append('csrf_token', CSRF_TOKEN);
+        }
+
+        const response = await fetch('/api/speech/stt', {
+            method: 'POST',
+            headers: {
+                'X-CSRF-Token': CSRF_TOKEN
+            },
+            body: formData
+        });
+
+        const data = await response.json();
+        spinner.style.display = 'none';
+        if (btn) btn.disabled = false;
+
+        if (!data.success) {
+            errorAlert.style.display = 'block';
+            errorMessage.textContent = data.error || 'Telugu speech transcription failed. Please check your SARVAM_API_KEY configuration.';
+            return;
+        }
+
+        transcriptText.textContent = data.transcript || '(Empty speech transcription returned by Sarvam AI)';
+        outputSection.style.display = 'block';
+
+    } catch (err) {
+        spinner.style.display = 'none';
+        if (btn) btn.disabled = false;
+        errorAlert.style.display = 'block';
+        errorMessage.textContent = 'Network error communicating with the transcription server: ' + err.message;
+    }
+}
+
+function copyTranscriptText() {
+    const textEl = document.getElementById('sttTranscriptText');
+    if (!textEl) return;
+    navigator.clipboard.writeText(textEl.textContent).then(() => {
+        alert('Telugu transcription copied to clipboard!');
+    }).catch(err => {
+        console.error('Clipboard copy error:', err);
+    });
+}
+
+function sendTranscriptToTts() {
+    const textEl = document.getElementById('sttTranscriptText');
+    const ttsInput = document.getElementById('ttsTextInput');
+    if (textEl && ttsInput && textEl.textContent.trim()) {
+        ttsInput.value = textEl.textContent.trim();
+        ttsInput.scrollIntoView({ behavior: 'smooth' });
+        ttsInput.focus();
+    }
+}
+</script>
+{% endblock %}

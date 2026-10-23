@@ -24,6 +24,7 @@
                 <a href="{{ url_for('dashboard') }}" class="{% if request.endpoint == 'dashboard' %}active{% endif %}">Directory</a>
                 <a href="{{ url_for('attendance_mark') }}" class="{% if request.endpoint == 'attendance_mark' %}active{% endif %}">📋 Attendance</a>
                 <a href="{{ url_for('voice_assistant') }}" class="{% if request.endpoint == 'voice_assistant' %}active{% endif %}" style="font-weight: 600; color: #2563eb;">🎙️ Voice Assistant</a>
+                <a href="{{ url_for('telugu_speech_lab') }}" class="{% if request.endpoint == 'telugu_speech_lab' %}active{% endif %}" style="font-weight: 600; color: #0284c7;">🗣️ Telugu AI Speech</a>
                 <a href="{{ url_for('call_history') }}" class="{% if request.endpoint in ['call_history', 'call_detail'] %}active{% endif %}">Call History</a>
                 <a href="{{ url_for('follow_ups_list') }}" class="{% if request.endpoint == 'follow_ups_list' %}active{% endif %}">Follow-Ups</a>
                 
@@ -48,6 +49,7 @@
             {% else %}
             <nav class="nav-links">
                 <a href="{{ url_for('voice_assistant') }}" class="{% if request.endpoint == 'voice_assistant' %}active{% endif %}" style="font-weight: 600; color: #2563eb;">🎙️ AI Voice Assistant</a>
+                <a href="{{ url_for('telugu_speech_lab') }}" class="{% if request.endpoint == 'telugu_speech_lab' %}active{% endif %}" style="font-weight: 600; color: #0284c7;">🗣️ Telugu AI Speech</a>
                 <a href="{{ url_for('login') }}">Staff Login</a>
             </nav>
             {% endif %}

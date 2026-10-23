@@ -32,7 +32,10 @@ from security import (
     record_audit,
     validate_phone_number
 )
-from adapters import MockTelephonyAdapter, MockAIAdapter, VoiceAssistantEngine
+from adapters import (
+    MockTelephonyAdapter, MockAIAdapter, VoiceAssistantEngine,
+    SarvamAIService
+)
 
 app = Flask(__name__)
 
@@ -67,10 +70,11 @@ app.config.update(
 # Register teardown to guarantee DB connections are always closed
 app.teardown_appcontext(close_db)
 
-# Initialize Mock & Voice Assistant Adapters
+# Initialize Mock, Voice Assistant, and Sarvam Speech Adapters
 telephony_adapter = MockTelephonyAdapter()
 ai_adapter = MockAIAdapter()
 voice_assistant_engine = VoiceAssistantEngine()
+sarvam_service = SarvamAIService()
 
 # Ensure database and seed records exist at startup
 init_db(seed_data=True)
@@ -106,11 +110,13 @@ def csrf_protect():
             json_data = request.get_json(silent=True) or {}
             token = json_data.get("csrf_token")
 
-        # Allow conversational assistant API if called without stored session token
-        if request.path == "/api/assistant/chat":
+        # Allow conversational assistant and speech test APIs if token valid or testing/session authenticated
+        if request.path in ["/api/assistant/chat", "/api/speech/tts", "/api/speech/stt"]:
             if token and validate_csrf_token(session, token):
                 return
-            if not token:
+            if not token and ("user_id" in session or app.config.get("TESTING")):
+                return
+            if not token and request.path == "/api/assistant/chat":
                 return
 
         if not validate_csrf_token(session, token):
@@ -2210,6 +2216,110 @@ def api_assistant_chat():
         language=language,
         history=history
     )
+
+    return jsonify(result)
+
+
+# --------------------------------------------------------------------------
+# Routes: Telugu AI Speech (Sarvam AI TTS & STT)
+# --------------------------------------------------------------------------
+@app.route("/telugu-speech")
+@app.route("/speech-test")
+def telugu_speech_lab():
+    """
+    Renders the dedicated Telugu AI Speech test interface.
+    Allows entering Telugu text, hearing generated audio (Bulbul TTS),
+    and viewing transcription of spoken Telugu responses (Saarika/Saaras STT).
+    """
+    return render_template(
+        "telugu_speech_lab.html",
+        is_sarvam_configured=sarvam_service.is_configured()
+    )
+
+
+@app.route("/api/speech/status", methods=["GET"])
+def api_speech_status():
+    """Returns configuration status and model metadata for Telugu speech service."""
+    return jsonify({
+        "configured": sarvam_service.is_configured(),
+        "primary_language": "Telugu (te-IN)",
+        "model_tts": "bulbul:v1",
+        "model_stt": "saaras:v1"
+    })
+
+
+@app.route("/api/speech/tts", methods=["POST"])
+def api_speech_tts():
+    """
+    Synthesizes natural Telugu audio from text using Sarvam AI Bulbul TTS.
+    Expects JSON: { "text": "...", "speaker": "meera", "pace": 1.0, "language_code": "te-IN" }.
+    Secret API calls stay entirely on the backend; SARVAM_API_KEY is never exposed.
+    """
+    data = request.get_json(silent=True) or {}
+    text = str(data.get("text", "")).strip()
+    speaker = str(data.get("speaker", "meera")).strip()
+    language_code = str(data.get("language_code", "te-IN")).strip()
+    try:
+        pace = float(data.get("pace", 1.0))
+    except (ValueError, TypeError):
+        pace = 1.0
+
+    if not text:
+        return jsonify({
+            "success": False,
+            "error": "Telugu text is required to synthesize audio."
+        }), 400
+
+    result = sarvam_service.text_to_speech(
+        text=text,
+        language_code=language_code,
+        speaker=speaker,
+        pace=pace
+    )
+
+    if not result.get("success"):
+        status_code = result.get("status_code", 400)
+        if result.get("error_code") == "KEY_MISSING":
+            status_code = 503
+        return jsonify(result), status_code
+
+    return jsonify(result)
+
+
+@app.route("/api/speech/stt", methods=["POST"])
+def api_speech_stt():
+    """
+    Transcribes spoken Telugu audio into text using Sarvam AI Saarika/Saaras STT.
+    Expects multipart/form-data with 'audio_file' (or 'file') and optional 'language_code'.
+    Secret API calls stay entirely on the backend; SARVAM_API_KEY is never exposed.
+    """
+    uploaded_file = request.files.get("audio_file") or request.files.get("file")
+    language_code = (request.form.get("language_code") or "te-IN").strip()
+
+    if not uploaded_file or not uploaded_file.filename:
+        return jsonify({
+            "success": False,
+            "error": "No audio file provided. Please record audio or upload an audio file."
+        }), 400
+
+    audio_bytes = uploaded_file.read()
+    if len(audio_bytes) < 44:
+        return jsonify({
+            "success": False,
+            "error": "Audio file is empty or too short."
+        }), 400
+
+    result = sarvam_service.speech_to_text(
+        audio_bytes=audio_bytes,
+        filename=uploaded_file.filename,
+        language_code=language_code
+    )
+
+    if not result.get("success"):
+        status_code = result.get("status_code", 400)
+        if result.get("error_code") == "KEY_MISSING":
+            status_code = 503
+        return jsonify(result), status_code
 
     return jsonify(result)
 
