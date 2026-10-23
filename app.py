@@ -29,7 +29,8 @@ from security import (
     is_rate_limited, record_failed_login, reset_failed_logins,
     can_access_student, can_modify_students, can_manage_users,
     can_mark_attendance,
-    record_audit
+    record_audit,
+    validate_phone_number
 )
 from adapters import MockTelephonyAdapter, MockAIAdapter, VoiceAssistantEngine
 
@@ -564,7 +565,7 @@ def attendance_queue():
 
     rows = conn.execute("""
         SELECT s.id, s.roll_number, s.name, s.department, s.year_semester, s.section,
-               s.parent_name, s.parent_phone, s.preferred_language, s.attendance_percentage,
+               s.parent_name, s.parent_relationship, s.parent_phone, s.preferred_language, s.attendance_percentage,
                ar.id as attendance_record_id, ar.status, ar.call_record_id, ar.attendance_date
         FROM students s
         JOIN attendance_records ar ON s.id = ar.student_id
@@ -574,8 +575,14 @@ def attendance_queue():
 
     queue = []
     already_called = []
+    invalid_contacts = []
+    queue_pos = 1
 
     for r in rows:
+        phone_raw = r["parent_phone"] or ""
+        clean_phone, is_valid_phone = validate_phone_number(phone_raw)
+        p_rel = r["parent_relationship"] or "Parent"
+
         item = {
             "id": r["id"],
             "student_id": r["id"],
@@ -585,17 +592,32 @@ def attendance_queue():
             "year_semester": r["year_semester"],
             "section": r["section"],
             "parent_name": r["parent_name"],
-            "parent_phone": r["parent_phone"] or "Unavailable",
+            "parent_relationship": p_rel,
+            "parent_phone": phone_raw,
             "preferred_language": r["preferred_language"] or "Telugu",
             "attendance_percentage": r["attendance_percentage"],
             "attendance_record_id": r["attendance_record_id"],
             "attendance_date": r["attendance_date"],
             "call_record_id": r["call_record_id"],
-            "already_processed": bool(r["call_record_id"])
+            "already_processed": bool(r["call_record_id"]),
+            "phone_valid": is_valid_phone
         }
+
+        if not is_valid_phone:
+            item["contact_status"] = "Invalid Phone" if phone_raw else "Missing Phone"
+            item["failure_reason"] = f"Invalid phone format ({phone_raw or 'empty'}). Must contain at least 10 digits."
+            invalid_contacts.append(item)
+        else:
+            item["failure_reason"] = None
+
         if r["call_record_id"]:
+            item["contact_status"] = f"Already Contacted (#{r['call_record_id']})"
             already_called.append(item)
         else:
+            if is_valid_phone:
+                item["contact_status"] = "Eligible"
+            item["queue_position"] = queue_pos
+            queue_pos += 1
             queue.append(item)
 
     return jsonify({
@@ -607,6 +629,7 @@ def attendance_queue():
         "queue": queue,
         "already_called_count": len(already_called),
         "already_called": already_called,
+        "invalid_contacts": invalid_contacts,
         "label": "SIMULATED — NO REAL TELEPHONE CALL WAS PLACED"
     })
 
@@ -620,6 +643,7 @@ def attendance_queue_process():
     - Scoping and Principal read-only block
     - Student must be marked Absent on attendance_date (excludes Present)
     - Prevents duplicate calls for the same attendance date
+    - Handles skip requests and skips missing/invalid numbers with recorded explanation
     - Simulates call via MockTelephonyAdapter and MockAIAdapter
     - Creates CallRecord with explicit 'SIMULATED — NO REAL TELEPHONE CALL WAS PLACED'
     - Creates FollowUp ticket for human faculty callback
@@ -638,6 +662,8 @@ def attendance_queue_process():
     student_id = data.get("student_id")
     attendance_date = (data.get("attendance_date") or data.get("date") or "").strip()
     selected_lang = data.get("language")
+    action = (data.get("action") or "call").strip().lower()
+    reason = (data.get("reason") or "").strip()
 
     if not student_id or not attendance_date:
         return jsonify({"success": False, "error": "student_id and attendance_date are required."}), 400
@@ -672,10 +698,86 @@ def attendance_queue_process():
             "call_record_id": att_record["call_record_id"]
         }), 409
 
+    now = datetime.now()
+
+    # Handle teacher skip action
+    if action == "skip":
+        skip_reason = reason or "Skipped by teacher during queue execution"
+        cursor = conn.cursor()
+        cursor.execute("""
+            INSERT INTO follow_ups (
+                student_id, teacher_name, assigned_to, due_date, status, notes, action_required
+            ) VALUES (?, ?, ?, ?, ?, ?, ?)
+        """, (
+            student_id,
+            session.get("username", "Faculty"),
+            f"Dr. {student['department']} Mentor",
+            (now + timedelta(days=2)).strftime("%Y-%m-%d"),
+            "open",
+            f"Queue outreach skipped for {student['name']} ({student['roll_number']}) on {attendance_date}. Reason: {skip_reason}",
+            "Parent Meeting Scheduled"
+        ))
+        followup_id = cursor.lastrowid
+        conn.commit()
+
+        record_audit(
+            conn, session.get("user_id"), session.get("username"),
+            "queue_student_skipped", f"student_{student_id}",
+            f"Skipped parent call for {student['roll_number']} on {attendance_date}: {skip_reason}. FollowUp #{followup_id} created.",
+            request.remote_addr
+        )
+
+        return jsonify({
+            "success": True,
+            "skipped": True,
+            "status": "Skipped",
+            "student_id": student_id,
+            "student_name": student["name"],
+            "reason": skip_reason,
+            "followup_id": followup_id
+        })
+
+    # Validate parent mobile number
+    clean_phone, is_valid_phone = validate_phone_number(student["parent_phone"])
+    if not is_valid_phone:
+        failure_msg = f"Invalid or missing parent mobile number: '{student['parent_phone'] or 'empty'}'. Must contain at least 10 digits."
+        cursor = conn.cursor()
+        cursor.execute("""
+            INSERT INTO follow_ups (
+                student_id, teacher_name, assigned_to, due_date, status, notes, action_required
+            ) VALUES (?, ?, ?, ?, ?, ?, ?)
+        """, (
+            student_id,
+            "AI Calling Queue (Auto-Check)",
+            f"Dr. {student['department']} Mentor",
+            (now + timedelta(days=1)).strftime("%Y-%m-%d"),
+            "open",
+            f"Automated absence call skipped on {attendance_date}: Student {student['name']} ({student['roll_number']}) has invalid parent contact ({student['parent_phone'] or 'empty'}). Immediate phone number verification required.",
+            "Attendance Warning Issued"
+        ))
+        followup_id = cursor.lastrowid
+        conn.commit()
+
+        record_audit(
+            conn, session.get("user_id"), session.get("username"),
+            "queue_call_skipped_invalid_contact", f"student_{student_id}",
+            f"Skipped call for {student['roll_number']} on {attendance_date}: {failure_msg}. FollowUp #{followup_id} created.",
+            request.remote_addr
+        )
+
+        return jsonify({
+            "success": False,
+            "skipped": True,
+            "status": "Skipped - Invalid Contact",
+            "student_id": student_id,
+            "student_name": student["name"],
+            "failure_reason": failure_msg,
+            "followup_id": followup_id
+        })
+
     lang = selected_lang or student["preferred_language"] or "Telugu"
     script_data = ai_adapter.generate_simulated_call_script(dict(student), lang)
 
-    now = datetime.now()
     duration_seconds = script_data.get("duration_seconds", 45)
     start_time = now - timedelta(seconds=duration_seconds)
     end_time = now
@@ -744,6 +846,7 @@ def attendance_queue_process():
 
     return jsonify({
         "success": True,
+        "status": "Completed",
         "call_record_id": call_record_id,
         "followup_id": followup_id,
         "student": {
@@ -1711,7 +1814,8 @@ def download_sample_csv():
 
 
 # --------------------------------------------------------------------------
-# Routes: Manual Add Student (Department Scoped)
+# --------------------------------------------------------------------------
+# Routes: Manual Add, Edit, Delete Student Records (Faculty/Coordinator/Admin)
 # --------------------------------------------------------------------------
 @app.route("/add-student", methods=["GET", "POST"])
 @login_required(allowed_roles=["Admin", "Department Coordinator", "Faculty"])
@@ -1734,6 +1838,7 @@ def add_student():
         year_semester = request.form.get("year_semester", "III Year - Sem 1").strip()
         section = request.form.get("section", "A").strip().upper()
         parent_name = request.form.get("parent_name", "").strip()
+        parent_relationship = request.form.get("parent_relationship", "Parent").strip()
         parent_phone = request.form.get("parent_phone", "").strip()
         preferred_language = request.form.get("preferred_language", "Telugu").strip()
         marks_info = request.form.get("marks_info", "").strip()
@@ -1756,24 +1861,35 @@ def add_student():
             flash("Roll Number, Student Name, and Parent Mobile Phone are required.", "danger")
             return render_template("add_student.html", departments=departments, user_dept=user_dept, user_role=user_role)
 
+        clean_phone, is_p_valid = validate_phone_number(parent_phone)
+        if not is_p_valid:
+            flash(f"Invalid parent phone: '{parent_phone}'. Please enter a valid 10-digit number.", "danger")
+            return render_template("add_student.html", departments=departments, user_dept=user_dept, user_role=user_role)
+
+        if student_phone:
+            clean_s_phone, is_s_valid = validate_phone_number(student_phone)
+            if not is_s_valid:
+                flash(f"Invalid student phone: '{student_phone}'. Please enter a valid 10-digit number.", "danger")
+                return render_template("add_student.html", departments=departments, user_dept=user_dept, user_role=user_role)
+
         try:
             conn.execute("""
                 INSERT INTO students (
                     roll_number, name, department, year_semester, section,
                     student_phone, student_email,
-                    parent_name, parent_phone, preferred_language, attendance_percentage, marks_info
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    parent_name, parent_relationship, parent_phone, preferred_language, attendance_percentage, marks_info
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """, (
                 roll_number, name, department, year_semester, section,
                 student_phone or None, student_email or None,
-                parent_name, parent_phone, preferred_language, attendance_percentage, marks_info or None
+                parent_name, parent_relationship or "Parent", parent_phone, preferred_language, attendance_percentage, marks_info or None
             ))
             conn.commit()
 
             record_audit(
                 conn, session.get("user_id"), session.get("username"),
                 "student_created", f"student_{roll_number}",
-                f"Enrolled student {name} ({roll_number}) in {department} (Student Phone: {student_phone or 'N/A'}, Parent: {parent_name} / {parent_phone})",
+                f"Enrolled student {name} ({roll_number}) in {department} (Student Phone: {student_phone or 'N/A'}, Parent: {parent_name} [{parent_relationship}] / {parent_phone})",
                 request.remote_addr
             )
 
@@ -1783,6 +1899,148 @@ def add_student():
             flash(f"Error saving student (Roll number may already exist): {str(e)}", "danger")
 
     return render_template("add_student.html", departments=departments, user_dept=user_dept, user_role=user_role)
+
+
+@app.route("/student/<int:student_id>/edit", methods=["GET", "POST"])
+@login_required(allowed_roles=["Admin", "Department Coordinator", "Faculty"])
+def edit_student(student_id):
+    user_role = session.get("role")
+    user_dept = session.get("department", "All")
+    conn = get_db_connection()
+
+    student = conn.execute("SELECT * FROM students WHERE id = ?", (student_id,)).fetchone()
+    if not student:
+        abort(404, description="Student record not found.")
+
+    if not can_access_student(user_role, user_dept, student["department"]):
+        abort(403, description=f"Access Denied: You cannot edit students outside your department ({user_dept}).")
+
+    if user_dept and user_dept != "All":
+        departments = [user_dept]
+    else:
+        dept_rows = conn.execute("SELECT DISTINCT department FROM students ORDER BY department ASC").fetchall()
+        departments = [d["department"] for d in dept_rows] or ["CSE", "ECE", "IT", "MECH"]
+
+    if request.method == "POST":
+        roll_number = request.form.get("roll_number", "").strip().upper()
+        name = request.form.get("name", "").strip()
+        student_phone = request.form.get("student_phone", "").strip()
+        student_email = request.form.get("student_email", "").strip()
+        year_semester = request.form.get("year_semester", "III Year - Sem 1").strip()
+        section = request.form.get("section", "A").strip().upper()
+        parent_name = request.form.get("parent_name", "").strip()
+        parent_relationship = request.form.get("parent_relationship", "Parent").strip()
+        parent_phone = request.form.get("parent_phone", "").strip()
+        preferred_language = request.form.get("preferred_language", "Telugu").strip()
+        marks_info = request.form.get("marks_info", "").strip()
+
+        if user_role in ["Department Coordinator", "Faculty"] and user_dept != "All":
+            department = user_dept
+        else:
+            department = request.form.get("department", student["department"]).strip().upper()
+
+        try:
+            attendance_percentage = float(request.form.get("attendance_percentage", student["attendance_percentage"] or 85.0))
+            attendance_percentage = max(0.0, min(100.0, attendance_percentage))
+        except ValueError:
+            attendance_percentage = student["attendance_percentage"] or 85.0
+
+        if not roll_number or not name or not parent_phone:
+            flash("Roll Number, Student Name, and Parent Mobile Phone are required.", "danger")
+            return render_template("edit_student.html", student=student, departments=departments, user_dept=user_dept, user_role=user_role)
+
+        clean_phone, is_p_valid = validate_phone_number(parent_phone)
+        if not is_p_valid:
+            flash(f"Invalid parent phone: '{parent_phone}'. Please enter a valid 10-digit number.", "danger")
+            return render_template("edit_student.html", student=student, departments=departments, user_dept=user_dept, user_role=user_role)
+
+        if student_phone:
+            clean_s_phone, is_s_valid = validate_phone_number(student_phone)
+            if not is_s_valid:
+                flash(f"Invalid student phone: '{student_phone}'. Please enter a valid 10-digit number.", "danger")
+                return render_template("edit_student.html", student=student, departments=departments, user_dept=user_dept, user_role=user_role)
+
+        # Check duplicate roll number if roll number changed
+        if roll_number != student["roll_number"]:
+            conflict = conn.execute("SELECT id FROM students WHERE roll_number = ? AND id != ?", (roll_number, student_id)).fetchone()
+            if conflict:
+                flash(f"Another student already exists with roll number '{roll_number}'.", "danger")
+                return render_template("edit_student.html", student=student, departments=departments, user_dept=user_dept, user_role=user_role)
+
+        try:
+            conn.execute("""
+                UPDATE students SET
+                    roll_number = ?,
+                    name = ?,
+                    department = ?,
+                    year_semester = ?,
+                    section = ?,
+                    student_phone = ?,
+                    student_email = ?,
+                    parent_name = ?,
+                    parent_relationship = ?,
+                    parent_phone = ?,
+                    preferred_language = ?,
+                    attendance_percentage = ?,
+                    marks_info = ?
+                WHERE id = ?
+            """, (
+                roll_number, name, department, year_semester, section,
+                student_phone or None, student_email or None,
+                parent_name, parent_relationship or "Parent", parent_phone,
+                preferred_language, attendance_percentage, marks_info or None,
+                student_id
+            ))
+            conn.commit()
+
+            recalculate_student_attendance(conn, student_id)
+            conn.commit()
+
+            record_audit(
+                conn, session.get("user_id"), session.get("username"),
+                "student_updated", f"student_{roll_number}",
+                f"Updated student record for {name} ({roll_number}) in {department}",
+                request.remote_addr
+            )
+
+            flash(f"Student details for {name} ({roll_number}) updated successfully!", "success")
+            return redirect(url_for("student_detail", student_id=student_id))
+        except Exception as e:
+            flash(f"Error updating student: {str(e)}", "danger")
+
+    return render_template("edit_student.html", student=student, departments=departments, user_dept=user_dept, user_role=user_role)
+
+
+@app.route("/student/<int:student_id>/delete", methods=["POST"])
+@login_required(allowed_roles=["Admin", "Department Coordinator", "Faculty"])
+def delete_student(student_id):
+    user_role = session.get("role")
+    user_dept = session.get("department", "All")
+    conn = get_db_connection()
+
+    student = conn.execute("SELECT * FROM students WHERE id = ?", (student_id,)).fetchone()
+    if not student:
+        abort(404, description="Student record not found.")
+
+    if not can_access_student(user_role, user_dept, student["department"]):
+        abort(403, description=f"Access Denied: You cannot delete students outside your department ({user_dept}).")
+
+    name = student["name"]
+    roll_number = student["roll_number"]
+    dept = student["department"]
+
+    conn.execute("DELETE FROM students WHERE id = ?", (student_id,))
+    conn.commit()
+
+    record_audit(
+        conn, session.get("user_id"), session.get("username"),
+        "student_deleted", f"student_{roll_number}",
+        f"Deleted student {name} ({roll_number}) from department {dept}",
+        request.remote_addr
+    )
+
+    flash(f"Student {name} ({roll_number}) has been removed from the directory.", "info")
+    return redirect(url_for("dashboard"))
 
 
 # --------------------------------------------------------------------------

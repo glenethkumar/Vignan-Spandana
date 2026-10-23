@@ -63,6 +63,9 @@
                     <button type="button" id="btnStopQueueExec" class="btn btn-danger" onclick="stopQueueExecution()" style="display: none; font-weight: 600;">
                         ⏹️ Stop Queue
                     </button>
+                    <button type="button" id="btnSkipQueueExec" class="btn btn-secondary" onclick="skipCurrentInQueue()" style="display: none; font-weight: 600;">
+                        ⏭️ Skip Student
+                    </button>
                     <span id="queueProgressBadge" class="badge badge-dept" style="display: none; padding: 6px 12px; font-size: 0.82rem;">
                         Ready
                     </span>
@@ -106,12 +109,12 @@
                     <table class="data-table" style="margin: 0; font-size: 0.82rem;">
                         <thead style="position: sticky; top: 0; background: #f1f5f9; z-index: 2;">
                             <tr>
-                                <th style="width: 40px;">#</th>
+                                <th style="width: 35px;">#</th>
                                 <th>Roll Number</th>
                                 <th>Student Name</th>
-                                <th>Parent Phone</th>
-                                <th>Language</th>
-                                <th>Queue Status</th>
+                                <th>Parent & Relationship</th>
+                                <th>Phone Number</th>
+                                <th>Contact Status / Reason</th>
                             </tr>
                         </thead>
                         <tbody id="queueTableBody">

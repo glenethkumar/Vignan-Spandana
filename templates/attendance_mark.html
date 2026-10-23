@@ -242,8 +242,16 @@
                 </span>
             </div>
 
-            <!-- Quick Batch Toggle Actions -->
-            <div style="display: flex; gap: 0.5rem; align-items: center;">
+            <!-- Roster Search & Batch Actions -->
+            <div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
+                <input 
+                    type="text" 
+                    id="rosterSearch" 
+                    class="form-control" 
+                    placeholder="🔍 Search name or roll..." 
+                    onkeyup="filterRosterTable()" 
+                    style="max-width: 220px; font-size: 0.85rem; height: 34px;"
+                />
                 <button type="button" id="btnMarkAllPresent" class="btn btn-secondary btn-sm" onclick="markAll('Present')">
                     ✅ All Present
                 </button>
@@ -338,6 +346,9 @@
                         </td>
                         <td style="font-size: 0.85rem; color: var(--text-muted);">
                             {{ s.parent_name }}
+                            {% if s.parent_relationship %}
+                                <span class="badge badge-dept" style="font-size: 0.72rem; padding: 2px 6px;">{{ s.parent_relationship }}</span>
+                            {% endif %}
                             {% if s.parent_phone %}
                                 &bull; <span style="font-family: monospace;">{{ s.parent_phone }}</span>
                             {% endif %}
@@ -348,15 +359,27 @@
             </table>
         </div>
 
-        <!-- Sticky Footer Save Bar -->
+        <!-- Sticky Footer Save & Call Action Bar -->
         {% if user_role != 'Principal' %}
-        <div style="margin-top: 1.5rem; display: flex; justify-content: space-between; align-items: center; padding-top: 1rem; border-top: 1px solid var(--border-color);">
+        <div style="margin-top: 1.5rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; padding-top: 1rem; border-top: 1px solid var(--border-color);">
             <div style="font-size: 0.85rem; color: var(--text-muted);">
-                Saving records for date: <strong>{{ selected_date }}</strong>. Dynamic attendance percentages will be recalculated automatically.
+                Saving records for date: <strong>{{ selected_date }}</strong>. Dynamic attendance percentages are recalculated automatically.
             </div>
-            <button type="submit" class="btn btn-primary" style="padding: 8px 24px; font-size: 0.95rem; font-weight: 600;">
-                💾 Save Attendance Records
-            </button>
+            <div style="display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap;">
+                <button type="submit" class="btn btn-primary" id="btnSaveAttendanceBottom" style="padding: 8px 24px; font-size: 0.95rem; font-weight: 600;">
+                    💾 Save Attendance Records
+                </button>
+                <button 
+                    type="button" 
+                    id="btnCallParentsBottom" 
+                    class="btn btn-call" 
+                    onclick="openCallQueueModal('{{ selected_dept }}', '{{ selected_date }}')"
+                    style="font-weight: 700; padding: 8px 24px; font-size: 0.95rem; box-shadow: 0 4px 6px -1px rgba(225, 29, 72, 0.3);"
+                    title="Open automated parent calling queue for absent students on this date"
+                >
+                    📞 CALL PARENTS (Queue: {{ queue_pending_count }})
+                </button>
+            </div>
         </div>
         {% endif %}
 
@@ -429,6 +452,15 @@ function updateCounters() {
 
     if (statPresent) statPresent.textContent = present;
     if (statAbsent) statAbsent.textContent = absent;
+}
+
+function filterRosterTable() {
+    const q = (document.getElementById('rosterSearch')?.value || '').toLowerCase().trim();
+    const rows = document.querySelectorAll('#attendanceTable tbody tr[id^="row-"]');
+    rows.forEach(row => {
+        const text = row.innerText.toLowerCase();
+        row.style.display = (!q || text.includes(q)) ? '' : 'none';
+    });
 }
 
 document.addEventListener('DOMContentLoaded', updateCounters);

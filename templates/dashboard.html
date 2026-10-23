@@ -150,7 +150,12 @@
                     <span class="badge badge-dept">{{ s['department'] }} - Sec {{ s['section'] }}</span>
                 </td>
                 <td>
-                    <div>{{ s['parent_name'] }}</div>
+                    <div>
+                        {{ s['parent_name'] }}
+                        {% if s['parent_relationship'] %}
+                            <span class="badge badge-dept" style="font-size: 0.72rem; padding: 2px 6px;">{{ s['parent_relationship'] }}</span>
+                        {% endif %}
+                    </div>
                     <div style="font-size: 0.82rem; color: var(--text-muted); font-family: monospace;">
                         📞 {{ s['parent_phone'] }}
                     </div>
@@ -177,16 +182,19 @@
                 </td>
                 <td style="text-align: right; white-space: nowrap;">
                     <a href="{{ url_for('student_detail', student_id=s['id']) }}" class="btn btn-secondary btn-sm" title="View details and call history">
-                        View Profile
+                        View
                     </a>
                     {% if session.get('role') != 'Principal' %}
+                    <a href="{{ url_for('edit_student', student_id=s['id']) }}" class="btn btn-secondary btn-sm" title="Edit student record">
+                        ✏️ Edit
+                    </a>
                     <button 
                         type="button" 
                         class="btn btn-call btn-sm" 
                         onclick="triggerCallParent({{ s['id'] }}, '{{ s['name']|escape }}', '{{ s['roll_number']|escape }}', '{{ s['department']|escape }}', '{{ s['parent_phone']|escape }}', '{{ s['attendance_percentage'] }}', '{{ s['preferred_language']|escape }}')"
                         title="AI Voice Call Simulation Demo"
                     >
-                        📞 Call Parent
+                        📞 Call
                     </button>
                     {% endif %}
                 </td>

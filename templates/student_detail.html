@@ -14,8 +14,17 @@
             Class: <strong>{{ student['year_semester'] }} (Sec {{ student['section'] }})</strong>
         </div>
     </div>
-    <div style="display: flex; gap: 0.5rem;">
+    <div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
         {% if session.get('role') != 'Principal' %}
+        <a href="{{ url_for('edit_student', student_id=student['id']) }}" class="btn btn-secondary" id="btnEditStudent">
+            ✏️ Edit Student
+        </a>
+        <form action="{{ url_for('delete_student', student_id=student['id']) }}" method="POST" style="margin: 0;" onsubmit="return confirm('Are you sure you want to permanently delete student {{ student['name']|escape }} ({{ student['roll_number']|escape }})? This action cannot be undone.');">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button type="submit" class="btn btn-secondary" style="color: var(--danger); border-color: #fca5a5;" id="btnDeleteStudent">
+                🗑️ Delete
+            </button>
+        </form>
         <button 
             type="button" 
             class="btn btn-call" 
@@ -323,7 +332,10 @@
 
             <div style="margin-bottom: 1rem;">
                 <div class="info-label">Parent / Guardian Name</div>
-                <div class="info-value" style="font-size: 1.05rem;">{{ student['parent_name'] }}</div>
+                <div class="info-value" style="font-size: 1.05rem;">
+                    {{ student['parent_name'] }}
+                    <span class="badge badge-dept" style="font-size: 0.78rem; margin-left: 6px;">{{ student['parent_relationship'] or 'Parent' }}</span>
+                </div>
             </div>
 
             <div style="margin-bottom: 1rem;">

@@ -123,6 +123,7 @@ def init_db(seed_data=True, db_path=None):
         student_phone TEXT,
         student_email TEXT,
         parent_name TEXT NOT NULL,
+        parent_relationship TEXT DEFAULT 'Parent',
         parent_phone TEXT,
         preferred_language TEXT NOT NULL DEFAULT 'Telugu', -- 'Telugu', 'Hindi', 'English'
         attendance_percentage REAL DEFAULT 85.0,
@@ -164,7 +165,7 @@ def init_db(seed_data=True, db_path=None):
     if "attendance_date" not in call_cols:
         cursor.execute("ALTER TABLE call_records ADD COLUMN attendance_date TEXT")
 
-    # Migration helper for students table upgrades (marks_info, student_phone, student_email)
+    # Migration helper for students table upgrades (marks_info, student_phone, student_email, parent_relationship)
     cursor.execute("PRAGMA table_info(students)")
     student_cols = [col[1] for col in cursor.fetchall()]
     if "marks_info" not in student_cols:
@@ -173,6 +174,8 @@ def init_db(seed_data=True, db_path=None):
         cursor.execute("ALTER TABLE students ADD COLUMN student_phone TEXT")
     if "student_email" not in student_cols:
         cursor.execute("ALTER TABLE students ADD COLUMN student_email TEXT")
+    if "parent_relationship" not in student_cols:
+        cursor.execute("ALTER TABLE students ADD COLUMN parent_relationship TEXT DEFAULT 'Parent'")
 
     # 5. FollowUp notes table
     cursor.execute("""

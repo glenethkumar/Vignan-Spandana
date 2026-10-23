@@ -561,30 +561,53 @@ function renderQueueTable(pendingItems, alreadyCalled) {
     let idx = 1;
 
     pendingItems.forEach(s => {
+        const qPos = s.queue_position || idx++;
+        const pRel = s.parent_relationship || 'Parent';
+        const pName = s.parent_name || 'Parent';
+        const phone = s.parent_phone || 'None';
+        let statusBadge = '';
+        if (s.phone_valid === false) {
+            statusBadge = `
+                <span id="qstatus-${s.id}" class="badge badge-danger">⚠️ Invalid Phone</span>
+                <div style="font-size: 0.72rem; color: #b91c1c; margin-top: 2px;">${s.failure_reason || 'Requires 10 digits'}</div>
+            `;
+        } else {
+            statusBadge = `
+                <span id="qstatus-${s.id}" class="badge badge-warning">
+                    ⏳ Ready in Queue (#${qPos})
+                </span>
+            `;
+        }
+
         html += `
             <tr id="qrow-${s.id}">
-                <td style="color: var(--text-muted);">${idx++}</td>
+                <td style="color: var(--text-muted); font-weight: 600;">#${qPos}</td>
                 <td style="font-family: monospace; font-weight: 600;">${s.roll_number}</td>
                 <td><strong>${s.name}</strong></td>
-                <td style="font-family: monospace;">${s.parent_phone}</td>
-                <td><span class="badge badge-lang">${s.preferred_language}</span></td>
                 <td>
-                    <span id="qstatus-${s.id}" class="badge badge-warning">
-                        ⏳ In Queue (Pending)
-                    </span>
+                    ${pName}
+                    <span class="badge badge-dept" style="font-size: 0.7rem; padding: 2px 6px;">${pRel}</span>
                 </td>
+                <td style="font-family: monospace;">${phone}</td>
+                <td>${statusBadge}</td>
             </tr>
         `;
     });
 
     alreadyCalled.forEach(s => {
+        const pRel = s.parent_relationship || 'Parent';
+        const pName = s.parent_name || 'Parent';
+        const phone = s.parent_phone || 'None';
         html += `
             <tr id="qrow-${s.id}" style="opacity: 0.75; background: #fafafa;">
-                <td style="color: var(--text-muted);">${idx++}</td>
+                <td style="color: var(--text-muted);">-</td>
                 <td style="font-family: monospace; font-weight: 600;">${s.roll_number}</td>
                 <td><strong>${s.name}</strong></td>
-                <td style="font-family: monospace;">${s.parent_phone}</td>
-                <td><span class="badge badge-lang">${s.preferred_language}</span></td>
+                <td>
+                    ${pName}
+                    <span class="badge badge-dept" style="font-size: 0.7rem; padding: 2px 6px;">${pRel}</span>
+                </td>
+                <td style="font-family: monospace;">${phone}</td>
                 <td>
                     <span id="qstatus-${s.id}" class="badge badge-success">
                         ✅ Contacted (#${s.call_record_id})
@@ -633,11 +656,22 @@ function stopQueueExecution() {
     }
 }
 
+function skipCurrentInQueue() {
+    if (!queueState.inProgress || queueState.currentIndex >= queueState.items.length) return;
+    queueState.skipCurrent = true;
+    const btnSkip = document.getElementById('btnSkipQueueExec');
+    if (btnSkip) {
+        btnSkip.disabled = true;
+        btnSkip.textContent = '⏭️ Skipping student...';
+    }
+}
+
 async function startQueueExecution() {
     if (queueState.inProgress || queueState.items.length === 0) return;
 
     queueState.inProgress = true;
     queueState.stopped = false;
+    queueState.skipCurrent = false;
     queueState.currentIndex = 0;
 
     // Update UI controls
@@ -646,6 +680,13 @@ async function startQueueExecution() {
     btnStop.style.display = 'inline-block';
     btnStop.disabled = false;
     btnStop.textContent = '⏹️ Stop Queue';
+
+    const btnSkip = document.getElementById('btnSkipQueueExec');
+    if (btnSkip) {
+        btnSkip.style.display = 'inline-block';
+        btnSkip.disabled = false;
+        btnSkip.textContent = '⏭️ Skip Student';
+    }
 
     const btnClose = document.getElementById('btnQueueModalClose');
     const btnDone = document.getElementById('btnQueueDone');
@@ -684,33 +725,113 @@ async function runNextStudentInQueue() {
     document.getElementById('queuePercentText').textContent = `${percent}%`;
     document.getElementById('queueStatusProgressText').textContent = `Processing student ${currentNum} of ${total}: ${student.name}`;
 
-    // Mark current student as Calling in roster
     const statusPill = document.getElementById(`qstatus-${student.id}`);
+    const card = document.getElementById('queueActiveCallCard');
+    card.style.display = 'block';
+    document.getElementById('queueActiveStudentName').textContent = student.name;
+    document.getElementById('queueActiveRoll').textContent = student.roll_number;
+    document.getElementById('queueActivePhone').textContent = student.parent_phone || 'None';
+    document.getElementById('queueActiveLang').textContent = student.preferred_language || 'Telugu';
+
+    const stepBadge = document.getElementById('queueActiveStepBadge');
+    const transcriptBox = document.getElementById('queueActiveTranscript');
+
+    const btnSkip = document.getElementById('btnSkipQueueExec');
+    if (btnSkip) {
+        btnSkip.disabled = false;
+        btnSkip.textContent = '⏭️ Skip Student';
+    }
+
+    // Check if phone number is invalid / missing (Prompt 3 Requirement 11)
+    if (student.phone_valid === false) {
+        if (statusPill) {
+            statusPill.className = 'badge badge-danger';
+            statusPill.textContent = '⚠️ Invalid Contact (Skipped)';
+        }
+        stepBadge.className = 'badge badge-danger';
+        stepBadge.textContent = '⚠️ Skipped: Invalid Number';
+        transcriptBox.innerHTML = `
+            <div style="font-weight: 600; color: #b91c1c;">
+                ⚠️ Skipped: Missing or invalid parent contact (${student.parent_phone || 'empty'}).
+            </div>
+            <div style="font-size: 0.8rem; color: #475569; margin-top: 2px;">
+                Parent outreach requires a valid 10-digit phone number. Follow-up verification ticket created for faculty callback.
+            </div>
+        `;
+
+        try {
+            await fetch('/attendance/queue/process', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCsrfToken()
+                },
+                body: JSON.stringify({
+                    student_id: student.id,
+                    attendance_date: queueState.date,
+                    action: 'skip',
+                    reason: 'Invalid or missing parent mobile number: ' + (student.parent_phone || 'empty'),
+                    csrf_token: getCsrfToken()
+                })
+            });
+        } catch (e) {
+            console.error('Skip phone error:', e);
+        }
+
+        await new Promise(r => setTimeout(r, 1400));
+        queueState.currentIndex++;
+        await runNextStudentInQueue();
+        return;
+    }
+
+    // Mark current student as Calling in roster
     if (statusPill) {
         statusPill.className = 'badge badge-call';
         statusPill.textContent = '📞 Calling... (Active)';
     }
 
-    // Display Active Call Card
-    const card = document.getElementById('queueActiveCallCard');
-    card.style.display = 'block';
-    document.getElementById('queueActiveStudentName').textContent = student.name;
-    document.getElementById('queueActiveRoll').textContent = student.roll_number;
-    document.getElementById('queueActivePhone').textContent = student.parent_phone;
-    document.getElementById('queueActiveLang').textContent = student.preferred_language;
-
-    const stepBadge = document.getElementById('queueActiveStepBadge');
     stepBadge.className = 'badge badge-warning';
     stepBadge.textContent = 'Dialing... (ringing)';
-
-    const transcriptBox = document.getElementById('queueActiveTranscript');
     transcriptBox.innerHTML = `<em>Dialing +91 ${student.parent_phone}... [MockTelephonyAdapter]</em>`;
 
     try {
         // Step 1: Simulate dialing delay (1 second)
         await new Promise(r => setTimeout(r, 1000));
+
         if (queueState.stopped) {
             finishQueue(false, 'Queue stopped by faculty member.');
+            return;
+        }
+
+        // Check if teacher pressed Skip during dialing
+        if (queueState.skipCurrent) {
+            queueState.skipCurrent = false;
+            if (statusPill) {
+                statusPill.className = 'badge badge-warning';
+                statusPill.textContent = '⏭️ Skipped by Teacher';
+            }
+            stepBadge.className = 'badge badge-warning';
+            stepBadge.textContent = '⏭️ Skipped by Teacher';
+            transcriptBox.innerHTML = `<span style="color: #b45309; font-weight: 600;">ℹ️ Student skipped by teacher. Follow-up recorded. Advancing...</span>`;
+
+            await fetch('/attendance/queue/process', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCsrfToken()
+                },
+                body: JSON.stringify({
+                    student_id: student.id,
+                    attendance_date: queueState.date,
+                    action: 'skip',
+                    reason: 'Skipped by teacher during queue execution',
+                    csrf_token: getCsrfToken()
+                })
+            });
+
+            await new Promise(r => setTimeout(r, 800));
+            queueState.currentIndex++;
+            await runNextStudentInQueue();
             return;
         }
 
@@ -800,6 +921,9 @@ function finishQueue(success, message) {
 
     const btnStop = document.getElementById('btnStopQueueExec');
     if (btnStop) btnStop.style.display = 'none';
+
+    const btnSkip = document.getElementById('btnSkipQueueExec');
+    if (btnSkip) btnSkip.style.display = 'none';
 
     const btnClose = document.getElementById('btnQueueModalClose');
     const btnDone = document.getElementById('btnQueueDone');

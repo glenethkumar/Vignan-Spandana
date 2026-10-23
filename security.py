@@ -11,6 +11,7 @@ Provides:
 import time
 import secrets
 import hmac
+import re
 from typing import Optional, Dict, List, Tuple
 from werkzeug.security import generate_password_hash, check_password_hash
 
@@ -126,8 +127,24 @@ def can_access_student(user_role: str, user_dept: str, student_dept: str) -> boo
 
 
 def can_modify_students(user_role: str) -> bool:
-    """Only Admin and Department Coordinator can add/import student records."""
-    return user_role in ["Admin", "Department Coordinator"]
+    """Admin, Department Coordinator, and Faculty can add, edit, and delete student records. Principal is read-only."""
+    return user_role in ["Admin", "Department Coordinator", "Faculty"]
+
+
+def validate_phone_number(phone_str: Optional[str]) -> Tuple[bool, Optional[str]]:
+    """
+    Validates a phone number. Returns (is_valid, cleaned_digits_or_error_reason).
+    Accepts 10 to 15 digit telephone numbers (e.g. standard Indian 10-digit mobile or E.164 +91...).
+    Rejects empty, non-digit, or too short/long values.
+    """
+    if not phone_str:
+        return False, "Phone number is empty or missing"
+    digits = re.sub(r"\D", "", phone_str)
+    if len(digits) < 10:
+        return False, f"Phone number has only {len(digits)} digits (minimum 10 required)"
+    if len(digits) > 15:
+        return False, f"Phone number has {len(digits)} digits (maximum 15 allowed)"
+    return True, digits
 
 
 def can_mark_attendance(user_role: str) -> bool:

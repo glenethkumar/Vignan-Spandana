@@ -158,7 +158,7 @@
                     <h3 style="font-size: 1.05rem; margin: 0; color: var(--primary-color);">Parent & AI Voice Outreach Profile</h3>
                 </div>
 
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem;">
                     <div class="form-group">
                         <label for="parent_name" class="form-label" style="font-weight: 600;">Parent / Guardian Name <span style="color: var(--danger);">*</span></label>
                         <input 
@@ -172,13 +172,26 @@
                     </div>
 
                     <div class="form-group">
+                        <label for="parent_relationship" class="form-label" style="font-weight: 600;">Relationship <span style="color: var(--danger);">*</span></label>
+                        <select id="parent_relationship" name="parent_relationship" class="form-select">
+                            <option value="Father">Father</option>
+                            <option value="Mother">Mother</option>
+                            <option value="Guardian">Guardian</option>
+                            <option value="Parent" selected>Parent</option>
+                            <option value="Relative">Relative</option>
+                            <option value="Other">Other</option>
+                        </select>
+                        <div class="form-text">Relationship to student.</div>
+                    </div>
+
+                    <div class="form-group">
                         <label for="parent_phone" class="form-label" style="font-weight: 600;">Parent Mobile Phone Number <span style="color: var(--danger);">*</span></label>
                         <input 
                             type="tel" 
                             id="parent_phone" 
                             name="parent_phone" 
                             class="form-control" 
-                            placeholder="e.g. +91 98480 99999" 
+                            placeholder="e.g. 9848099999" 
                             required
                         >
                         <div class="form-text">Destination phone number for automated parent absence outreach.</div>
