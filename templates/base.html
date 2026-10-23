@@ -27,9 +27,11 @@
                 <a href="{{ url_for('call_history') }}" class="{% if request.endpoint in ['call_history', 'call_detail'] %}active{% endif %}">Call History</a>
                 <a href="{{ url_for('follow_ups_list') }}" class="{% if request.endpoint == 'follow_ups_list' %}active{% endif %}">Follow-Ups</a>
                 
+                {% if session.get('role') in ['Admin', 'Department Coordinator', 'Faculty'] %}
+                <a href="{{ url_for('add_student') }}" class="{% if request.endpoint == 'add_student' %}active{% endif %}">➕ Add Student</a>
+                {% endif %}
                 {% if session.get('role') in ['Admin', 'Department Coordinator'] %}
                 <a href="{{ url_for('import_students') }}" class="{% if request.endpoint == 'import_students' %}active{% endif %}">Import Data</a>
-                <a href="{{ url_for('add_student') }}" class="{% if request.endpoint == 'add_student' %}active{% endif %}">+ Add Student</a>
                 {% endif %}
 
                 {% if session.get('role') == 'Admin' %}

@@ -12,7 +12,12 @@
             </p>
         </div>
 
-        <div style="display: flex; gap: 0.5rem; align-items: center;">
+        <div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
+            {% if session.get('role') in ['Admin', 'Department Coordinator', 'Faculty'] %}
+            <a href="{{ url_for('add_student') }}" class="btn btn-primary btn-sm" id="btnAttendanceAddStudent">
+                ➕ Add Student
+            </a>
+            {% endif %}
             <a href="{{ url_for('dashboard') }}" class="btn btn-secondary btn-sm">
                 &larr; Back to Directory
             </a>

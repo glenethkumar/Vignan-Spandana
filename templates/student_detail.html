@@ -69,6 +69,28 @@
                     <div class="info-value">Section {{ student['section'] }}</div>
                 </div>
                 <div class="info-item">
+                    <div class="info-label">Student Mobile Phone</div>
+                    <div class="info-value" style="font-family: monospace;">
+                        {% if student['student_phone'] %}
+                            📱 {{ student['student_phone'] }}
+                        {% else %}
+                            <span style="color: var(--text-muted); font-size: 0.85rem; font-style: italic;">Not registered</span>
+                        {% endif %}
+                    </div>
+                </div>
+                {% if student['student_email'] %}
+                <div class="info-item">
+                    <div class="info-label">Student Email</div>
+                    <div class="info-value">✉️ {{ student['student_email'] }}</div>
+                </div>
+                {% endif %}
+                {% if student['marks_info'] %}
+                <div class="info-item">
+                    <div class="info-label">Academic / Internal Marks</div>
+                    <div class="info-value">{{ student['marks_info'] }}</div>
+                </div>
+                {% endif %}
+                <div class="info-item">
                     <div class="info-label">Overall Attendance</div>
                     <div class="info-value">
                         {% if student['attendance_percentage'] is not none %}

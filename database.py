@@ -120,10 +120,13 @@ def init_db(seed_data=True, db_path=None):
         department TEXT NOT NULL,     -- e.g. CSE, ECE, IT, MECH
         year_semester TEXT NOT NULL,  -- e.g. "III Year - Sem 1"
         section TEXT NOT NULL,        -- e.g. "A", "B", "C"
+        student_phone TEXT,
+        student_email TEXT,
         parent_name TEXT NOT NULL,
         parent_phone TEXT,
         preferred_language TEXT NOT NULL DEFAULT 'Telugu', -- 'Telugu', 'Hindi', 'English'
         attendance_percentage REAL DEFAULT 85.0,
+        marks_info TEXT,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
     """)
@@ -161,11 +164,15 @@ def init_db(seed_data=True, db_path=None):
     if "attendance_date" not in call_cols:
         cursor.execute("ALTER TABLE call_records ADD COLUMN attendance_date TEXT")
 
-    # Migration helper for students table upgrades (marks_info)
+    # Migration helper for students table upgrades (marks_info, student_phone, student_email)
     cursor.execute("PRAGMA table_info(students)")
     student_cols = [col[1] for col in cursor.fetchall()]
     if "marks_info" not in student_cols:
         cursor.execute("ALTER TABLE students ADD COLUMN marks_info TEXT")
+    if "student_phone" not in student_cols:
+        cursor.execute("ALTER TABLE students ADD COLUMN student_phone TEXT")
+    if "student_email" not in student_cols:
+        cursor.execute("ALTER TABLE students ADD COLUMN student_email TEXT")
 
     # 5. FollowUp notes table
     cursor.execute("""

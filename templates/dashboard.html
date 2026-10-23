@@ -29,12 +29,14 @@
             <a href="{{ url_for('voice_assistant') }}" class="btn btn-primary btn-sm" style="background: linear-gradient(135deg, #1e3a8a, #4338ca); border: none;">
                 🎙️ AI Voice Assistant
             </a>
+            {% if session.get('role') in ['Admin', 'Department Coordinator', 'Faculty'] %}
+            <a href="{{ url_for('add_student') }}" class="btn btn-primary btn-sm" id="btnAddStudent">
+                ➕ Add Student
+            </a>
+            {% endif %}
             {% if session.get('role') in ['Admin', 'Department Coordinator'] %}
             <a href="{{ url_for('import_students') }}" class="btn btn-secondary btn-sm">
                 📁 Import Excel/CSV
-            </a>
-            <a href="{{ url_for('add_student') }}" class="btn btn-primary btn-sm">
-                + Add Student
             </a>
             {% elif session.get('role') == 'Principal' %}
             <span style="font-size: 0.82rem; color: #7c3aed; background: #f5f3ff; border: 1px solid #ddd6fe; padding: 4px 8px; border-radius: 4px; font-weight: 500;">
@@ -138,6 +140,11 @@
                 <td>
                     <strong>{{ s['name'] }}</strong>
                     <div style="font-size: 0.78rem; color: var(--text-muted);">{{ s['year_semester'] }}</div>
+                    {% if s['student_phone'] %}
+                    <div style="font-size: 0.76rem; color: #475569; font-family: monospace; margin-top: 1px;">
+                        📱 {{ s['student_phone'] }}
+                    </div>
+                    {% endif %}
                 </td>
                 <td>
                     <span class="badge badge-dept">{{ s['department'] }} - Sec {{ s['section'] }}</span>

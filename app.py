@@ -1714,51 +1714,66 @@ def download_sample_csv():
 # Routes: Manual Add Student (Department Scoped)
 # --------------------------------------------------------------------------
 @app.route("/add-student", methods=["GET", "POST"])
-@login_required(allowed_roles=["Admin", "Department Coordinator"])
+@login_required(allowed_roles=["Admin", "Department Coordinator", "Faculty"])
 def add_student():
     user_role = session.get("role")
     user_dept = session.get("department", "All")
+    conn = get_db_connection()
+
+    if user_dept and user_dept != "All":
+        departments = [user_dept]
+    else:
+        dept_rows = conn.execute("SELECT DISTINCT department FROM students ORDER BY department ASC").fetchall()
+        departments = [d["department"] for d in dept_rows] or ["CSE", "ECE", "IT", "MECH"]
 
     if request.method == "POST":
         roll_number = request.form.get("roll_number", "").strip().upper()
         name = request.form.get("name", "").strip()
+        student_phone = request.form.get("student_phone", "").strip()
+        student_email = request.form.get("student_email", "").strip()
         year_semester = request.form.get("year_semester", "III Year - Sem 1").strip()
-        section = request.form.get("section", "A").strip()
+        section = request.form.get("section", "A").strip().upper()
         parent_name = request.form.get("parent_name", "").strip()
         parent_phone = request.form.get("parent_phone", "").strip()
         preferred_language = request.form.get("preferred_language", "Telugu").strip()
+        marks_info = request.form.get("marks_info", "").strip()
 
-        if user_role == "Department Coordinator" and user_dept != "All":
+        if user_role in ["Department Coordinator", "Faculty"] and user_dept != "All":
             department = user_dept
         else:
             department = request.form.get("department", "CSE").strip().upper()
 
         try:
             attendance_percentage = float(request.form.get("attendance_percentage", 85.0))
+            if attendance_percentage < 0.0:
+                attendance_percentage = 0.0
+            elif attendance_percentage > 100.0:
+                attendance_percentage = 100.0
         except ValueError:
             attendance_percentage = 85.0
 
         if not roll_number or not name or not parent_phone:
-            flash("Roll Number, Student Name, and Parent Phone are required.", "danger")
-            return render_template("add_student.html")
+            flash("Roll Number, Student Name, and Parent Mobile Phone are required.", "danger")
+            return render_template("add_student.html", departments=departments, user_dept=user_dept, user_role=user_role)
 
-        conn = get_db_connection()
         try:
             conn.execute("""
                 INSERT INTO students (
                     roll_number, name, department, year_semester, section,
-                    parent_name, parent_phone, preferred_language, attendance_percentage
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    student_phone, student_email,
+                    parent_name, parent_phone, preferred_language, attendance_percentage, marks_info
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """, (
                 roll_number, name, department, year_semester, section,
-                parent_name, parent_phone, preferred_language, attendance_percentage
+                student_phone or None, student_email or None,
+                parent_name, parent_phone, preferred_language, attendance_percentage, marks_info or None
             ))
             conn.commit()
 
             record_audit(
                 conn, session.get("user_id"), session.get("username"),
                 "student_created", f"student_{roll_number}",
-                f"Enrolled student {name} ({roll_number}) in {department}",
+                f"Enrolled student {name} ({roll_number}) in {department} (Student Phone: {student_phone or 'N/A'}, Parent: {parent_name} / {parent_phone})",
                 request.remote_addr
             )
 
@@ -1767,7 +1782,7 @@ def add_student():
         except Exception as e:
             flash(f"Error saving student (Roll number may already exist): {str(e)}", "danger")
 
-    return render_template("add_student.html")
+    return render_template("add_student.html", departments=departments, user_dept=user_dept, user_role=user_role)
 
 
 # --------------------------------------------------------------------------

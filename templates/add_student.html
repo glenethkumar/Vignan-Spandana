@@ -3,86 +3,202 @@
 {% block title %}Add New Student - Vignan Spandana{% endblock %}
 
 {% block content %}
-<div style="max-width: 700px; margin: 0 auto;">
+<div style="max-width: 800px; margin: 0 auto;">
     <div style="margin-bottom: 1.25rem;">
-        <a href="{{ url_for('dashboard') }}" style="font-size: 0.9rem;">&larr; Back to Dashboard</a>
-        <h2 style="margin-top: 4px;">Enroll New Student</h2>
-        <p style="color: var(--text-muted); font-size: 0.92rem;">
-            Manually enter a student record to test parent communication profiles.
+        <a href="{{ url_for('dashboard') }}" style="font-size: 0.9rem; text-decoration: none; color: var(--primary-color); font-weight: 500;">
+            &larr; Back to Directory
+        </a>
+        <h2 style="margin-top: 6px; font-size: 1.5rem; color: var(--text-main);">➕ Enroll Student Record Manually</h2>
+        <p style="color: var(--text-muted); font-size: 0.92rem; margin-top: 2px;">
+            Enter student academic specifications, student contact, and parent communication details to register them in the system.
         </p>
     </div>
 
-    <div class="card">
-        <form action="{{ url_for('add_student') }}" method="POST">
+    <div class="card" style="box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);">
+        <form action="{{ url_for('add_student') }}" method="POST" autocomplete="off">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
-                <div class="form-group">
-                    <label for="roll_number" class="form-label">Roll Number *</label>
-                    <input type="text" id="roll_number" name="roll_number" class="form-control" placeholder="e.g. 211FA04077" required>
+            <!-- Section 1: Student Identity & Contact -->
+            <div style="margin-bottom: 1.5rem;">
+                <div style="display: flex; align-items: center; gap: 8px; border-bottom: 2px solid #e2e8f0; padding-bottom: 8px; margin-bottom: 14px;">
+                    <span style="font-size: 1.1rem;">👤</span>
+                    <h3 style="font-size: 1.05rem; margin: 0; color: var(--primary-color);">Student Information</h3>
                 </div>
-                <div class="form-group">
-                    <label for="name" class="form-label">Student Name *</label>
-                    <input type="text" id="name" name="name" class="form-control" placeholder="e.g. T. Haritha" required>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                    <div class="form-group">
+                        <label for="roll_number" class="form-label" style="font-weight: 600;">Roll Number <span style="color: var(--danger);">*</span></label>
+                        <input 
+                            type="text" 
+                            id="roll_number" 
+                            name="roll_number" 
+                            class="form-control" 
+                            placeholder="e.g. 211FA04077" 
+                            style="text-transform: uppercase; font-family: monospace;" 
+                            required
+                        >
+                        <div class="form-text">Unique institutional hall ticket / roll number.</div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="name" class="form-label" style="font-weight: 600;">Student Full Name <span style="color: var(--danger);">*</span></label>
+                        <input 
+                            type="text" 
+                            id="name" 
+                            name="name" 
+                            class="form-control" 
+                            placeholder="e.g. T. Haritha" 
+                            required
+                        >
+                    </div>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                    <div class="form-group">
+                        <label for="student_phone" class="form-label" style="font-weight: 600;">Student Phone Number</label>
+                        <input 
+                            type="tel" 
+                            id="student_phone" 
+                            name="student_phone" 
+                            class="form-control" 
+                            placeholder="e.g. +91 98765 43210"
+                        >
+                        <div class="form-text">Direct mobile number of the student (optional).</div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="student_email" class="form-label" style="font-weight: 600;">Student Email Address</label>
+                        <input 
+                            type="email" 
+                            id="student_email" 
+                            name="student_email" 
+                            class="form-control" 
+                            placeholder="e.g. 211fa04077@vignan.ac.in"
+                        >
+                    </div>
                 </div>
             </div>
 
-            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem;">
-                <div class="form-group">
-                    <label for="department" class="form-label">Department *</label>
-                    {% if session.get('department') and session.get('department') != 'All' %}
-                        <input type="text" id="department" name="department" class="form-control" value="{{ session.get('department') }}" readonly>
-                        <div class="form-text">Enforced to your department.</div>
-                    {% else %}
-                        <select id="department" name="department" class="form-select">
-                            <option value="CSE">CSE</option>
-                            <option value="ECE">ECE</option>
-                            <option value="IT">IT</option>
-                            <option value="MECH">MECH</option>
+            <!-- Section 2: Academic Placement -->
+            <div style="margin-bottom: 1.5rem;">
+                <div style="display: flex; align-items: center; gap: 8px; border-bottom: 2px solid #e2e8f0; padding-bottom: 8px; margin-bottom: 14px;">
+                    <span style="font-size: 1.1rem;">🎓</span>
+                    <h3 style="font-size: 1.05rem; margin: 0; color: var(--primary-color);">Academic Placement</h3>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem;">
+                    <div class="form-group">
+                        <label for="department" class="form-label" style="font-weight: 600;">Department / Branch <span style="color: var(--danger);">*</span></label>
+                        {% if session.get('department') and session.get('department') != 'All' %}
+                            <input type="text" id="department" name="department" class="form-control" value="{{ session.get('department') }}" readonly style="background: #e2e8f0; cursor: not-allowed;">
+                            <div class="form-text">Enforced to your department ({{ session.get('department') }}).</div>
+                        {% else %}
+                            <select id="department" name="department" class="form-select">
+                                {% for d in departments %}
+                                    <option value="{{ d }}">{{ d }}</option>
+                                {% endfor %}
+                            </select>
+                        {% endif %}
+                    </div>
+
+                    <div class="form-group">
+                        <label for="year_semester" class="form-label" style="font-weight: 600;">Class / Year & Semester</label>
+                        <select id="year_semester" name="year_semester" class="form-select">
+                            <option value="I Year - Sem 1">I Year - Sem 1</option>
+                            <option value="I Year - Sem 2">I Year - Sem 2</option>
+                            <option value="II Year - Sem 1">II Year - Sem 1</option>
+                            <option value="II Year - Sem 2">II Year - Sem 2</option>
+                            <option value="III Year - Sem 1" selected>III Year - Sem 1</option>
+                            <option value="III Year - Sem 2">III Year - Sem 2</option>
+                            <option value="IV Year - Sem 1">IV Year - Sem 1</option>
+                            <option value="IV Year - Sem 2">IV Year - Sem 2</option>
                         </select>
-                    {% endif %}
+                    </div>
+
+                    <div class="form-group">
+                        <label for="section" class="form-label" style="font-weight: 600;">Section</label>
+                        <input type="text" id="section" name="section" class="form-control" value="A" maxlength="3" style="text-transform: uppercase;">
+                    </div>
                 </div>
-                <div class="form-group">
-                    <label for="year_semester" class="form-label">Year & Semester</label>
-                    <input type="text" id="year_semester" name="year_semester" class="form-control" value="III Year - Sem 1">
-                </div>
-                <div class="form-group">
-                    <label for="section" class="form-label">Section</label>
-                    <input type="text" id="section" name="section" class="form-control" value="A">
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                    <div class="form-group">
+                        <label for="attendance_percentage" class="form-label" style="font-weight: 600;">Baseline Attendance (%)</label>
+                        <input 
+                            type="number" 
+                            step="0.1" 
+                            min="0" 
+                            max="100" 
+                            id="attendance_percentage" 
+                            name="attendance_percentage" 
+                            class="form-control" 
+                            value="85.0"
+                        >
+                        <div class="form-text">Recalculated dynamically as daily attendance is marked. Values &lt; 75% trigger shortage alerts.</div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="marks_info" class="form-label" style="font-weight: 600;">Academic / Internal Marks</label>
+                        <input 
+                            type="text" 
+                            id="marks_info" 
+                            name="marks_info" 
+                            class="form-control" 
+                            placeholder="e.g. Mid-1: 82/100, CGPA: 8.4"
+                        >
+                        <div class="form-text">Shared context for AI parent briefings.</div>
+                    </div>
                 </div>
             </div>
 
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
-                <div class="form-group">
-                    <label for="parent_name" class="form-label">Parent / Guardian Name *</label>
-                    <input type="text" id="parent_name" name="parent_name" class="form-control" placeholder="e.g. T. Appa Rao" required>
+            <!-- Section 3: Parent & Communication Profile -->
+            <div style="margin-bottom: 1.5rem;">
+                <div style="display: flex; align-items: center; gap: 8px; border-bottom: 2px solid #e2e8f0; padding-bottom: 8px; margin-bottom: 14px;">
+                    <span style="font-size: 1.1rem;">👪</span>
+                    <h3 style="font-size: 1.05rem; margin: 0; color: var(--primary-color);">Parent & AI Voice Outreach Profile</h3>
                 </div>
-                <div class="form-group">
-                    <label for="parent_phone" class="form-label">Parent Mobile Phone *</label>
-                    <input type="text" id="parent_phone" name="parent_phone" class="form-control" placeholder="e.g. +91 98480 99999" required>
-                </div>
-            </div>
 
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
-                <div class="form-group">
-                    <label for="preferred_language" class="form-label">Voice AI Call Language</label>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                    <div class="form-group">
+                        <label for="parent_name" class="form-label" style="font-weight: 600;">Parent / Guardian Name <span style="color: var(--danger);">*</span></label>
+                        <input 
+                            type="text" 
+                            id="parent_name" 
+                            name="parent_name" 
+                            class="form-control" 
+                            placeholder="e.g. T. Appa Rao" 
+                            required
+                        >
+                    </div>
+
+                    <div class="form-group">
+                        <label for="parent_phone" class="form-label" style="font-weight: 600;">Parent Mobile Phone Number <span style="color: var(--danger);">*</span></label>
+                        <input 
+                            type="tel" 
+                            id="parent_phone" 
+                            name="parent_phone" 
+                            class="form-control" 
+                            placeholder="e.g. +91 98480 99999" 
+                            required
+                        >
+                        <div class="form-text">Destination phone number for automated parent absence outreach.</div>
+                    </div>
+                </div>
+
+                <div class="form-group" style="max-width: 50%;">
+                    <label for="preferred_language" class="form-label" style="font-weight: 600;">Voice AI Call Language</label>
                     <select id="preferred_language" name="preferred_language" class="form-select">
                         <option value="Telugu" selected>Telugu (తెలుగు)</option>
-                        <option value="Hindi">Hindi (हिन्दी)</option>
                         <option value="English">English</option>
+                        <option value="Hindi">Hindi (हिन्दी)</option>
                     </select>
-                    <div class="form-text">Primary language spoken to the parent.</div>
-                </div>
-                <div class="form-group">
-                    <label for="attendance_percentage" class="form-label">Attendance Percentage (%)</label>
-                    <input type="number" step="0.1" min="0" max="100" id="attendance_percentage" name="attendance_percentage" class="form-control" value="82.0">
-                    <div class="form-text">Values below 75% trigger shortage alert.</div>
+                    <div class="form-text">Primary regional language spoken to parent during AI calls.</div>
                 </div>
             </div>
 
-            <div style="display: flex; gap: 0.75rem; margin-top: 1rem;">
-                <button type="submit" class="btn btn-primary">
-                    Save Student Record
+            <div style="display: flex; gap: 0.75rem; align-items: center; border-top: 1px solid var(--border-color); padding-top: 1.25rem; margin-top: 1.5rem;">
+                <button type="submit" class="btn btn-primary" id="btnSaveStudent" style="font-weight: 600; padding: 8px 24px;">
+                    💾 Save Student Record
                 </button>
                 <a href="{{ url_for('dashboard') }}" class="btn btn-secondary">
                     Cancel
