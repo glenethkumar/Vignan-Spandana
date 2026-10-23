@@ -4,51 +4,68 @@
 
 {% block content %}
 <!-- Breadcrumb Header -->
-<div style="margin-bottom: 1.25rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;">
-    <div>
-        <a href="{{ url_for('dashboard') }}" style="font-size: 0.9rem;">&larr; Back to Directory</a>
-        <h2 style="margin-top: 4px;">{{ student['name'] }}</h2>
-        <div style="font-size: 0.85rem; color: var(--text-muted);">
-            Roll No: <strong style="color: var(--text-main);">{{ student['roll_number'] }}</strong> &bull;
-            Department: <strong style="color: #0369a1;">{{ student['department'] }}</strong> &bull;
-            Class: <strong>{{ student['year_semester'] }} (Sec {{ student['section'] }})</strong>
+<div class="card" style="margin-bottom: 1.25rem;">
+    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+        <div>
+            <div style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 4px;">
+                <a href="{{ url_for('dashboard') }}" style="color: var(--primary-navy); font-weight: 600; text-decoration: none;">
+                    &larr; Student Directory
+                </a>
+                <span style="margin: 0 6px;">/</span>
+                <span>{{ student['department'] }}</span>
+                <span style="margin: 0 6px;">/</span>
+                <span style="font-family: var(--font-mono); font-weight: 600;">{{ student['roll_number'] }}</span>
+            </div>
+            <h2 style="margin: 0; font-size: 1.6rem; color: var(--primary-navy); font-family: var(--font-serif);">
+                {{ student['name'] }}
+            </h2>
+            <div style="font-size: 0.85rem; color: var(--text-muted); margin-top: 4px;">
+                Roll No: <strong style="font-family: var(--font-mono); color: var(--primary-navy);">{{ student['roll_number'] }}</strong> &bull;
+                Department: <strong style="color: var(--primary-navy);">{{ student['department'] }}</strong> &bull;
+                Class: <strong>{{ student['year_semester'] }} (Sec {{ student['section'] }})</strong>
+            </div>
         </div>
-    </div>
-    <div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
-        {% if session.get('role') != 'Principal' %}
-        <a href="{{ url_for('edit_student', student_id=student['id']) }}" class="btn btn-secondary" id="btnEditStudent">
-            ✏️ Edit Student
-        </a>
-        <form action="{{ url_for('delete_student', student_id=student['id']) }}" method="POST" style="margin: 0;" onsubmit="return confirm('Are you sure you want to permanently delete student {{ student['name']|escape }} ({{ student['roll_number']|escape }})? This action cannot be undone.');">
-            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-            <button type="submit" class="btn btn-secondary" style="color: var(--danger); border-color: #fca5a5;" id="btnDeleteStudent">
-                🗑️ Delete
+
+        <div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
+            {% if session.get('role') != 'Principal' %}
+            <a href="{{ url_for('edit_student', student_id=student['id']) }}" class="btn btn-secondary btn-sm" id="btnEditStudent">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                Edit Student
+            </a>
+            <form action="{{ url_for('delete_student', student_id=student['id']) }}" method="POST" style="margin: 0;" onsubmit="return confirm('Are you sure you want to permanently delete student {{ student['name']|escape }} ({{ student['roll_number']|escape }})? This action cannot be undone.');">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button type="submit" class="btn btn-secondary btn-sm" style="color: var(--secondary-red); border-color: var(--danger-border);" id="btnDeleteStudent">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                    Delete
+                </button>
+            </form>
+            <button 
+                type="button" 
+                class="btn btn-call btn-sm" 
+                onclick="triggerCallParent({{ student['id'] }}, '{{ student['name']|escape }}', '{{ student['roll_number']|escape }}', '{{ student['department']|escape }}', '{{ student['parent_phone']|escape }}', '{{ student['attendance_percentage'] }}', '{{ student['preferred_language']|escape }}')"
+            >
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>
+                Call Parent (AI)
             </button>
-        </form>
-        <button 
-            type="button" 
-            class="btn btn-call" 
-            onclick="triggerCallParent({{ student['id'] }}, '{{ student['name']|escape }}', '{{ student['roll_number']|escape }}', '{{ student['department']|escape }}', '{{ student['parent_phone']|escape }}', '{{ student['attendance_percentage'] }}', '{{ student['preferred_language']|escape }}')"
-        >
-            📞 Call Parent (AI)
-        </button>
-        <a href="#followUpForm" class="btn btn-secondary">
-            📝 Add Follow-Up Note
-        </a>
-        {% else %}
-        <span class="badge badge-dept" style="padding: 6px 12px;">
-            👓 Principal Administrative Inspection View
-        </span>
-        {% endif %}
+            <a href="#followUpForm" class="btn btn-secondary btn-sm">
+                Follow-Up Note
+            </a>
+            {% else %}
+            <span class="badge badge-dept" style="padding: 6px 12px;">
+                Principal Administrative Inspection View
+            </span>
+            {% endif %}
+        </div>
     </div>
 </div>
 
 <div class="profile-grid">
     <!-- Left Column: Student Academic & Parent Info -->
     <div>
-        <div class="card">
+        <!-- Academic Profile Card -->
+        <div class="card" style="border-top: 3px solid var(--primary-navy); margin-bottom: 1.5rem;">
             <div class="card-header">
-                <h3 class="card-title">Student Profile & Academic Status</h3>
+                <h3 class="card-title">Student Academic Profile</h3>
                 {% if student['attendance_percentage'] < 75.0 %}
                     <span class="badge badge-danger">Attendance Alert: {{ student['attendance_percentage'] }}%</span>
                 {% else %}
@@ -59,11 +76,11 @@
             <div class="info-list">
                 <div class="info-item">
                     <div class="info-label">Full Name</div>
-                    <div class="info-value">{{ student['name'] }}</div>
+                    <div class="info-value"><strong>{{ student['name'] }}</strong></div>
                 </div>
                 <div class="info-item">
                     <div class="info-label">Roll Number</div>
-                    <div class="info-value" style="font-family: monospace;">{{ student['roll_number'] }}</div>
+                    <div class="info-value" style="font-family: var(--font-mono); font-weight: 600; color: var(--primary-navy);">{{ student['roll_number'] }}</div>
                 </div>
                 <div class="info-item">
                     <div class="info-label">Department / Branch</div>
@@ -78,10 +95,10 @@
                     <div class="info-value">Section {{ student['section'] }}</div>
                 </div>
                 <div class="info-item">
-                    <div class="info-label">Student Mobile Phone</div>
-                    <div class="info-value" style="font-family: monospace;">
+                    <div class="info-label">Student Phone</div>
+                    <div class="info-value" style="font-family: var(--font-mono);">
                         {% if student['student_phone'] %}
-                            📱 {{ student['student_phone'] }}
+                            {{ student['student_phone'] }}
                         {% else %}
                             <span style="color: var(--text-muted); font-size: 0.85rem; font-style: italic;">Not registered</span>
                         {% endif %}
@@ -90,7 +107,7 @@
                 {% if student['student_email'] %}
                 <div class="info-item">
                     <div class="info-label">Student Email</div>
-                    <div class="info-value">✉️ {{ student['student_email'] }}</div>
+                    <div class="info-value">{{ student['student_email'] }}</div>
                 </div>
                 {% endif %}
                 {% if student['marks_info'] %}
@@ -103,9 +120,9 @@
                     <div class="info-label">Overall Attendance</div>
                     <div class="info-value">
                         {% if student['attendance_percentage'] is not none %}
-                            <strong>{{ student['attendance_percentage'] }}%</strong>
+                            <strong style="font-size: 1.05rem;">{{ student['attendance_percentage'] }}%</strong>
                             {% if student['attendance_percentage'] < 75.0 %}
-                                <span style="font-size: 0.8rem; color: var(--danger);">(Shortage warning)</span>
+                                <span style="font-size: 0.8rem; color: var(--secondary-red); font-weight: 600;">(Shortage Warning)</span>
                             {% endif %}
                         {% else %}
                             <span style="color: var(--text-muted); font-size: 0.9rem;">Unavailable (Pending)</span>
@@ -116,8 +133,8 @@
         </div>
 
         <!-- Daily Attendance History Card -->
-        <div class="card" style="margin-bottom: 1.5rem;">
-            <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
+        <div class="card" style="margin-bottom: 1.5rem; border-top: 3px solid var(--muted-gold);">
+            <div class="card-header">
                 <div>
                     <h3 class="card-title">Daily Attendance Session History</h3>
                     <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 2px;">
@@ -126,7 +143,7 @@
                 </div>
                 {% if session.get('role') != 'Principal' %}
                 <a href="{{ url_for('attendance_mark', dept=student['department'], section=student['section']) }}" class="btn btn-secondary btn-sm" style="font-size: 0.78rem;">
-                    📋 Mark / Correct Attendance
+                    Mark / Correct Attendance
                 </a>
                 {% endif %}
             </div>
@@ -145,12 +162,12 @@
                     <tbody>
                         {% for att in attendance_records %}
                         <tr>
-                            <td style="font-family: monospace; font-weight: 600;">{{ att['attendance_date'] }}</td>
+                            <td style="font-family: var(--font-mono); font-weight: 600; color: var(--primary-navy);">{{ att['attendance_date'] }}</td>
                             <td>
                                 {% if att['status'] == 'Present' %}
-                                    <span class="badge badge-success">✓ Present</span>
+                                    <span class="badge badge-success">Present</span>
                                 {% else %}
-                                    <span class="badge badge-danger">✗ Absent</span>
+                                    <span class="badge badge-danger">Absent</span>
                                 {% endif %}
                             </td>
                             <td>{{ att['marked_by'] }}</td>
@@ -161,7 +178,7 @@
                 </table>
             </div>
             {% else %}
-            <div style="text-align: center; padding: 1.25rem; color: var(--text-muted); font-size: 0.88rem;">
+            <div style="text-align: center; padding: 1.5rem; color: var(--text-muted); font-size: 0.88rem;">
                 No itemized daily attendance sessions logged yet for this student.
                 {% if student['attendance_percentage'] is not none %}
                     <br/><span style="font-size: 0.8rem;">(Current aggregate: <strong>{{ student['attendance_percentage'] }}%</strong>)</span>
@@ -171,20 +188,19 @@
         </div>
 
         <!-- Call History Section -->
-        <div class="card">
+        <div class="card" style="margin-bottom: 1.5rem; border-top: 3px solid var(--primary-navy);">
             <div class="card-header">
                 <div>
                     <h3 class="card-title">Parent AI Call History</h3>
                     <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 2px;">
-                        Automated AI voice calls made to parent
+                        Automated AI voice calls made to registered guardian
                     </div>
                 </div>
                 {% if session.get('role') != 'Principal' %}
-                <!-- Tool for faculty presentation: simulate mock log -->
                 <form action="{{ url_for('simulate_call', student_id=student['id']) }}" method="POST" style="margin: 0;">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                     <button type="submit" class="btn btn-secondary btn-sm" title="Adds a mock call record to database for faculty demonstration">
-                        + Simulate Mock Call Record
+                        + Simulate Mock Record
                     </button>
                 </form>
                 {% endif %}
@@ -207,7 +223,7 @@
                     <tbody>
                         {% for call in call_records %}
                         <tr>
-                            <td style="white-space: nowrap; font-size: 0.85rem;">
+                            <td style="white-space: nowrap; font-size: 0.85rem; font-family: var(--font-mono);">
                                 {{ call['call_time'] }}
                             </td>
                             <td>
@@ -222,7 +238,7 @@
                             <td>
                                 <span class="badge badge-lang">{{ call['language'] }}</span>
                             </td>
-                            <td style="font-size: 0.85rem; font-family: monospace;">{{ call['duration_seconds'] }}s</td>
+                            <td style="font-size: 0.85rem; font-family: var(--font-mono);">{{ call['duration_seconds'] }}s</td>
                             <td style="max-width: 250px;">
                                 <div style="font-size: 0.82rem; color: var(--text-main); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="{{ call['summary'] or call['notes'] }}">
                                     {{ call['summary'] or call['notes'] or 'No summary recorded.' }}
@@ -233,7 +249,7 @@
                             </td>
                             <td style="text-align: right; white-space: nowrap;">
                                 <a href="{{ url_for('call_detail', call_id=call['id']) }}" class="btn btn-secondary btn-sm" style="padding: 2px 8px; font-size: 0.78rem;">
-                                    📜 View Call
+                                    View Call
                                 </a>
                             </td>
                         </tr>
@@ -242,12 +258,13 @@
                 </table>
             </div>
             {% else %}
-            <!-- Empty state as requested by user -->
             <div class="empty-state">
-                <div class="empty-state-icon">📞</div>
+                <div class="empty-state-icon" style="color: var(--muted-gold);">
+                    <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" style="margin: 0 auto; display: block;" aria-hidden="true"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>
+                </div>
                 <h3>No Call Records Yet</h3>
                 <p style="max-width: 420px; margin: 0 auto; font-size: 0.9rem;">
-                    There is currently no call history for this student. When the automated AI voice calling system is connected, call timestamps, durations, and multilingual transcripts will be archived here.
+                    There is currently no parent call history for this student. When the automated AI voice system contacts the guardian, transcripts and triage notes will be archived here.
                 </p>
                 {% if session.get('role') != 'Principal' %}
                 <div style="margin-top: 1rem;">
@@ -265,7 +282,7 @@
         </div>
 
         <!-- Follow-Up Notes Section -->
-        <div class="card" id="followUpSection">
+        <div class="card" id="followUpSection" style="border-top: 3px solid var(--border-dark);">
             <div class="card-header">
                 <h3 class="card-title">Staff / Faculty Follow-Up Notes</h3>
             </div>
@@ -273,10 +290,10 @@
             {% if follow_ups and follow_ups|length > 0 %}
             <div style="display: flex; flex-direction: column; gap: 0.75rem; margin-bottom: 1.5rem;">
                 {% for note in follow_ups %}
-                <div style="background: #f8fafc; border: 1px solid var(--border-color); border-left: 3px solid var(--accent-color); border-radius: 4px; padding: 0.85rem 1rem;">
+                <div style="background: #FAF9F5; border: 1px solid var(--border-color); border-left: 3px solid var(--muted-gold); border-radius: 4px; padding: 0.85rem 1rem;">
                     <div style="display: flex; justify-content: space-between; font-size: 0.82rem; color: var(--text-muted); margin-bottom: 4px;">
-                        <span><strong>{{ note['teacher_name'] }}</strong></span>
-                        <span>{{ note['created_at'] }}</span>
+                        <span><strong style="color: var(--primary-navy);">{{ note['teacher_name'] }}</strong></span>
+                        <span style="font-family: var(--font-mono);">{{ note['created_at'] }}</span>
                     </div>
                     <div style="font-size: 0.92rem; color: var(--text-main);">
                         {{ note['notes'] }}
@@ -297,7 +314,7 @@
 
             {% if session.get('role') != 'Principal' %}
             <div id="followUpForm" style="border-top: 1px solid var(--border-color); padding-top: 1rem;">
-                <h4 style="font-size: 0.95rem; margin-bottom: 0.75rem;">Record New Follow-Up Note</h4>
+                <h4 style="font-size: 0.95rem; margin-bottom: 0.75rem; color: var(--primary-navy);">Record New Follow-Up Note</h4>
                 <form action="{{ url_for('add_followup', student_id=student['id']) }}" method="POST">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                     <div class="form-group">
@@ -323,37 +340,37 @@
         </div>
     </div>
 
-    <!-- Right Column: Parent Contact Card & AI Calling Preview -->
+    <!-- Right Column: Parent Contact Card & Access Scoping -->
     <div>
-        <div class="card" style="border-top: 4px solid var(--accent-color);">
+        <div class="card" style="border-top: 3px solid var(--muted-gold); margin-bottom: 1.5rem;">
             <div class="card-header">
-                <h3 class="card-title">Parent Contact Details</h3>
+                <h3 class="card-title">Parent Contact Information</h3>
             </div>
 
             <div style="margin-bottom: 1rem;">
                 <div class="info-label">Parent / Guardian Name</div>
-                <div class="info-value" style="font-size: 1.05rem;">
+                <div class="info-value" style="font-size: 1.05rem; font-weight: 600; color: var(--primary-navy);">
                     {{ student['parent_name'] }}
-                    <span class="badge badge-dept" style="font-size: 0.78rem; margin-left: 6px;">{{ student['parent_relationship'] or 'Parent' }}</span>
+                    <span class="badge badge-dept" style="font-size: 0.75rem; margin-left: 6px;">{{ student['parent_relationship'] or 'Parent' }}</span>
                 </div>
             </div>
 
             <div style="margin-bottom: 1rem;">
-                <div class="info-label">Phone Number</div>
-                <div class="info-value" style="font-family: monospace; font-size: 1.05rem;">
-                    📞 {{ student['parent_phone'] }}
+                <div class="info-label">Mobile Phone Number</div>
+                <div class="info-value" style="font-family: var(--font-mono); font-size: 1.05rem; font-weight: 600;">
+                    {{ student['parent_phone'] }}
                 </div>
             </div>
 
             <div style="margin-bottom: 1.25rem;">
-                <div class="info-label">AI Call Voice Language</div>
+                <div class="info-label">Preferred Voice Language</div>
                 <div style="margin-top: 4px;">
-                    <span class="badge badge-lang" style="font-size: 0.9rem; padding: 4px 8px;">
-                        🗣️ {{ student['preferred_language'] }}
+                    <span class="badge badge-lang" style="font-size: 0.88rem; padding: 4px 10px;">
+                        {{ student['preferred_language'] }}
                     </span>
                 </div>
-                <div class="form-text" style="margin-top: 4px;">
-                    The parent prefers spoken communication in {{ student['preferred_language'] }}.
+                <div class="form-text" style="margin-top: 4px; font-size: 0.8rem;">
+                    AI outbound calls will synthesize dialogue in {{ student['preferred_language'] }}.
                 </div>
             </div>
 
@@ -364,21 +381,25 @@
                 style="padding: 0.65rem;"
                 onclick="triggerCallParent({{ student['id'] }}, '{{ student['name']|escape }}', '{{ student['roll_number']|escape }}', '{{ student['department']|escape }}', '{{ student['parent_phone']|escape }}', '{{ student['attendance_percentage'] }}', '{{ student['preferred_language']|escape }}')"
             >
-                📞 Dispatch AI Voice Call
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>
+                Dispatch AI Voice Call
             </button>
             {% endif %}
         </div>
 
-        <div class="card" style="background-color: #f8fafc;">
-            <h4 style="font-size: 0.95rem; margin-bottom: 0.5rem; color: var(--primary-color);">
-                🛡️ Access Control Status
+        <div class="card" style="background-color: #FAF9F5; border-color: var(--border-color);">
+            <h4 style="font-size: 0.92rem; margin-bottom: 0.5rem; color: var(--primary-navy); letter-spacing: 0.02em;">
+                Access Control Status
             </h4>
-            <p style="font-size: 0.85rem; color: var(--text-muted); line-height: 1.4;">
-                Student Department: <strong>{{ student['department'] }}</strong><br>
-                User Department Scope: <strong>{{ session.get('department') }}</strong><br>
+            <div style="font-size: 0.85rem; color: var(--text-muted); line-height: 1.55;">
+                Student Department: <strong style="color: var(--primary-navy);">{{ student['department'] }}</strong><br>
+                User Scope: <strong>{{ session.get('department') }}</strong><br>
                 User Role: <strong>{{ session.get('role') }}</strong>
-            </p>
+            </div>
         </div>
     </div>
 </div>
+
+<!-- Modal Includes -->
+{% include "call_modal.html" %}
 {% endblock %}

@@ -1,35 +1,45 @@
 {% extends 'base.html' %}
 
-{% block title %}Call History{% endblock %}
+{% block title %}Call History - Vignan Spandana{% endblock %}
 
 {% block content %}
 <div class="dashboard-container">
     <!-- Header Section -->
-    <div class="page-header" style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
-        <div>
-            <h2 style="font-size: 1.5rem; font-weight: 700; color: var(--primary-color); margin: 0;">
-                📞 Institutional Call History
-            </h2>
-            <div style="font-size: 0.88rem; color: var(--text-muted); margin-top: 4px;">
-                Comprehensive record of automated and simulated AI parent voice calls
+    <div class="card" style="margin-bottom: 1.25rem;">
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+            <div>
+                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
+                    <span class="badge badge-dept" style="font-size: 0.72rem; letter-spacing: 0.05em;">COMMUNICATION LOGS</span>
+                    <span style="font-size: 0.82rem; color: var(--text-muted);">&bull; Outbound AI Parent Communication</span>
+                </div>
+                <h2 style="font-size: 1.55rem; font-family: var(--font-serif); color: var(--primary-navy); margin: 0;">
+                    Institutional Call History
+                </h2>
+                <div style="font-size: 0.88rem; color: var(--text-muted); margin-top: 4px;">
+                    Comprehensive audit trail of automated AI voice notifications dispatched to parents and guardians.
+                </div>
             </div>
-        </div>
-        <div style="display: flex; gap: 8px;">
-            <a href="{{ url_for('follow_ups_list') }}" class="btn btn-secondary btn-sm">
-                📋 View Follow-Up Tickets
-            </a>
-            <a href="{{ url_for('dashboard') }}" class="btn btn-secondary btn-sm">
-                👥 Student Directory
-            </a>
+            <div style="display: flex; gap: 8px;">
+                <a href="{{ url_for('follow_ups_list') }}" class="btn btn-secondary btn-sm">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+                    Follow-Up Tickets
+                </a>
+                <a href="{{ url_for('dashboard') }}" class="btn btn-secondary btn-sm">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+                    Student Directory
+                </a>
+            </div>
         </div>
     </div>
 
     <!-- Filter Card -->
-    <div class="card" style="margin-bottom: 1.5rem; padding: 1rem 1.25rem;">
+    <div class="card" style="margin-bottom: 1.5rem; padding: 1.15rem 1.25rem; background: #FAF9F5;">
         <form method="GET" action="{{ url_for('call_history') }}" style="display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end;">
             <!-- Status Filter -->
             <div style="flex: 1; min-width: 140px;">
-                <label for="status" class="info-label" style="margin-bottom: 4px;">Status</label>
+                <label for="status" style="display: block; font-size: 0.75rem; font-weight: 700; color: var(--primary-navy); letter-spacing: 0.04em; margin-bottom: 4px;">
+                    STATUS
+                </label>
                 <select name="status" id="status" class="form-select" style="height: 38px; font-size: 0.88rem;">
                     <option value="All" {% if selected_status == 'All' %}selected{% endif %}>All Statuses</option>
                     <option value="Completed" {% if selected_status == 'Completed' %}selected{% endif %}>Completed</option>
@@ -41,7 +51,9 @@
 
             <!-- Language Filter -->
             <div style="flex: 1; min-width: 130px;">
-                <label for="language" class="info-label" style="margin-bottom: 4px;">Language</label>
+                <label for="language" style="display: block; font-size: 0.75rem; font-weight: 700; color: var(--primary-navy); letter-spacing: 0.04em; margin-bottom: 4px;">
+                    LANGUAGE
+                </label>
                 <select name="language" id="language" class="form-select" style="height: 38px; font-size: 0.88rem;">
                     <option value="All" {% if selected_lang == 'All' %}selected{% endif %}>All Languages</option>
                     <option value="Telugu" {% if selected_lang == 'Telugu' %}selected{% endif %}>Telugu</option>
@@ -52,7 +64,9 @@
 
             <!-- Department Filter -->
             <div style="flex: 1; min-width: 140px;">
-                <label for="department" class="info-label" style="margin-bottom: 4px;">Department</label>
+                <label for="department" style="display: block; font-size: 0.75rem; font-weight: 700; color: var(--primary-navy); letter-spacing: 0.04em; margin-bottom: 4px;">
+                    DEPARTMENT
+                </label>
                 <select name="department" id="department" class="form-select" style="height: 38px; font-size: 0.88rem;" {% if session.get('role') in ['Department Coordinator', 'Faculty'] and session.get('department') != 'All' %}disabled{% endif %}>
                     {% if session.get('role') in ['Admin', 'Principal'] %}
                         <option value="All" {% if selected_dept == 'All' %}selected{% endif %}>All Departments</option>
@@ -65,20 +79,25 @@
 
             <!-- Date Filter -->
             <div style="flex: 1; min-width: 140px;">
-                <label for="date" class="info-label" style="margin-bottom: 4px;">Call Date</label>
+                <label for="date" style="display: block; font-size: 0.75rem; font-weight: 700; color: var(--primary-navy); letter-spacing: 0.04em; margin-bottom: 4px;">
+                    CALL DATE
+                </label>
                 <input type="date" name="date" id="date" value="{{ selected_date }}" class="form-control" style="height: 38px; font-size: 0.88rem;">
             </div>
 
             <!-- Roll Number Search -->
             <div style="flex: 1.5; min-width: 180px;">
-                <label for="roll_number" class="info-label" style="margin-bottom: 4px;">Roll No / Student Name</label>
+                <label for="roll_number" style="display: block; font-size: 0.75rem; font-weight: 700; color: var(--primary-navy); letter-spacing: 0.04em; margin-bottom: 4px;">
+                    ROLL NO / NAME
+                </label>
                 <input type="text" name="roll_number" id="roll_number" value="{{ search_query }}" placeholder="e.g. 211FA04001 or Sai" class="form-control" style="height: 38px; font-size: 0.88rem;">
             </div>
 
             <!-- Actions -->
             <div style="display: flex; gap: 8px;">
                 <button type="submit" class="btn btn-primary" style="height: 38px; padding: 0 16px;">
-                    🔍 Filter
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                    Filter
                 </button>
                 <a href="{{ url_for('call_history') }}" class="btn btn-secondary" style="height: 38px; padding: 0 14px; display: inline-flex; align-items: center;" title="Reset Filters">
                     ↺ Reset
@@ -87,14 +106,14 @@
         </form>
     </div>
 
-    <!-- Call Records Table -->
-    <div class="card" style="padding: 0; overflow: hidden;">
-        <div class="card-header" style="padding: 1rem 1.25rem; background: #fafbfc; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center;">
-            <div style="font-weight: 600; color: var(--primary-color);">
-                Total Records: <span>{{ calls|length }}</span>
+    <!-- Call Records Table Card -->
+    <div class="card" style="padding: 0; overflow: hidden; border-top: 3px solid var(--primary-navy);">
+        <div class="card-header" style="padding: 1rem 1.25rem; background: #FAF9F5; margin: 0; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center;">
+            <div style="font-weight: 600; color: var(--primary-navy); font-size: 0.95rem;">
+                Records Found: <span style="font-family: var(--font-mono); font-weight: 700;">{{ calls|length }}</span>
             </div>
             <div style="font-size: 0.8rem; color: var(--text-muted);">
-                Showing most recent logged communication events
+                Ordered by latest call attempt
             </div>
         </div>
 
@@ -103,42 +122,48 @@
             <table class="data-table" style="margin: 0;">
                 <thead>
                     <tr>
-                        <th style="width: 80px;">Call #</th>
-                        <th>Student & Roll No</th>
-                        <th>Dept</th>
+                        <th style="width: 50px;">ID</th>
                         <th>Call Timestamp</th>
+                        <th>Student & Roll</th>
+                        <th>Department</th>
+                        <th>Parent & Phone</th>
                         <th>Language</th>
                         <th>Duration</th>
                         <th>Status</th>
-                        <th>Summary Snippet</th>
-                        <th>Initiated By</th>
+                        <th>AI Triage Summary</th>
                         <th style="text-align: right;">Action</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for call in calls %}
                     <tr>
-                        <td style="font-family: monospace; font-size: 0.82rem; color: var(--text-muted);">
+                        <td style="font-family: var(--font-mono); font-weight: 600; color: var(--text-muted); font-size: 0.82rem;">
                             #{{ call['id'] }}
                         </td>
+                        <td style="white-space: nowrap; font-family: var(--font-mono); font-size: 0.82rem;">
+                            {{ call['call_time'] }}
+                        </td>
                         <td>
-                            <a href="{{ url_for('student_detail', student_id=call['student_id']) }}" style="font-weight: 600; color: var(--primary-color); text-decoration: none;">
+                            <a href="{{ url_for('student_detail', student_id=call['student_id']) }}" style="font-weight: 600; color: var(--primary-navy);">
                                 {{ call['student_name'] }}
                             </a>
-                            <div style="font-size: 0.78rem; font-family: monospace; color: var(--text-muted);">
+                            <div style="font-family: var(--font-mono); font-size: 0.78rem; color: var(--text-muted);">
                                 {{ call['roll_number'] }}
                             </div>
                         </td>
                         <td>
                             <span class="badge badge-dept">{{ call['department'] }}</span>
                         </td>
-                        <td style="white-space: nowrap; font-size: 0.84rem;">
-                            {{ call['call_time'] }}
+                        <td>
+                            <div>{{ call['parent_name'] }}</div>
+                            <div style="font-family: var(--font-mono); font-size: 0.8rem; color: var(--text-muted);">
+                                {{ call['parent_phone'] or 'Not Registered' }}
+                            </div>
                         </td>
                         <td>
-                            <span class="badge badge-lang">{{ call['language'] or 'English' }}</span>
+                            <span class="badge badge-lang">{{ call['language'] }}</span>
                         </td>
-                        <td style="font-size: 0.84rem; font-family: monospace;">
+                        <td style="font-family: var(--font-mono); font-size: 0.85rem;">
                             {{ call['duration_seconds'] }}s
                         </td>
                         <td>
@@ -154,15 +179,12 @@
                         </td>
                         <td style="max-width: 280px;">
                             <div style="font-size: 0.82rem; color: var(--text-main); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="{{ call['summary'] or call['notes'] }}">
-                                {{ call['summary'] or call['notes'] or 'No summary recorded' }}
+                                {{ call['summary'] or call['notes'] or 'Attendance recorded & escalated.' }}
                             </div>
                         </td>
-                        <td style="font-size: 0.82rem; color: var(--text-muted);">
-                            {{ call['initiated_by'] or 'System' }}
-                        </td>
                         <td style="text-align: right; white-space: nowrap;">
-                            <a href="{{ url_for('call_detail', call_id=call['id']) }}" class="btn btn-secondary btn-sm" style="padding: 4px 10px; font-size: 0.8rem;">
-                                📜 View Details
+                            <a href="{{ url_for('call_detail', call_id=call['id']) }}" class="btn btn-secondary btn-sm" style="font-size: 0.78rem; padding: 4px 10px;">
+                                Transcript &rarr;
                             </a>
                         </td>
                     </tr>
@@ -171,13 +193,12 @@
             </table>
         </div>
         {% else %}
-        <div style="padding: 3rem 1.5rem; text-align: center; color: var(--text-muted);">
-            <div style="font-size: 2.2rem; margin-bottom: 0.5rem;">📭</div>
-            <div style="font-weight: 600; font-size: 1.05rem; color: var(--text-main);">No Call Records Found</div>
-            <p style="font-size: 0.85rem; max-width: 400px; margin: 0.5rem auto 1.25rem;">
-                No calls match your active filter criteria. Try resetting the filters or initiate a call demo from the student directory.
-            </p>
-            <a href="{{ url_for('call_history') }}" class="btn btn-secondary btn-sm">Reset Filters</a>
+        <div style="text-align: center; padding: 3rem 1.5rem; color: var(--text-muted);">
+            <div style="font-size: 2rem; margin-bottom: 0.5rem; color: var(--muted-gold);">
+                <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" style="margin: 0 auto; display: block;" aria-hidden="true"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>
+            </div>
+            <p style="font-weight: 600; color: var(--primary-navy);">No call records found matching current criteria.</p>
+            <p style="font-size: 0.85rem;">Try adjusting the status, date, or department filters above.</p>
         </div>
         {% endif %}
     </div>

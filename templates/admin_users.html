@@ -3,23 +3,32 @@
 {% block title %}User Management - Vignan Spandana{% endblock %}
 
 {% block content %}
-<div style="margin-bottom: 1.25rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.75rem;">
-    <div>
-        <a href="{{ url_for('dashboard') }}" style="font-size: 0.9rem;">&larr; Back to Dashboard</a>
-        <h2 style="margin-top: 4px;">User & Role Management</h2>
-        <p style="color: var(--text-muted); font-size: 0.9rem;">
-            Create staff accounts, assign institutional roles, set department-scoped boundaries, or deactivate accounts.
-        </p>
-    </div>
-    <div>
-        <a href="{{ url_for('admin_audit_logs') }}" class="btn btn-secondary btn-sm">
-            🛡️ View Security Audit Log
-        </a>
+<div class="card" style="margin-bottom: 1.25rem;">
+    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.75rem;">
+        <div>
+            <div style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 4px;">
+                <a href="{{ url_for('dashboard') }}" style="color: var(--primary-navy); font-weight: 600; text-decoration: none;">
+                    &larr; Back to Dashboard
+                </a>
+            </div>
+            <h2 style="margin: 0; font-size: 1.55rem; font-family: var(--font-serif); color: var(--primary-navy);">
+                User & Role Management
+            </h2>
+            <p style="color: var(--text-muted); font-size: 0.9rem; margin-top: 4px; margin-bottom: 0;">
+                Enroll institutional staff accounts, assign granular role permissions, and enforce department-scoped boundaries.
+            </p>
+        </div>
+        <div>
+            <a href="{{ url_for('admin_audit_logs') }}" class="btn btn-secondary btn-sm">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+                Security Audit Log
+            </a>
+        </div>
     </div>
 </div>
 
 <!-- Create New User Form -->
-<div class="card" style="border-top: 4px solid var(--primary-color);">
+<div class="card" style="border-top: 3px solid var(--primary-navy); margin-bottom: 1.5rem;">
     <div class="card-header">
         <h3 class="card-title">Enroll New Staff / Faculty Account</h3>
     </div>
@@ -28,19 +37,19 @@
         
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem;">
             <div class="form-group">
-                <label for="username" class="form-label">Username *</label>
+                <label for="username" class="form-label" style="font-weight: 600;">Username <span style="color: var(--secondary-red);">*</span></label>
                 <input type="text" id="username" name="username" class="form-control" placeholder="e.g. coord_it" required>
             </div>
             <div class="form-group">
-                <label for="password" class="form-label">Initial Password *</label>
+                <label for="password" class="form-label" style="font-weight: 600;">Initial Password <span style="color: var(--secondary-red);">*</span></label>
                 <input type="password" id="password" name="password" class="form-control" placeholder="Minimum 6 characters" required>
             </div>
             <div class="form-group">
-                <label for="full_name" class="form-label">Full Name & Title *</label>
+                <label for="full_name" class="form-label" style="font-weight: 600;">Full Name & Title <span style="color: var(--secondary-red);">*</span></label>
                 <input type="text" id="full_name" name="full_name" class="form-control" placeholder="e.g. Prof. N. Swetha" required>
             </div>
             <div class="form-group">
-                <label for="role" class="form-label">Assigned Role *</label>
+                <label for="role" class="form-label" style="font-weight: 600;">Assigned Role <span style="color: var(--secondary-red);">*</span></label>
                 <select id="role" name="role" class="form-select" required>
                     <option value="Faculty">Faculty (Dept Scoped)</option>
                     <option value="Department Coordinator">Department Coordinator (Dept Scoped)</option>
@@ -49,7 +58,7 @@
                 </select>
             </div>
             <div class="form-group">
-                <label for="department" class="form-label">Department Scope *</label>
+                <label for="department" class="form-label" style="font-weight: 600;">Department Scope <span style="color: var(--secondary-red);">*</span></label>
                 <select id="department" name="department" class="form-select" required>
                     <option value="CSE">CSE</option>
                     <option value="ECE">ECE</option>
@@ -60,48 +69,51 @@
             </div>
         </div>
 
-        <div style="margin-top: 0.5rem;">
-            <button type="submit" class="btn btn-primary btn-sm">
-                + Create & Hash Account Credentials
+        <div style="margin-top: 1.25rem; border-top: 1px solid var(--border-color); padding-top: 1rem; display: flex; justify-content: flex-end;">
+            <button type="submit" class="btn btn-primary" style="padding: 0.55rem 1.5rem;">
+                Create Account
             </button>
         </div>
     </form>
 </div>
 
-<!-- Existing Users Table -->
-<div class="card">
-    <div class="card-header">
-        <h3 class="card-title">Existing System Users ({{ users|length }})</h3>
+<!-- Existing Accounts Table -->
+<div class="card" style="padding: 0; overflow: hidden; border-top: 3px solid var(--muted-gold);">
+    <div class="card-header" style="padding: 1rem 1.25rem; background: #FAF9F5; margin: 0; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center;">
+        <div style="font-weight: 600; color: var(--primary-navy); font-size: 0.95rem;">
+            Registered System Accounts: <span style="font-family: var(--font-mono); font-weight: 700;">{{ users|length }}</span>
+        </div>
+        <div style="font-size: 0.8rem; color: var(--text-muted);">
+            Enforces PBKDF2:SHA256 password security
+        </div>
     </div>
 
     <div class="table-responsive">
-        <table class="data-table">
+        <table class="data-table" style="margin: 0; font-size: 0.88rem;">
             <thead>
                 <tr>
-                    <th>User ID</th>
-                    <th>Full Name</th>
+                    <th style="width: 50px;">ID</th>
                     <th>Username</th>
-                    <th>Role</th>
-                    <th>Dept Scope</th>
-                    <th>Status</th>
+                    <th>Full Name & Title</th>
+                    <th>Assigned Role</th>
+                    <th>Department Scope</th>
+                    <th>Account Status</th>
                     <th>Created</th>
-                    <th style="text-align: right;">Actions</th>
+                    <th style="text-align: right;">Action</th>
                 </tr>
             </thead>
             <tbody>
                 {% for u in users %}
-                <tr style="{% if not u['is_active'] %}background-color: #fef2f2; opacity: 0.8;{% endif %}">
-                    <td style="font-family: monospace;">#{{ u['id'] }}</td>
+                <tr>
+                    <td style="font-family: var(--font-mono); color: var(--text-muted); font-size: 0.82rem;">
+                        #{{ u['id'] }}
+                    </td>
+                    <td style="font-family: var(--font-mono); font-weight: 600; color: var(--primary-navy);">
+                        {{ u['username'] }}
+                    </td>
                     <td><strong>{{ u['full_name'] }}</strong></td>
-                    <td style="font-family: monospace;">{{ u['username'] }}</td>
                     <td>
-                        <span class="role-pill" style="
-                            {% if u['role'] == 'Admin' %}background: #475569;
-                            {% elif u['role'] == 'Principal' %}background: #7c3aed;
-                            {% elif u['role'] == 'Department Coordinator' %}background: #0284c7;
-                            {% else %}background: #059669;{% endif %}">
-                            {{ u['role'] }}
-                        </span>
+                        <span class="role-pill">{{ u['role'] }}</span>
                     </td>
                     <td>
                         <span class="badge badge-dept">{{ u['department'] }}</span>
@@ -113,8 +125,8 @@
                             <span class="badge badge-danger">Deactivated</span>
                         {% endif %}
                     </td>
-                    <td style="font-size: 0.8rem; color: var(--text-muted);">
-                        {{ u['created_at'][:10] if u['created_at'] else 'System' }}
+                    <td style="font-size: 0.82rem; font-family: var(--font-mono); color: var(--text-muted);">
+                        {{ u['created_at'] }}
                     </td>
                     <td style="text-align: right; white-space: nowrap;">
                         {% if u['id'] != session.get('user_id') %}
@@ -122,11 +134,11 @@
                             <form action="{{ url_for('admin_toggle_user', user_id=u['id']) }}" method="POST" style="display: inline;">
                                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                 {% if u['is_active'] %}
-                                    <button type="submit" class="btn btn-secondary btn-sm" style="color: var(--danger);" title="Deactivate user" onclick="return confirm('Deactivate account for {{ u.username }}?')">
+                                    <button type="submit" class="btn btn-secondary btn-sm" style="color: var(--secondary-red); font-size: 0.78rem; padding: 2px 8px;" title="Deactivate user" onclick="return confirm('Deactivate account for {{ u.username }}?')">
                                         Deactivate
                                     </button>
                                 {% else %}
-                                    <button type="submit" class="btn btn-secondary btn-sm" style="color: var(--success);" title="Reactivate user">
+                                    <button type="submit" class="btn btn-secondary btn-sm" style="color: var(--success-green); font-size: 0.78rem; padding: 2px 8px;" title="Reactivate user">
                                         Reactivate
                                     </button>
                                 {% endif %}
@@ -135,23 +147,23 @@
                             <!-- Inline Role Change Form -->
                             <form action="{{ url_for('admin_update_role', user_id=u['id']) }}" method="POST" style="display: inline-flex; gap: 4px; align-items: center; margin-left: 6px;">
                                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                                <select name="role" class="form-select" style="font-size: 0.75rem; padding: 2px 4px; width: auto;">
+                                <select name="role" class="form-select" style="font-size: 0.75rem; padding: 2px 6px; width: auto; height: 28px;">
                                     <option value="Faculty" {% if u['role'] == 'Faculty' %}selected{% endif %}>Faculty</option>
                                     <option value="Department Coordinator" {% if u['role'] == 'Department Coordinator' %}selected{% endif %}>Coord</option>
                                     <option value="Principal" {% if u['role'] == 'Principal' %}selected{% endif %}>Principal</option>
                                     <option value="Admin" {% if u['role'] == 'Admin' %}selected{% endif %}>Admin</option>
                                 </select>
-                                <select name="department" class="form-select" style="font-size: 0.75rem; padding: 2px 4px; width: auto;">
+                                <select name="department" class="form-select" style="font-size: 0.75rem; padding: 2px 6px; width: auto; height: 28px;">
                                     <option value="CSE" {% if u['department'] == 'CSE' %}selected{% endif %}>CSE</option>
                                     <option value="ECE" {% if u['department'] == 'ECE' %}selected{% endif %}>ECE</option>
                                     <option value="IT" {% if u['department'] == 'IT' %}selected{% endif %}>IT</option>
                                     <option value="MECH" {% if u['department'] == 'MECH' %}selected{% endif %}>MECH</option>
                                     <option value="All" {% if u['department'] == 'All' %}selected{% endif %}>All</option>
                                 </select>
-                                <button type="submit" class="btn btn-primary btn-sm" style="font-size: 0.75rem; padding: 3px 6px;">Save</button>
+                                <button type="submit" class="btn btn-primary btn-sm" style="font-size: 0.75rem; padding: 2px 8px; height: 28px;">Save</button>
                             </form>
                         {% else %}
-                            <span style="font-size: 0.78rem; color: var(--text-muted); font-style: italic;">(Current User)</span>
+                            <span style="font-size: 0.78rem; color: var(--text-muted); font-style: italic;">Current Session</span>
                         {% endif %}
                     </td>
                 </tr>

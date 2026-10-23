@@ -5,38 +5,34 @@
 {% block content %}
 <div style="max-width: 1200px; margin: 0 auto; padding-bottom: 2rem;">
     <!-- Page Header & Status Banner -->
-    <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem; margin-bottom: 1.5rem;">
-        <div>
-            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
-                <span style="font-size: 1.6rem;">🗣️</span>
-                <h2 style="margin: 0; font-size: 1.65rem; color: var(--text-main); font-weight: 700;">
+    <div class="card" style="margin-bottom: 1.5rem;">
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+            <div>
+                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
+                    <span class="badge badge-dept" style="font-size: 0.72rem; letter-spacing: 0.05em;">INDIC SPEECH LAB</span>
+                    <span style="font-size: 0.82rem; color: var(--text-muted);">&bull; Sarvam AI Voice Pipeline (te-IN)</span>
+                </div>
+                <h2 style="margin: 0; font-size: 1.55rem; color: var(--primary-navy); font-family: var(--font-serif);">
                     Telugu AI Speech Laboratory
                 </h2>
-                <span class="badge badge-primary" style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px; padding: 4px 8px;">
-                    Sarvam AI Indic Voice
-                </span>
+                <p style="color: var(--text-muted); font-size: 0.9rem; margin-top: 4px; margin-bottom: 0;">
+                    Evaluate Telugu text-to-speech voice synthesis (Bulbul) and speech-to-text acoustic transcription (Saarika / Saaras).
+                </p>
             </div>
-            <p style="color: var(--text-muted); font-size: 0.95rem; margin: 4px 0 0 0;">
-                Test Telugu text-to-speech audio synthesis (Bulbul) and speech-to-text voice transcription (Saarika / Saaras).
-                All secret API calls are secured on the backend.
-            </p>
-        </div>
 
-        <div style="display: flex; align-items: center; gap: 10px; background: #ffffff; padding: 10px 16px; border: 1px solid var(--border-color); border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
-            <div style="font-size: 0.85rem; color: var(--text-muted);">
-                API Configuration Status:
+            <div style="display: flex; align-items: center; gap: 10px;">
+                {% if is_sarvam_configured %}
+                <span class="badge badge-success" style="font-size: 0.8rem; padding: 5px 12px; display: inline-flex; align-items: center; gap: 6px;">
+                    <span style="display: inline-block; width: 7px; height: 7px; background: var(--success-green); border-radius: 50%;"></span>
+                    SARVAM_API_KEY Configured
+                </span>
+                {% else %}
+                <span class="badge badge-warning" style="font-size: 0.8rem; padding: 5px 12px; display: inline-flex; align-items: center; gap: 6px;" title="Set SARVAM_API_KEY in server environment to enable live Sarvam AI generation">
+                    <span style="display: inline-block; width: 7px; height: 7px; background: var(--warning-amber); border-radius: 50%;"></span>
+                    SARVAM_API_KEY Not Detected
+                </span>
+                {% endif %}
             </div>
-            {% if is_sarvam_configured %}
-            <span class="badge badge-success" style="font-size: 0.82rem; padding: 4px 10px; display: inline-flex; align-items: center; gap: 5px;">
-                <span style="display: inline-block; width: 8px; height: 8px; background: #22c55e; border-radius: 50%;"></span>
-                SARVAM_API_KEY Configured
-            </span>
-            {% else %}
-            <span class="badge badge-warning" style="font-size: 0.82rem; padding: 4px 10px; display: inline-flex; align-items: center; gap: 5px;" title="Set SARVAM_API_KEY in .env or server environment to enable live Sarvam AI generation">
-                <span style="display: inline-block; width: 8px; height: 8px; background: #f59e0b; border-radius: 50%;"></span>
-                SARVAM_API_KEY Not Detected
-            </span>
-            {% endif %}
         </div>
     </div>
 

@@ -3,38 +3,45 @@
 {% block title %}Mark Daily Attendance - Vignan Spandana{% endblock %}
 
 {% block content %}
+<!-- Page Header -->
 <div class="card" style="margin-bottom: 1.25rem;">
     <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
         <div>
-            <h2>📋 Daily Attendance Marking</h2>
-            <p style="color: var(--text-muted); font-size: 0.92rem; margin-top: 2px;">
-                Record or correct class attendance for a specific date. Students marked absent can be escalated directly to the AI parent-calling simulation.
+            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
+                <span class="badge badge-dept" style="font-size: 0.72rem; letter-spacing: 0.05em;">DAILY REGISTER</span>
+                <span style="font-size: 0.82rem; color: var(--text-muted);">&bull; {{ selected_dept }} &bull; {{ selected_date }}</span>
+            </div>
+            <h2 style="margin: 0; font-size: 1.5rem; color: var(--primary-navy);">Daily Attendance Marking</h2>
+            <p style="color: var(--text-muted); font-size: 0.9rem; margin-top: 4px; margin-bottom: 0;">
+                Record or correct classroom attendance. Students marked absent are automatically organized for AI-powered parent communication.
             </p>
         </div>
 
         <div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
             {% if session.get('role') in ['Admin', 'Department Coordinator', 'Faculty'] %}
-            <a href="{{ url_for('add_student') }}" class="btn btn-primary btn-sm" id="btnAttendanceAddStudent">
-                ➕ Add Student
+            <a href="{{ url_for('add_student') }}" class="btn btn-secondary btn-sm" id="btnAttendanceAddStudent" title="Enroll new student record">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                Add Student
             </a>
             {% endif %}
             <a href="{{ url_for('dashboard') }}" class="btn btn-secondary btn-sm">
-                &larr; Back to Directory
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+                Back to Directory
             </a>
         </div>
     </div>
 </div>
 
 <!-- Filter Selection Bar -->
-<div class="card" style="margin-bottom: 1.25rem; background: #f8fafc;">
+<div class="card" style="margin-bottom: 1.25rem; background: #FAF9F5; border-color: var(--border-color);">
     <form method="GET" action="{{ url_for('attendance_mark') }}" style="display: flex; flex-wrap: wrap; gap: 1rem; align-items: flex-end;">
         <!-- Department Filter -->
         <div style="flex: 1; min-width: 140px;">
-            <label for="deptSelect" style="display: block; font-size: 0.82rem; font-weight: 600; color: var(--text-muted); margin-bottom: 4px;">
+            <label for="deptSelect" style="display: block; font-size: 0.75rem; font-weight: 700; color: var(--primary-navy); letter-spacing: 0.04em; margin-bottom: 4px;">
                 DEPARTMENT
             </label>
             {% if session.get('department') and session.get('department') != 'All' %}
-                <input type="text" class="form-input" value="{{ selected_dept }}" readonly style="background: #e2e8f0; cursor: not-allowed;" />
+                <input type="text" class="form-input" value="{{ selected_dept }}" readonly style="background: #EFECE6; cursor: not-allowed; font-weight: 600;" />
                 <input type="hidden" name="dept" value="{{ selected_dept }}" />
             {% else %}
                 <select id="deptSelect" name="dept" class="form-select" onchange="this.form.submit()">
@@ -47,7 +54,7 @@
 
         <!-- Section Filter -->
         <div style="flex: 1; min-width: 120px;">
-            <label for="sectionSelect" style="display: block; font-size: 0.82rem; font-weight: 600; color: var(--text-muted); margin-bottom: 4px;">
+            <label for="sectionSelect" style="display: block; font-size: 0.75rem; font-weight: 700; color: var(--primary-navy); letter-spacing: 0.04em; margin-bottom: 4px;">
                 SECTION
             </label>
             <select id="sectionSelect" name="section" class="form-select" onchange="this.form.submit()">
@@ -60,7 +67,7 @@
 
         <!-- Year/Semester Filter -->
         <div style="flex: 1; min-width: 160px;">
-            <label for="yearSelect" style="display: block; font-size: 0.82rem; font-weight: 600; color: var(--text-muted); margin-bottom: 4px;">
+            <label for="yearSelect" style="display: block; font-size: 0.75rem; font-weight: 700; color: var(--primary-navy); letter-spacing: 0.04em; margin-bottom: 4px;">
                 CLASS / YEAR
             </label>
             <select id="yearSelect" name="year" class="form-select" onchange="this.form.submit()">
@@ -73,7 +80,7 @@
 
         <!-- Attendance Date Selector -->
         <div style="flex: 1; min-width: 160px;">
-            <label for="attendanceDate" style="display: block; font-size: 0.82rem; font-weight: 600; color: var(--text-muted); margin-bottom: 4px;">
+            <label for="attendanceDate" style="display: block; font-size: 0.75rem; font-weight: 700; color: var(--primary-navy); letter-spacing: 0.04em; margin-bottom: 4px;">
                 ATTENDANCE DATE
             </label>
             <input 
@@ -90,13 +97,14 @@
 
         <div>
             <button type="submit" class="btn btn-secondary btn-sm" style="height: 38px;">
-                🔍 Refresh List
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                Refresh List
             </button>
         </div>
     </form>
 </div>
 
-<!-- Quick Statistics Banner -->
+<!-- Restrained Statistics Banner -->
 <div class="stats-grid" style="margin-bottom: 1.25rem;">
     <div class="stat-card">
         <div class="stat-label">Students in Selection</div>
@@ -104,38 +112,42 @@
         <div class="stat-hint">{{ selected_dept }} &bull; Section {{ selected_section }}</div>
     </div>
     <div class="stat-card success-border">
-        <div class="stat-label">Present Count</div>
-        <div class="stat-number" id="statPresent" style="color: var(--success);">{{ present_count }}</div>
-        <div class="stat-hint">For {{ selected_date }}</div>
+        <div class="stat-label" style="color: var(--success-green);">Present Count</div>
+        <div class="stat-number" id="statPresent" style="color: var(--success-green);">{{ present_count }}</div>
+        <div class="stat-hint">Active attendance on {{ selected_date }}</div>
     </div>
     <div class="stat-card alert-border">
-        <div class="stat-label">Absent Count</div>
-        <div class="stat-number" id="statAbsent" style="color: var(--danger);">{{ absent_count }}</div>
+        <div class="stat-label" style="color: var(--secondary-red);">Absent Count</div>
+        <div class="stat-number" id="statAbsent" style="color: var(--secondary-red);">{{ absent_count }}</div>
         <div class="stat-hint">
-            {% if absent_count > 0 %}Requires parent notification{% else %}All students accounted for{% endif %}
+            {% if absent_count > 0 %}Requires parent notification{% else %}All students present{% endif %}
         </div>
     </div>
 </div>
 
 {% if has_saved_records %}
-<div class="alert alert-info" style="margin-bottom: 1.25rem; display: flex; align-items: center; justify-content: space-between;">
-    <div>
-        <strong>ℹ️ Existing Record Loaded:</strong> Attendance for <strong>{{ selected_date }}</strong> was previously saved. You can modify any student's status below and click <strong>"Save Attendance"</strong> to update the record.
+<div class="alert alert-info" style="margin-bottom: 1.25rem; display: flex; align-items: center; justify-content: space-between; border-left: 3px solid var(--primary-navy);">
+    <div style="display: flex; align-items: center; gap: 8px;">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: var(--primary-navy);" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+        <span><strong>Existing Record Loaded:</strong> Attendance for <strong>{{ selected_date }}</strong> was previously saved. You may modify status and save updates.</span>
     </div>
-    <span class="badge badge-success">Saved in SQLite</span>
+    <span class="badge badge-success" style="font-size: 0.72rem;">Saved in SQLite</span>
 </div>
 {% endif %}
 
-<!-- Absent Students Escalation Card (Feature 4) -->
+<!-- Absent Students Escalation Card (Parent Outreach) -->
 {% if absent_students and absent_students|length > 0 %}
-<div class="card" style="margin-bottom: 1.5rem; border: 1px solid #fecaca; background: #fff5f5;">
+<div class="card" style="margin-bottom: 1.5rem; border: 1px solid var(--danger-border); background: #FCF9F9; border-top: 3px solid var(--secondary-red);">
     <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.75rem; margin-bottom: 0.75rem;">
         <div>
-            <h3 style="color: var(--danger); margin: 0; font-size: 1.05rem; display: flex; align-items: center; gap: 0.4rem;">
-                <span>🚨</span> Absent Students on {{ selected_date }} (Parent Outreach)
-            </h3>
-            <p style="font-size: 0.85rem; color: #991b1b; margin-top: 3px; margin-bottom: 0;">
-                The following students were marked Absent. Click "CALL PARENTS" to start sequential queue simulation, or call individually.
+            <div style="display: flex; align-items: center; gap: 6px;">
+                <span class="badge badge-danger" style="font-size: 0.72rem;">OUTREACH ACTION</span>
+                <h3 style="color: var(--secondary-red); margin: 0; font-size: 1.1rem; display: flex; align-items: center; gap: 6px;">
+                    Absent Students on {{ selected_date }}
+                </h3>
+            </div>
+            <p style="font-size: 0.85rem; color: #7F1D1D; margin-top: 4px; margin-bottom: 0;">
+                The following students were marked Absent. Click "CALL PARENTS" to initiate sequential AI outreach simulation.
             </p>
         </div>
         <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
@@ -144,12 +156,13 @@
                 id="btnCallParents" 
                 class="btn btn-call" 
                 onclick="openCallQueueModal('{{ selected_dept }}', '{{ selected_date }}')"
-                style="font-weight: 700; padding: 6px 16px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);"
+                style="font-weight: 700; padding: 7px 18px; box-shadow: 0 2px 5px rgba(40, 118, 83, 0.2);"
                 title="Prepare sequential calling queue for absent students on this date"
             >
-                📞 CALL PARENTS (Queue: {{ queue_pending_count }})
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>
+                CALL PARENTS (Queue: {{ queue_pending_count }})
             </button>
-            <span class="badge badge-danger" style="font-size: 0.82rem; padding: 6px 12px;">{{ absent_students|length }} Absent</span>
+            <span class="badge badge-danger" style="font-size: 0.8rem; padding: 6px 12px;">{{ absent_students|length }} Absent</span>
         </div>
     </div>
 
@@ -170,14 +183,14 @@
             <tbody>
                 {% for abs in absent_students %}
                 <tr>
-                    <td style="font-family: monospace; font-weight: 600;">{{ abs.roll_number }}</td>
+                    <td style="font-family: var(--font-mono); font-weight: 600; color: var(--primary-navy);">{{ abs.roll_number }}</td>
                     <td><strong>{{ abs.name }}</strong></td>
                     <td>{{ abs.parent_name }}</td>
                     <td>
                         {% if abs.parent_phone %}
-                            <span style="font-family: monospace; font-size: 0.88rem;">{{ abs.parent_phone }}</span>
+                            <span style="font-family: var(--font-mono); font-size: 0.88rem;">{{ abs.parent_phone }}</span>
                         {% else %}
-                            <span style="color: var(--danger); font-size: 0.82rem; font-style: italic;">No Phone Registered</span>
+                            <span style="color: var(--secondary-red); font-size: 0.82rem; font-style: italic;">No Phone Registered</span>
                         {% endif %}
                     </td>
                     <td>
@@ -186,23 +199,23 @@
                     <td>
                         {% if abs.call_record_id %}
                             <span class="badge badge-success" title="Simulated parent call placed">
-                                ✅ Called (#{{ abs.call_record_id }})
+                                ✓ Called (#{{ abs.call_record_id }})
                             </span>
                         {% else %}
                             <span class="badge badge-warning" title="No call placed yet for this date">
-                                ⏳ Call Pending
+                                Call Pending
                             </span>
                         {% endif %}
                     </td>
                     <td>
                         {% if abs.attendance_percentage is not none %}
                             {% if abs.attendance_percentage < 75.0 %}
-                                <span class="badge badge-danger">⚠️ {{ abs.attendance_percentage }}%</span>
+                                <span class="badge badge-danger">{{ abs.attendance_percentage }}%</span>
                             {% else %}
-                                <span class="badge badge-success">✓ {{ abs.attendance_percentage }}%</span>
+                                <span class="badge badge-success">{{ abs.attendance_percentage }}%</span>
                             {% endif %}
                         {% else %}
-                            <span class="badge badge-dept" style="color: var(--text-muted); background: #f1f5f9;">Pending</span>
+                            <span class="badge badge-dept" style="color: var(--text-muted); background: #F3EFE6;">Pending</span>
                         {% endif %}
                     </td>
                     <td style="text-align: right;">
@@ -234,11 +247,11 @@
     <div class="card">
         <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.75rem; margin-bottom: 1rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.75rem;">
             <div>
-                <h3 style="margin: 0; font-size: 1.1rem; color: var(--primary-color);">
+                <h3 style="margin: 0; font-size: 1.15rem; color: var(--primary-navy);">
                     Student Attendance Roster
                 </h3>
                 <span style="font-size: 0.85rem; color: var(--text-muted);">
-                    Mark attendance for <strong>{{ selected_date }}</strong>
+                    Mark attendance for <strong>{{ selected_date }}</strong> &bull; Total roster: <strong>{{ total_students }}</strong>
                 </span>
             </div>
 
@@ -248,19 +261,21 @@
                     type="text" 
                     id="rosterSearch" 
                     class="form-control" 
-                    placeholder="🔍 Search name or roll..." 
+                    placeholder="Search name or roll..." 
                     onkeyup="filterRosterTable()" 
-                    style="max-width: 220px; font-size: 0.85rem; height: 34px;"
+                    style="max-width: 200px; font-size: 0.85rem; height: 34px;"
                 />
                 <button type="button" id="btnMarkAllPresent" class="btn btn-secondary btn-sm" onclick="markAll('Present')">
-                    ✅ All Present
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="color: var(--success-green);" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                    All Present
                 </button>
                 <button type="button" id="btnMarkAllAbsent" class="btn btn-secondary btn-sm" onclick="markAll('Absent')">
-                    ❌ Mark All Absent
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="color: var(--secondary-red);" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                    Mark All Absent
                 </button>
                 {% if user_role != 'Principal' %}
                 <button type="submit" class="btn btn-primary btn-sm" style="font-weight: 600;">
-                    💾 Save Attendance
+                    Save Attendance
                 </button>
                 {% endif %}
             </div>
@@ -271,12 +286,12 @@
             <table class="data-table" id="attendanceTable">
                 <thead>
                     <tr>
-                        <th style="width: 50px;">#</th>
+                        <th style="width: 45px;">#</th>
                         <th>Roll Number</th>
                         <th>Student Name</th>
                         <th>Section</th>
                         <th>Overall Att %</th>
-                        <th style="text-align: center; width: 220px;">Daily Status ({{ selected_date }})</th>
+                        <th style="text-align: center; width: 230px;">Daily Status ({{ selected_date }})</th>
                         <th>Parent Contact</th>
                     </tr>
                 </thead>
@@ -284,8 +299,8 @@
                     {% for s in students %}
                     <tr id="row-{{ s.id }}">
                         <td style="color: var(--text-muted); font-size: 0.82rem;">{{ loop.index }}</td>
-                        <td style="font-family: monospace; font-weight: 600;">
-                            <a href="{{ url_for('student_detail', student_id=s.id) }}" title="View profile">
+                        <td style="font-family: var(--font-mono); font-weight: 600;">
+                            <a href="{{ url_for('student_detail', student_id=s.id) }}" title="View profile" style="color: var(--primary-navy);">
                                 {{ s.roll_number }}
                             </a>
                         </td>
@@ -298,12 +313,12 @@
                         <td>
                             {% if s.attendance_percentage is not none %}
                                 {% if s.attendance_percentage < 75.0 %}
-                                    <span class="badge badge-danger">⚠️ {{ s.attendance_percentage }}%</span>
+                                    <span class="badge badge-danger">Alert: {{ s.attendance_percentage }}%</span>
                                 {% else %}
-                                    <span class="badge badge-success">✓ {{ s.attendance_percentage }}%</span>
+                                    <span class="badge badge-success">{{ s.attendance_percentage }}%</span>
                                 {% endif %}
                             {% else %}
-                                <span class="badge badge-dept" style="color: var(--text-muted); background: #f1f5f9;">Pending</span>
+                                <span class="badge badge-dept" style="color: var(--text-muted); background: #F3EFE6;">Pending</span>
                             {% endif %}
                         </td>
                         <td style="text-align: center;">
@@ -316,28 +331,24 @@
                                 {% endif %}
                             {% else %}
                                 <!-- Interactive Toggle for Faculty / Coordinator / Admin -->
-                                <div style="display: inline-flex; border: 1px solid var(--border-color); border-radius: 6px; overflow: hidden;">
-                                    <label style="margin: 0; padding: 6px 14px; font-size: 0.85rem; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 4px; user-select: none;"
-                                           class="status-label-present {% if s.date_status == 'Present' %}active-present{% endif %}">
+                                <div class="attendance-segmented-control">
+                                    <label class="status-label-present {% if s.date_status == 'Present' %}active-present{% endif %}">
                                         <input 
                                             type="radio" 
                                             name="status_{{ s.id }}" 
                                             value="Present" 
                                             {% if s.date_status == 'Present' %}checked{% endif %} 
                                             onchange="handleStatusChange({{ s.id }}, 'Present')"
-                                            style="margin: 0;"
                                         />
                                         <span>Present</span>
                                     </label>
-                                    <label style="margin: 0; padding: 6px 14px; font-size: 0.85rem; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 4px; user-select: none;"
-                                           class="status-label-absent {% if s.date_status == 'Absent' %}active-absent{% endif %}">
+                                    <label class="status-label-absent {% if s.date_status == 'Absent' %}active-absent{% endif %}">
                                         <input 
                                             type="radio" 
                                             name="status_{{ s.id }}" 
                                             value="Absent" 
                                             {% if s.date_status == 'Absent' %}checked{% endif %} 
                                             onchange="handleStatusChange({{ s.id }}, 'Absent')"
-                                            style="margin: 0;"
                                         />
                                         <span>Absent</span>
                                     </label>
@@ -347,10 +358,10 @@
                         <td style="font-size: 0.85rem; color: var(--text-muted);">
                             {{ s.parent_name }}
                             {% if s.parent_relationship %}
-                                <span class="badge badge-dept" style="font-size: 0.72rem; padding: 2px 6px;">{{ s.parent_relationship }}</span>
+                                <span class="badge badge-dept" style="font-size: 0.72rem; padding: 1px 5px;">{{ s.parent_relationship }}</span>
                             {% endif %}
                             {% if s.parent_phone %}
-                                &bull; <span style="font-family: monospace;">{{ s.parent_phone }}</span>
+                                &bull; <span style="font-family: var(--font-mono);">{{ s.parent_phone }}</span>
                             {% endif %}
                         </td>
                     </tr>
@@ -363,31 +374,34 @@
         {% if user_role != 'Principal' %}
         <div style="margin-top: 1.5rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; padding-top: 1rem; border-top: 1px solid var(--border-color);">
             <div style="font-size: 0.85rem; color: var(--text-muted);">
-                Saving records for date: <strong>{{ selected_date }}</strong>. Dynamic attendance percentages are recalculated automatically.
+                Saving records for: <strong>{{ selected_date }}</strong> &bull; Changes recalculate attendance automatically.
             </div>
             <div style="display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap;">
                 <button type="submit" class="btn btn-primary" id="btnSaveAttendanceBottom" style="padding: 8px 24px; font-size: 0.95rem; font-weight: 600;">
-                    💾 Save Attendance Records
+                    Save Attendance Records
                 </button>
                 <button 
                     type="button" 
                     id="btnCallParentsBottom" 
                     class="btn btn-call" 
                     onclick="openCallQueueModal('{{ selected_dept }}', '{{ selected_date }}')"
-                    style="font-weight: 700; padding: 8px 24px; font-size: 0.95rem; box-shadow: 0 4px 6px -1px rgba(225, 29, 72, 0.3);"
+                    style="font-weight: 700; padding: 8px 24px; font-size: 0.95rem;"
                     title="Open automated parent calling queue for absent students on this date"
                 >
-                    📞 CALL PARENTS (Queue: {{ queue_pending_count }})
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>
+                    CALL PARENTS (Queue: {{ queue_pending_count }})
                 </button>
             </div>
         </div>
         {% endif %}
 
         {% else %}
-        <div style="text-align: center; padding: 2.5rem; color: var(--text-muted);">
-            <div style="font-size: 2rem; margin-bottom: 0.5rem;">👨‍🎓</div>
-            <p>No students found matching <strong>Department: {{ selected_dept }}</strong>, <strong>Section: {{ selected_section }}</strong>.</p>
-            <p style="font-size: 0.85rem;">Try adjusting the section or class filters above.</p>
+        <div style="text-align: center; padding: 3rem 1.5rem; color: var(--text-muted);">
+            <div style="font-size: 2rem; margin-bottom: 0.5rem; color: var(--muted-gold);">
+                <svg width="42" height="42" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="margin: 0 auto; display: block;" aria-hidden="true"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+            </div>
+            <p style="font-weight: 600; color: var(--primary-navy);">No students found matching selection.</p>
+            <p style="font-size: 0.85rem;">Adjust Department: <strong>{{ selected_dept }}</strong>, Section: <strong>{{ selected_section }}</strong>, or Year filters above.</p>
         </div>
         {% endif %}
     </div>
@@ -398,13 +412,43 @@
 {% include "call_queue_modal.html" %}
 
 <style>
-.active-present {
-    background: #dcfce7 !important;
-    color: #166534 !important;
+.attendance-segmented-control {
+    display: inline-flex;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+    background: #FFFFFF;
 }
+
+.status-label-present, .status-label-absent {
+    margin: 0;
+    padding: 6px 14px;
+    font-size: 0.82rem;
+    font-weight: 600;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    user-select: none;
+    transition: all 0.15s ease;
+    color: var(--text-secondary);
+}
+
+.status-label-present input, .status-label-absent input {
+    margin: 0;
+    accent-color: var(--primary-navy);
+}
+
+.active-present {
+    background: var(--success-bg) !important;
+    color: var(--success-green) !important;
+    font-weight: 700;
+}
+
 .active-absent {
-    background: #fee2e2 !important;
-    color: #991b1b !important;
+    background: var(--danger-bg) !important;
+    color: var(--secondary-red) !important;
+    font-weight: 700;
 }
 </style>
 

@@ -3,26 +3,36 @@
 {% block title %}Security Audit Logs - Vignan Spandana{% endblock %}
 
 {% block content %}
-<div style="margin-bottom: 1.25rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.75rem;">
-    <div>
-        <a href="{{ url_for('admin_users') }}" style="font-size: 0.9rem;">&larr; Back to User Management</a>
-        <h2 style="margin-top: 4px;">Institutional Security Audit Trail</h2>
-        <p style="color: var(--text-muted); font-size: 0.9rem;">
-            Immutable system audit logs tracking authentication, user state mutations, and access attempts.
-        </p>
-    </div>
-    <div>
-        <span class="badge badge-success" style="font-size: 0.82rem; padding: 5px 10px;">
-            🔒 Zero Secrets Stored &bull; Safe Logging
-        </span>
+<div class="card" style="margin-bottom: 1.25rem;">
+    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.75rem;">
+        <div>
+            <div style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 4px;">
+                <a href="{{ url_for('admin_users') }}" style="color: var(--primary-navy); font-weight: 600; text-decoration: none;">
+                    &larr; User Management
+                </a>
+            </div>
+            <h2 style="margin: 0; font-size: 1.55rem; font-family: var(--font-serif); color: var(--primary-navy);">
+                Institutional Security Audit Trail
+            </h2>
+            <p style="color: var(--text-muted); font-size: 0.9rem; margin-top: 4px; margin-bottom: 0;">
+                Immutable system audit records tracking authentication attempts, user state mutations, and access events.
+            </p>
+        </div>
+        <div>
+            <span class="badge badge-success" style="font-size: 0.8rem; padding: 6px 12px;">
+                Zero Secrets Stored &bull; Safe Audit
+            </span>
+        </div>
     </div>
 </div>
 
 <!-- Filter Box -->
-<div class="card" style="padding: 1rem 1.25rem; margin-bottom: 1rem;">
+<div class="card" style="padding: 1.15rem 1.25rem; margin-bottom: 1.5rem; background: #FAF9F5;">
     <form method="GET" action="{{ url_for('admin_audit_logs') }}" style="display: flex; gap: 1rem; align-items: center; flex-wrap: wrap;">
-        <label for="action_filter" style="font-weight: 600; font-size: 0.9rem;">Filter by Action:</label>
-        <select id="action_filter" name="action" class="form-select" style="width: auto; min-width: 200px;" onchange="this.form.submit()">
+        <label for="action_filter" style="font-weight: 700; font-size: 0.75rem; color: var(--primary-navy); letter-spacing: 0.04em; text-transform: uppercase;">
+            FILTER BY ACTION:
+        </label>
+        <select id="action_filter" name="action" class="form-select" style="width: auto; min-width: 220px; font-size: 0.88rem;" onchange="this.form.submit()">
             <option value="">All Actions ({{ logs|length }})</option>
             <option value="login" {% if selected_action == 'login' %}selected{% endif %}>User Sign-in (login)</option>
             <option value="login_failed" {% if selected_action == 'login_failed' %}selected{% endif %}>Failed Sign-in (login_failed)</option>
@@ -42,63 +52,59 @@
 </div>
 
 <!-- Logs Table -->
-<div class="table-responsive">
-    <table class="data-table">
-        <thead>
-            <tr>
-                <th>Timestamp (UTC)</th>
-                <th>Operator</th>
-                <th>Action</th>
-                <th>Resource</th>
-                <th>Details (Sanitized)</th>
-                <th>IP Address</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for log in logs %}
-            <tr>
-                <td style="white-space: nowrap; font-family: monospace; font-size: 0.82rem;">
-                    {{ log['timestamp'] }}
-                </td>
-                <td>
-                    <strong>{{ log['username'] }}</strong>
-                    {% if log['user_id'] %}
-                        <span style="font-size: 0.75rem; color: var(--text-muted);">(#{{ log['user_id'] }})</span>
-                    {% endif %}
-                </td>
-                <td>
-                    {% if log['action'] in ['login_failed', 'unauthorized_access_attempt'] %}
-                        <span class="badge badge-danger">{{ log['action'] }}</span>
-                    {% elif log['action'] in ['login', 'user_created', 'user_reactivated'] %}
-                        <span class="badge badge-success">{{ log['action'] }}</span>
-                    {% elif log['action'] in ['role_changed', 'user_deactivated'] %}
-                        <span class="badge badge-warning">{{ log['action'] }}</span>
-                    {% else %}
-                        <span class="badge badge-dept">{{ log['action'] }}</span>
-                    {% endif %}
-                </td>
-                <td style="font-family: monospace; font-size: 0.82rem;">
-                    {{ log['resource'] or '-' }}
-                </td>
-                <td style="font-size: 0.88rem; max-width: 320px;">
-                    {{ log['details'] or '-' }}
-                </td>
-                <td style="font-family: monospace; font-size: 0.82rem; color: var(--text-muted);">
-                    {{ log['ip_address'] }}
-                </td>
-            </tr>
-            {% else %}
-            <tr>
-                <td colspan="6">
-                    <div class="empty-state">
-                        <div class="empty-state-icon">🛡️</div>
-                        <h3>No Audit Records Found</h3>
-                        <p>No actions have been recorded under this category yet.</p>
-                    </div>
-                </td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+<div class="card" style="padding: 0; overflow: hidden; border-top: 3px solid var(--primary-navy);">
+    <div class="card-header" style="padding: 1rem 1.25rem; background: #FAF9F5; margin: 0; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center;">
+        <div style="font-weight: 600; color: var(--primary-navy); font-size: 0.95rem;">
+            Audit Events Logged: <span style="font-family: var(--font-mono); font-weight: 700;">{{ logs|length }}</span>
+        </div>
+        <div style="font-size: 0.8rem; color: var(--text-muted);">
+            Chronological audit log
+        </div>
+    </div>
+
+    <div class="table-responsive">
+        <table class="data-table" style="margin: 0; font-size: 0.85rem;">
+            <thead>
+                <tr>
+                    <th>Timestamp (UTC)</th>
+                    <th>Operator</th>
+                    <th>Action</th>
+                    <th>Resource</th>
+                    <th>Sanitized Event Detail</th>
+                    <th>IP Address</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for log in logs %}
+                <tr>
+                    <td style="white-space: nowrap; font-family: var(--font-mono); font-size: 0.82rem; color: var(--text-muted);">
+                        {{ log['timestamp'] }}
+                    </td>
+                    <td>
+                        <strong>{{ log['username'] or 'Anonymous' }}</strong>
+                    </td>
+                    <td>
+                        {% if 'fail' in log['action'] or 'unauthorized' in log['action'] %}
+                            <span class="badge badge-danger">{{ log['action'] }}</span>
+                        {% elif 'login' in log['action'] or 'create' in log['action'] %}
+                            <span class="badge badge-success">{{ log['action'] }}</span>
+                        {% else %}
+                            <span class="badge badge-dept">{{ log['action'] }}</span>
+                        {% endif %}
+                    </td>
+                    <td style="font-family: var(--font-mono); font-size: 0.82rem; color: var(--primary-navy);">
+                        {{ log['resource'] }}
+                    </td>
+                    <td style="max-width: 340px; word-break: break-all; font-family: var(--font-mono); font-size: 0.8rem; color: var(--text-main);">
+                        {{ log['details'] or '&mdash;' }}
+                    </td>
+                    <td style="font-family: var(--font-mono); font-size: 0.82rem; color: var(--text-muted);">
+                        {{ log['ip_address'] or 'Local' }}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
 </div>
 {% endblock %}

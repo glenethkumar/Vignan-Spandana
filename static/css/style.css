@@ -1584,10 +1584,10 @@ a:hover {
   width: 90px;
   height: 90px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #1e3a8a, #2563eb);
+  background: var(--primary-navy);
   color: #ffffff;
   border: 4px solid #ffffff;
-  box-shadow: 0 4px 14px rgba(37, 99, 235, 0.35);
+  box-shadow: 0 4px 14px rgba(23, 38, 60, 0.25);
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -1600,7 +1600,8 @@ a:hover {
 
 .va-mic-btn:hover {
   transform: scale(1.05);
-  box-shadow: 0 6px 20px rgba(37, 99, 235, 0.45);
+  box-shadow: 0 6px 20px rgba(23, 38, 60, 0.35);
+  background: #0E1A2B;
 }
 
 .va-mic-btn:active {
@@ -1608,13 +1609,13 @@ a:hover {
 }
 
 .va-mic-btn.listening {
-  background: linear-gradient(135deg, #b91c1c, #ef4444);
-  box-shadow: 0 4px 18px rgba(239, 68, 68, 0.5);
+  background: var(--secondary-red);
+  box-shadow: 0 4px 18px rgba(201, 54, 62, 0.4);
 }
 
 .va-mic-btn.responding {
-  background: linear-gradient(135deg, #0284c7, #06b6d4);
-  box-shadow: 0 4px 18px rgba(6, 182, 212, 0.5);
+  background: var(--muted-gold);
+  box-shadow: 0 4px 18px rgba(180, 154, 98, 0.4);
 }
 
 .va-mic-ripple {
@@ -1814,7 +1815,7 @@ a:hover {
 }
 
 .va-msg.user .va-msg-bubble {
-  background: linear-gradient(135deg, #1e3a8a, #2563eb);
+  background: var(--primary-navy);
   color: #ffffff;
   border-bottom-right-radius: 2px;
 }

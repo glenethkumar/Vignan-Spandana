@@ -3,29 +3,37 @@
 {% block title %}Import Preview - Vignan Spandana{% endblock %}
 
 {% block content %}
-<div style="margin-bottom: 1.25rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.75rem;">
-    <div>
-        <a href="{{ url_for('import_students') }}" style="font-size: 0.9rem;">&larr; Re-upload Different File</a>
-        <h2 style="margin-top: 4px;">Student Import Validation Preview</h2>
-        <p style="color: var(--text-muted); font-size: 0.9rem;">
-            Step 1 of 2: Review validated rows, data hygiene warnings, and detected errors before committing to the database.
-        </p>
-    </div>
-    <div style="display: flex; gap: 0.75rem;">
-        <form action="{{ url_for('import_cancel') }}" method="POST" style="margin: 0;">
-            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-            <button type="submit" class="btn btn-secondary btn-sm" onclick="return confirm('Discard staged upload data?')">
-                ✖ Cancel & Discard
-            </button>
-        </form>
-        {% if valid_count > 0 %}
-        <form action="{{ url_for('import_confirm') }}" method="POST" style="margin: 0;">
-            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-            <button type="submit" class="btn btn-primary btn-sm">
-                ✓ Confirm & Save {{ valid_count }} Valid Records &rarr;
-            </button>
-        </form>
-        {% endif %}
+<div class="card" style="margin-bottom: 1.25rem;">
+    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.75rem;">
+        <div>
+            <div style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 4px;">
+                <a href="{{ url_for('import_students') }}" style="color: var(--primary-navy); font-weight: 600; text-decoration: none;">
+                    &larr; Re-upload Different File
+                </a>
+            </div>
+            <h2 style="margin: 0; font-size: 1.55rem; font-family: var(--font-serif); color: var(--primary-navy);">
+                Student Import Validation Preview
+            </h2>
+            <p style="color: var(--text-muted); font-size: 0.9rem; margin-top: 4px; margin-bottom: 0;">
+                Step 1 of 2: Review validated records, data hygiene warnings, and detected errors before committing to the database.
+            </p>
+        </div>
+        <div style="display: flex; gap: 0.75rem;">
+            <form action="{{ url_for('import_cancel') }}" method="POST" style="margin: 0;">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button type="submit" class="btn btn-secondary btn-sm" onclick="return confirm('Discard staged upload data?')">
+                    Discard Upload
+                </button>
+            </form>
+            {% if valid_count > 0 %}
+            <form action="{{ url_for('import_confirm') }}" method="POST" style="margin: 0;">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button type="submit" class="btn btn-primary btn-sm">
+                    Confirm & Save {{ valid_count }} Valid Records &rarr;
+                </button>
+            </form>
+            {% endif %}
+        </div>
     </div>
 </div>
 
@@ -34,60 +42,63 @@
     <div class="stat-card">
         <div class="stat-label">Total Rows Analyzed</div>
         <div class="stat-number">{{ total_rows }}</div>
-        <div class="stat-hint">File: <code>{{ filename }}</code></div>
+        <div class="stat-hint">File: <code style="font-family: var(--font-mono);">{{ filename }}</code></div>
     </div>
     <div class="stat-card success-border">
-        <div class="stat-label">Valid for Commit</div>
-        <div class="stat-number" style="color: var(--success);">{{ valid_count }}</div>
+        <div class="stat-label" style="color: var(--success-green);">Valid for Commit</div>
+        <div class="stat-number" style="color: var(--success-green);">{{ valid_count }}</div>
         <div class="stat-hint">{{ add_count }} new additions &bull; {{ update_count }} updates</div>
     </div>
     <div class="stat-card alert-border">
-        <div class="stat-label">Errors (Will Be Skipped)</div>
-        <div class="stat-number" style="color: var(--danger);">{{ error_count }}</div>
+        <div class="stat-label" style="color: var(--secondary-red);">Errors (Will Be Skipped)</div>
+        <div class="stat-number" style="color: var(--secondary-red);">{{ error_count }}</div>
         <div class="stat-hint">Violates schema or validation</div>
     </div>
-    <div class="stat-card" style="border-left-color: var(--warning);">
-        <div class="stat-label">Sanitization Warnings</div>
-        <div class="stat-number" style="color: var(--warning);">{{ warning_count }}</div>
+    <div class="stat-card" style="border-top-color: var(--warning-amber);">
+        <div class="stat-label" style="color: var(--warning-amber);">Sanitization Warnings</div>
+        <div class="stat-number" style="color: var(--warning-amber);">{{ warning_count }}</div>
         <div class="stat-hint">Neutralized formula characters</div>
     </div>
 </div>
 
 {% if error_count > 0 %}
 <div class="alert alert-warning" style="margin-bottom: 1.25rem;">
-    <span>⚠️ <strong>Notice:</strong> {{ error_count }} invalid rows were detected. If you proceed, only the <strong>{{ valid_count }} valid records</strong> will be saved in a single database transaction; invalid rows will be ignored.</span>
+    <span><strong>Notice:</strong> {{ error_count }} invalid rows were detected. If you proceed, only the <strong>{{ valid_count }} valid records</strong> will be saved in a single database transaction; invalid rows will be skipped safely.</span>
 </div>
 {% endif %}
 
-<!-- Rows Preview Table -->
-<div class="card">
-    <div class="card-header">
-        <h3 class="card-title">Row-by-Row Staging Inspection</h3>
-        <span style="font-size: 0.85rem; color: var(--text-muted);">
-            Existing students matched strictly by <code>roll_number</code> (never by name)
-        </span>
+<!-- Staged Records Table -->
+<div class="card" style="padding: 0; overflow: hidden; border-top: 3px solid var(--primary-navy);">
+    <div class="card-header" style="padding: 1rem 1.25rem; background: #FAF9F5; margin: 0; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center;">
+        <div style="font-weight: 600; color: var(--primary-navy); font-size: 0.95rem;">
+            Staged Rows Preview (Showing first 100 rows)
+        </div>
+        <div style="font-size: 0.8rem; color: var(--text-muted);">
+            Transaction boundary isolation verified
+        </div>
     </div>
 
     <div class="table-responsive">
-        <table class="data-table">
+        <table class="data-table" style="margin: 0; font-size: 0.85rem;">
             <thead>
                 <tr>
-                    <th>Row #</th>
-                    <th>Status</th>
+                    <th style="width: 50px;">Row #</th>
+                    <th style="width: 90px;">Status</th>
                     <th>Roll No</th>
                     <th>Student Name</th>
-                    <th>Dept & Section</th>
+                    <th>Dept & Sec</th>
                     <th>Parent Phone</th>
                     <th>Lang</th>
-                    <th>Attendance</th>
                     <th>Action</th>
                     <th>Validation & Hygiene Notes</th>
                 </tr>
             </thead>
             <tbody>
                 {% for row in staged_rows %}
-                <tr style="{% if row['status'] == 'ERROR' %}background-color: #fef2f2;{% elif row['status'] == 'WARNING' %}background-color: #fffbeb;{% endif %}">
-                    <td style="font-family: monospace; font-size: 0.85rem;">{{ row['row_num'] }}</td>
+                <tr style="{% if row['status'] == 'ERROR' %}background: #FFF5F5;{% elif row['status'] == 'WARNING' %}background: #FFFDF5;{% endif %}">
+                    <td style="font-family: var(--font-mono); color: var(--text-muted); font-size: 0.82rem;">
+                        {{ row['row_num'] }}
+                    </td>
                     <td>
                         {% if row['status'] == 'VALID' %}
                             <span class="badge badge-success">VALID</span>
@@ -97,16 +108,15 @@
                             <span class="badge badge-danger">ERROR</span>
                         {% endif %}
                     </td>
-                    <td style="font-family: monospace; font-weight: 600;">
+                    <td style="font-family: var(--font-mono); font-weight: 600; color: var(--primary-navy);">
                         {{ row['roll_number'] or '<empty>' }}
                     </td>
-                    <td>{{ row['name'] or '<empty>' }}</td>
+                    <td><strong>{{ row['name'] or '<empty>' }}</strong></td>
+                    <td><span class="badge badge-dept">{{ row['department'] }} - {{ row['section'] }}</span></td>
                     <td>
-                        <span class="badge badge-dept">{{ row['department'] }} - {{ row['section'] }}</span>
+                        {{ row['parent_phone'] or '<empty>' }}
                     </td>
-                    <td style="font-family: monospace;">{{ row['parent_phone'] or '<empty>' }}</td>
-                    <td><span class="badge badge-lang">{{ row['preferred_language'] }}</span></td>
-                    <td>{{ row['attendance_percentage'] }}%</td>
+                    <td><span class="badge badge-lang">{{ row['preferred_language'] or 'Telugu' }}</span></td>
                     <td>
                         {% if row['action'] == 'ADD' %}
                             <span class="badge badge-success">+ ADD</span>
@@ -118,45 +128,27 @@
                     </td>
                     <td style="font-size: 0.82rem;">
                         {% if row['errors'] %}
-                            <div style="color: var(--danger); font-weight: 500;">
+                            <div style="color: var(--secondary-red); font-weight: 600;">
                                 {% for err in row['errors'] %}
                                     ❌ {{ err }}<br>
                                 {% endfor %}
                             </div>
                         {% endif %}
                         {% if row['warnings'] %}
-                            <div style="color: var(--warning); font-weight: 500;">
+                            <div style="color: var(--warning-amber); font-weight: 500;">
                                 {% for w in row['warnings'] %}
                                     ⚠️ {{ w }}<br>
                                 {% endfor %}
                             </div>
                         {% endif %}
                         {% if not row['errors'] and not row['warnings'] %}
-                            <span style="color: var(--success);">✓ Passed all schema checks</span>
+                            <span style="color: var(--success-green);">✓ Ready for commit</span>
                         {% endif %}
                     </td>
                 </tr>
                 {% endfor %}
             </tbody>
         </table>
-    </div>
-
-    <!-- Bottom Actions -->
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 1.25rem;">
-        <form action="{{ url_for('import_cancel') }}" method="POST" style="margin: 0;">
-            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-            <button type="submit" class="btn btn-secondary">
-                ✖ Cancel & Discard Staged Import
-            </button>
-        </form>
-        {% if valid_count > 0 %}
-        <form action="{{ url_for('import_confirm') }}" method="POST" style="margin: 0;">
-            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-            <button type="submit" class="btn btn-primary" style="font-weight: 600;">
-                ✓ Confirm & Commit {{ valid_count }} Records into Database
-            </button>
-        </form>
-        {% endif %}
     </div>
 </div>
 {% endblock %}

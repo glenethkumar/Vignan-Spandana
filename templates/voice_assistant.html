@@ -6,46 +6,55 @@
 <div class="card" style="margin-bottom: 1.25rem;">
     <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
         <div>
-            <h2>🎙️ AI Voice Assistant Prototype</h2>
-            <p style="color: var(--text-muted); font-size: 0.92rem; margin-top: 2px;">
+            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
+                <span class="badge badge-dept" style="font-size: 0.72rem; letter-spacing: 0.05em;">SPEECH INTELLIGENCE</span>
+                <span style="font-size: 0.82rem; color: var(--text-muted);">&bull; Bilingual (Telugu & English)</span>
+            </div>
+            <h2 style="margin: 0; font-size: 1.55rem; font-family: var(--font-serif); color: var(--primary-navy);">
+                AI Voice Assistant Prototype
+            </h2>
+            <p style="color: var(--text-muted); font-size: 0.9rem; margin-top: 4px; margin-bottom: 0;">
                 Interactive speech-to-speech conversational agent supporting Telugu and English with real microphone capture and multi-turn context.
             </p>
         </div>
 
         <div style="display: flex; align-items: center; gap: 0.75rem;">
             {% if service_status.mode == 'live' %}
-                <span class="badge" style="background: #dcfce7; color: #15803d; border: 1px solid #bbf7d0; font-size: 0.85rem; padding: 5px 10px;">
-                    🟢 Live AI: {{ service_status.provider | upper }}
+                <span class="badge badge-success" style="font-size: 0.8rem; padding: 5px 10px;">
+                    Live AI: {{ service_status.provider | upper }}
                 </span>
             {% else %}
-                <span class="badge" style="background: #fef3c7; color: #92400e; border: 1px solid #fde68a; font-size: 0.85rem; padding: 5px 10px;">
-                    🟡 Demo Simulation Mode
+                <span class="badge badge-warning" style="font-size: 0.8rem; padding: 5px 10px;">
+                    Demo Simulation Mode
                 </span>
             {% endif %}
             <a href="{{ url_for('dashboard') }}" class="btn btn-secondary btn-sm">
-                &larr; Back to Directory
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+                Back to Directory
             </a>
         </div>
     </div>
 </div>
 
 <!-- Clear Status & Error Alerts -->
-<div id="vaErrorAlert" class="va-alert-card va-alert-warning" style="display: none;">
-    <strong>⚠️ Notice:</strong> <span id="vaErrorText"></span>
+<div id="vaErrorAlert" class="alert alert-warning" style="display: none; margin-bottom: 1.25rem;">
+    <strong>Notice:</strong> <span id="vaErrorText"></span>
 </div>
 
 {% if service_status.mode == 'demo' %}
-<div class="va-alert-card va-alert-info" style="margin-bottom: 1.25rem;">
-    <strong>💡 Demonstration Mode Active:</strong> You are interacting with the intelligent demonstration personality engine. Speech recognition and speech synthesis run directly through your browser. To connect live Google Gemini, add <code>GEMINI_API_KEY=your_key</code> in <code>.env</code>.
+<div class="alert alert-info" style="margin-bottom: 1.25rem; border-left: 3px solid var(--primary-navy);">
+    <span><strong>Demonstration Mode Active:</strong> You are interacting with the intelligent demonstration personality engine. Speech recognition and speech synthesis run directly through your browser. To connect live Google Gemini, add <code>GEMINI_API_KEY=your_key</code> in <code>.env</code>.</span>
 </div>
 {% endif %}
 
 <!-- Main Voice Assistant Two-Column Layout -->
 <div class="va-layout">
     <!-- Left Stage: Interactive Controls & Microphone Visualizer -->
-    <div class="va-panel">
+    <div class="va-panel" style="background: var(--white-panel); border: 1px solid var(--border-color); border-top: 3px solid var(--primary-navy);">
         <div class="va-panel-header" style="display: flex; justify-content: space-between; align-items: center;">
-            <div class="va-panel-title">Voice Control</div>
+            <div class="va-panel-title" style="font-size: 1.1rem; color: var(--primary-navy); font-family: var(--font-serif);">
+                Voice Control
+            </div>
             <div id="vaStatusPill" class="va-status-pill ready">
                 <span class="va-status-dot"></span>
                 <span id="vaStatusText">Ready (Click Start)</span>
@@ -56,7 +65,9 @@
             <!-- Large Interactive Mic Button -->
             <div class="va-mic-wrapper">
                 <button type="button" id="vaMicBtn" class="va-mic-btn" title="Click to speak or toggle microphone">
-                    <span id="vaMicIcon">🎙️</span>
+                    <span id="vaMicIcon">
+                        <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path><path d="M19 10v2a7 7 0 0 1-14 0v-2"></path><line x1="12" y1="19" x2="12" y2="23"></line><line x1="8" y1="23" x2="16" y2="23"></line></svg>
+                    </span>
                 </button>
                 <div class="va-mic-ripple"></div>
             </div>
@@ -68,32 +79,34 @@
 
             <!-- Start / End Conversation Action Controls -->
             <div class="va-actions">
-                <button type="button" id="vaStartBtn" class="va-btn va-btn-primary">
-                    ▶ Start Conversation
+                <button type="button" id="vaStartBtn" class="va-btn va-btn-primary" style="background: var(--primary-navy);">
+                    Start Conversation
                 </button>
                 <button type="button" id="vaEndBtn" class="va-btn va-btn-danger">
-                    ⏹ End Conversation
+                    End Conversation
                 </button>
                 <button type="button" id="vaStopAudioBtn" class="va-btn va-btn-stop-audio" style="display: none;">
-                    🔇 Stop Audio
+                    Stop Audio
                 </button>
             </div>
 
             <!-- Language Selector Dropdown -->
-            <div class="va-lang-box">
-                <label for="vaLangSelect">🌐 Conversation Language</label>
-                <select id="vaLangSelect" class="va-lang-select">
-                    <option value="en" selected>English (India / US)</option>
+            <div class="va-lang-box" style="background: #FAF9F5; border: 1px solid var(--border-color);">
+                <label for="vaLangSelect" style="color: var(--primary-navy); font-weight: 700; font-size: 0.75rem; letter-spacing: 0.04em;">
+                    CONVERSATION LANGUAGE
+                </label>
+                <select id="vaLangSelect" class="va-lang-select" style="font-size: 0.88rem;">
+                    <option value="en" selected>English (India / Academic)</option>
                     <option value="te">తెలుగు (Telugu - te-IN)</option>
                 </select>
                 <div style="font-size: 0.78rem; color: var(--text-muted); margin-top: 5px;">
-                    Supports native Telugu speech recognition & synthesis. Natural mixed Telugu-English is supported.
+                    Supports native Telugu speech recognition & synthesis. Mixed Telugu-English inquiries are accepted.
                 </div>
             </div>
 
             <!-- Quick Demo Prompts Help -->
             <div style="margin-top: 1.25rem; text-align: left; width: 100%; border-top: 1px solid var(--border-color); padding-top: 0.85rem;">
-                <div style="font-size: 0.82rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase;">Try Asking:</div>
+                <div style="font-size: 0.75rem; font-weight: 700; color: var(--primary-navy); text-transform: uppercase; letter-spacing: 0.04em;">Suggested Inquiries:</div>
                 <ul style="font-size: 0.82rem; color: var(--text-main); margin-left: 1.25rem; margin-top: 0.35rem; line-height: 1.5;">
                     <li><em>"Why was the student marked absent?"</em></li>
                     <li><em>"How does this AI voice assistant work?"</em></li>
@@ -105,13 +118,13 @@
     </div>
 
     <!-- Right Stage: Multi-Turn Conversation Transcript -->
-    <div class="va-transcript-card">
-        <div class="va-transcript-header">
-            <span style="font-weight: 600; font-size: 0.95rem; color: var(--primary-color);">
-                💬 Conversation Transcript
+    <div class="va-transcript-card" style="border: 1px solid var(--border-color); border-top: 3px solid var(--muted-gold);">
+        <div class="va-transcript-header" style="background: #FAF9F5; border-bottom: 1px solid var(--border-color);">
+            <span style="font-weight: 700; font-size: 0.95rem; color: var(--primary-navy); font-family: var(--font-serif);">
+                Conversation Transcript
             </span>
-            <button type="button" id="vaClearBtn" class="btn btn-secondary btn-sm" style="font-size: 0.8rem; padding: 4px 8px;">
-                🗑️ Clear
+            <button type="button" id="vaClearBtn" class="btn btn-secondary btn-sm" style="font-size: 0.76rem; padding: 3px 8px;">
+                Clear
             </button>
         </div>
 
@@ -119,10 +132,12 @@
         <div id="vaTranscriptBody" class="va-transcript-body">
             <!-- Initial placeholder instruction -->
             <div style="text-align: center; color: var(--text-muted); font-size: 0.88rem; margin: auto; padding: 2rem;">
-                <div style="font-size: 2.2rem; margin-bottom: 0.5rem;">🎙️</div>
+                <div style="font-size: 2rem; margin-bottom: 0.5rem; color: var(--muted-gold);">
+                    <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" style="margin: 0 auto; display: block;" aria-hidden="true"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path><path d="M19 10v2a7 7 0 0 1-14 0v-2"></path><line x1="12" y1="19" x2="12" y2="23"></line><line x1="8" y1="23" x2="16" y2="23"></line></svg>
+                </div>
                 <strong>Click "Start Conversation" or the Microphone button to begin.</strong>
                 <p style="margin-top: 0.35rem; font-size: 0.82rem;">
-                    Speak naturally in English or Telugu. Your speech will be transcribed and answered by the AI agent.
+                    Speak in English or Telugu. Your speech will be transcribed and answered by the AI agent in real time.
                 </p>
             </div>
         </div>
@@ -136,8 +151,8 @@
                 placeholder="Type a message as an alternative to speaking..."
                 autocomplete="off"
             />
-            <button type="submit" id="vaSendBtn" class="va-send-btn">
-                Send ✈️
+            <button type="submit" id="vaSendBtn" class="va-send-btn" style="background: var(--primary-navy);">
+                Send
             </button>
         </form>
     </div>

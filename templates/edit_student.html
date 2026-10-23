@@ -3,45 +3,47 @@
 {% block title %}Edit Student - {{ student['name'] }} ({{ student['roll_number'] }}) - Vignan Spandana{% endblock %}
 
 {% block content %}
-<div style="max-width: 800px; margin: 0 auto;">
+<div style="max-width: 820px; margin: 0 auto;">
     <div style="margin-bottom: 1.25rem;">
-        <a href="{{ url_for('student_detail', student_id=student['id']) }}" style="font-size: 0.9rem; text-decoration: none; color: var(--primary-color); font-weight: 500;">
+        <a href="{{ url_for('student_detail', student_id=student['id']) }}" style="font-size: 0.88rem; text-decoration: none; color: var(--primary-navy); font-weight: 600;">
             &larr; Back to Student Profile
         </a>
-        <h2 style="margin-top: 6px; font-size: 1.5rem; color: var(--text-main);">✏️ Edit Student Record</h2>
-        <p style="color: var(--text-muted); font-size: 0.92rem; margin-top: 2px;">
+        <h2 style="margin-top: 6px; font-size: 1.6rem; color: var(--primary-navy); font-family: var(--font-serif);">
+            Edit Student Record
+        </h2>
+        <p style="color: var(--text-muted); font-size: 0.9rem; margin-top: 2px;">
             Update academic specifications, student contact, and parent communication details for <strong>{{ student['name'] }}</strong> ({{ student['roll_number'] }}).
         </p>
     </div>
 
-    <div class="card" style="box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);">
+    <div class="card" style="border-top: 3px solid var(--primary-navy);">
         <form action="{{ url_for('edit_student', student_id=student['id']) }}" method="POST" autocomplete="off">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
             <!-- Section 1: Student Identity & Contact -->
-            <div style="margin-bottom: 1.5rem;">
-                <div style="display: flex; align-items: center; gap: 8px; border-bottom: 2px solid #e2e8f0; padding-bottom: 8px; margin-bottom: 14px;">
-                    <span style="font-size: 1.1rem;">👤</span>
-                    <h3 style="font-size: 1.05rem; margin: 0; color: var(--primary-color);">Student Information</h3>
+            <div style="margin-bottom: 1.75rem;">
+                <div style="display: flex; align-items: center; gap: 8px; border-bottom: 1px solid var(--border-color); padding-bottom: 8px; margin-bottom: 14px;">
+                    <span class="badge badge-dept" style="font-size: 0.72rem;">SECTION 1</span>
+                    <h3 style="font-size: 1.05rem; margin: 0; color: var(--primary-navy);">Student Identity & Direct Contact</h3>
                 </div>
 
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
                     <div class="form-group">
-                        <label for="roll_number" class="form-label" style="font-weight: 600;">Roll Number <span style="color: var(--danger);">*</span></label>
+                        <label for="roll_number" class="form-label">Roll Number <span style="color: var(--secondary-red);">*</span></label>
                         <input 
                             type="text" 
                             id="roll_number" 
                             name="roll_number" 
                             class="form-control" 
                             value="{{ student['roll_number'] }}" 
-                            style="text-transform: uppercase; font-family: monospace;" 
+                            style="text-transform: uppercase; font-family: var(--font-mono); font-weight: 600;" 
                             required
                         >
                         <div class="form-text">Unique institutional hall ticket / roll number.</div>
                     </div>
 
                     <div class="form-group">
-                        <label for="name" class="form-label" style="font-weight: 600;">Student Full Name <span style="color: var(--danger);">*</span></label>
+                        <label for="name" class="form-label">Student Full Name <span style="color: var(--secondary-red);">*</span></label>
                         <input 
                             type="text" 
                             id="name" 
@@ -55,7 +57,7 @@
 
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
                     <div class="form-group">
-                        <label for="student_phone" class="form-label" style="font-weight: 600;">Student Mobile Phone</label>
+                        <label for="student_phone" class="form-label">Student Mobile Phone</label>
                         <input 
                             type="tel" 
                             id="student_phone" 
@@ -63,12 +65,13 @@
                             class="form-control" 
                             value="{{ student['student_phone'] or '' }}" 
                             placeholder="e.g. 9876543210"
+                            style="font-family: var(--font-mono);"
                         >
-                        <div class="form-text">Direct mobile number of the student.</div>
+                        <div class="form-text">Direct mobile phone of the student (optional).</div>
                     </div>
 
                     <div class="form-group">
-                        <label for="student_email" class="form-label" style="font-weight: 600;">Student Email Address</label>
+                        <label for="student_email" class="form-label">Student Email Address</label>
                         <input 
                             type="email" 
                             id="student_email" 
@@ -81,89 +84,89 @@
                 </div>
             </div>
 
-            <!-- Section 2: Academic Placement -->
-            <div style="margin-bottom: 1.5rem;">
-                <div style="display: flex; align-items: center; gap: 8px; border-bottom: 2px solid #e2e8f0; padding-bottom: 8px; margin-bottom: 14px;">
-                    <span style="font-size: 1.1rem;">🎓</span>
-                    <h3 style="font-size: 1.05rem; margin: 0; color: var(--primary-color);">Academic Placement</h3>
+            <!-- Section 2: Academic Program & Class -->
+            <div style="margin-bottom: 1.75rem;">
+                <div style="display: flex; align-items: center; gap: 8px; border-bottom: 1px solid var(--border-color); padding-bottom: 8px; margin-bottom: 14px;">
+                    <span class="badge badge-dept" style="font-size: 0.72rem;">SECTION 2</span>
+                    <h3 style="font-size: 1.05rem; margin: 0; color: var(--primary-navy);">Academic Program & Enrollment</h3>
                 </div>
 
                 <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem;">
                     <div class="form-group">
-                        <label for="department" class="form-label" style="font-weight: 600;">Department / Branch <span style="color: var(--danger);">*</span></label>
-                        {% if user_role in ['Department Coordinator', 'Faculty'] and user_dept != 'All' %}
-                            <input type="text" id="department" name="department" class="form-control" value="{{ student['department'] }}" readonly style="background: #e2e8f0; cursor: not-allowed;">
-                            <div class="form-text">Enforced to {{ user_dept }}.</div>
+                        <label for="department" class="form-label">Department / Branch <span style="color: var(--secondary-red);">*</span></label>
+                        {% if session.get('department') and session.get('department') != 'All' %}
+                            <input type="text" class="form-control" value="{{ student['department'] }}" readonly style="background: #EFECE6; cursor: not-allowed; font-weight: 600;">
+                            <input type="hidden" name="department" value="{{ student['department'] }}">
                         {% else %}
-                            <select id="department" name="department" class="form-select">
-                                {% for d in departments %}
-                                    <option value="{{ d }}" {% if student['department'] == d %}selected{% endif %}>{{ d }}</option>
-                                {% endfor %}
+                            <select id="department" name="department" class="form-select" required>
+                                <option value="CSE" {% if student['department'] == 'CSE' %}selected{% endif %}>CSE</option>
+                                <option value="ECE" {% if student['department'] == 'ECE' %}selected{% endif %}>ECE</option>
+                                <option value="IT" {% if student['department'] == 'IT' %}selected{% endif %}>IT</option>
+                                <option value="MECH" {% if student['department'] == 'MECH' %}selected{% endif %}>MECH</option>
                             </select>
                         {% endif %}
                     </div>
 
                     <div class="form-group">
-                        <label for="year_semester" class="form-label" style="font-weight: 600;">Class / Year & Semester</label>
-                        <select id="year_semester" name="year_semester" class="form-select">
-                            <option value="I Year - Sem 1" {% if student['year_semester'] == 'I Year - Sem 1' %}selected{% endif %}>I Year - Sem 1</option>
-                            <option value="I Year - Sem 2" {% if student['year_semester'] == 'I Year - Sem 2' %}selected{% endif %}>I Year - Sem 2</option>
-                            <option value="II Year - Sem 1" {% if student['year_semester'] == 'II Year - Sem 1' %}selected{% endif %}>II Year - Sem 1</option>
-                            <option value="II Year - Sem 2" {% if student['year_semester'] == 'II Year - Sem 2' %}selected{% endif %}>II Year - Sem 2</option>
-                            <option value="III Year - Sem 1" {% if student['year_semester'] == 'III Year - Sem 1' %}selected{% endif %}>III Year - Sem 1</option>
-                            <option value="III Year - Sem 2" {% if student['year_semester'] == 'III Year - Sem 2' %}selected{% endif %}>III Year - Sem 2</option>
-                            <option value="IV Year - Sem 1" {% if student['year_semester'] == 'IV Year - Sem 1' %}selected{% endif %}>IV Year - Sem 1</option>
-                            <option value="IV Year - Sem 2" {% if student['year_semester'] == 'IV Year - Sem 2' %}selected{% endif %}>IV Year - Sem 2</option>
+                        <label for="year_semester" class="form-label">Year & Semester <span style="color: var(--secondary-red);">*</span></label>
+                        <select id="year_semester" name="year_semester" class="form-select" required>
+                            {% for ys in ['I Year / I Sem', 'I Year / II Sem', 'II Year / I Sem', 'II Year / II Sem', 'III Year / I Sem', 'III Year / II Sem', 'IV Year / I Sem', 'IV Year / II Sem'] %}
+                                <option value="{{ ys }}" {% if student['year_semester'] == ys %}selected{% endif %}>{{ ys }}</option>
+                            {% endfor %}
                         </select>
                     </div>
 
                     <div class="form-group">
-                        <label for="section" class="form-label" style="font-weight: 600;">Section</label>
-                        <input type="text" id="section" name="section" class="form-control" value="{{ student['section'] }}" maxlength="3" style="text-transform: uppercase;">
+                        <label for="section" class="form-label">Section <span style="color: var(--secondary-red);">*</span></label>
+                        <select id="section" name="section" class="form-select" required>
+                            {% for sec in ['A', 'B', 'C', 'D'] %}
+                                <option value="{{ sec }}" {% if student['section'] == sec %}selected{% endif %}>Section {{ sec }}</option>
+                            {% endfor %}
+                        </select>
                     </div>
                 </div>
 
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
                     <div class="form-group">
-                        <label for="attendance_percentage" class="form-label" style="font-weight: 600;">Baseline / Overall Attendance (%)</label>
+                        <label for="initial_attendance" class="form-label">Attendance Aggregate (%)</label>
                         <input 
                             type="number" 
                             step="0.1" 
                             min="0" 
                             max="100" 
-                            id="attendance_percentage" 
-                            name="attendance_percentage" 
+                            id="initial_attendance" 
+                            name="initial_attendance" 
                             class="form-control" 
-                            value="{{ student['attendance_percentage'] if student['attendance_percentage'] is not none else 85.0 }}"
+                            value="{{ student['attendance_percentage'] if student['attendance_percentage'] is not none else '' }}" 
+                            placeholder="e.g. 78.5"
                         >
-                        <div class="form-text">Recalculated dynamically as daily attendance is marked. Values &lt; 75% trigger shortage alerts.</div>
+                        <div class="form-text">Aggregated attendance score across recorded academic sessions.</div>
                     </div>
 
                     <div class="form-group">
-                        <label for="marks_info" class="form-label" style="font-weight: 600;">Academic / Internal Marks</label>
+                        <label for="marks_info" class="form-label">Mid-Term / Internal Marks</label>
                         <input 
                             type="text" 
                             id="marks_info" 
                             name="marks_info" 
                             class="form-control" 
                             value="{{ student['marks_info'] or '' }}" 
-                            placeholder="e.g. Mid-1: 82/100, CGPA: 8.4"
+                            placeholder="e.g. Mid-1: 24/30, Mid-2: 26/30"
                         >
-                        <div class="form-text">Shared context for AI parent briefings.</div>
                     </div>
                 </div>
             </div>
 
-            <!-- Section 3: Parent & Communication Profile -->
-            <div style="margin-bottom: 1.5rem;">
-                <div style="display: flex; align-items: center; gap: 8px; border-bottom: 2px solid #e2e8f0; padding-bottom: 8px; margin-bottom: 14px;">
-                    <span style="font-size: 1.1rem;">👪</span>
-                    <h3 style="font-size: 1.05rem; margin: 0; color: var(--primary-color);">Parent & AI Voice Outreach Profile</h3>
+            <!-- Section 3: Parent & Communication Details -->
+            <div style="margin-bottom: 2rem;">
+                <div style="display: flex; align-items: center; gap: 8px; border-bottom: 1px solid var(--border-color); padding-bottom: 8px; margin-bottom: 14px;">
+                    <span class="badge badge-dept" style="font-size: 0.72rem;">SECTION 3</span>
+                    <h3 style="font-size: 1.05rem; margin: 0; color: var(--primary-navy);">Parent Contact & AI Language</h3>
                 </div>
 
-                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem;">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
                     <div class="form-group">
-                        <label for="parent_name" class="form-label" style="font-weight: 600;">Parent / Guardian Name <span style="color: var(--danger);">*</span></label>
+                        <label for="parent_name" class="form-label">Parent / Guardian Name <span style="color: var(--secondary-red);">*</span></label>
                         <input 
                             type="text" 
                             id="parent_name" 
@@ -175,71 +178,52 @@
                     </div>
 
                     <div class="form-group">
-                        <label for="parent_relationship" class="form-label" style="font-weight: 600;">Relationship <span style="color: var(--danger);">*</span></label>
+                        <label for="parent_relationship" class="form-label">Relationship to Student</label>
                         <select id="parent_relationship" name="parent_relationship" class="form-select">
-                            <option value="Father" {% if student['parent_relationship'] == 'Father' %}selected{% endif %}>Father</option>
-                            <option value="Mother" {% if student['parent_relationship'] == 'Mother' %}selected{% endif %}>Mother</option>
-                            <option value="Guardian" {% if student['parent_relationship'] == 'Guardian' %}selected{% endif %}>Guardian</option>
-                            <option value="Parent" {% if student['parent_relationship'] == 'Parent' or not student['parent_relationship'] %}selected{% endif %}>Parent</option>
-                            <option value="Relative" {% if student['parent_relationship'] == 'Relative' %}selected{% endif %}>Relative</option>
-                            <option value="Other" {% if student['parent_relationship'] == 'Other' %}selected{% endif %}>Other</option>
+                            {% for rel in ['Father', 'Mother', 'Guardian', 'Other'] %}
+                                <option value="{{ rel }}" {% if student['parent_relationship'] == rel %}selected{% endif %}>{{ rel }}</option>
+                            {% endfor %}
                         </select>
-                        <div class="form-text">Relationship to student.</div>
                     </div>
+                </div>
 
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
                     <div class="form-group">
-                        <label for="parent_phone" class="form-label" style="font-weight: 600;">Parent Mobile Phone <span style="color: var(--danger);">*</span></label>
+                        <label for="parent_phone" class="form-label">Parent Mobile Phone <span style="color: var(--secondary-red);">*</span></label>
                         <input 
                             type="tel" 
                             id="parent_phone" 
                             name="parent_phone" 
                             class="form-control" 
                             value="{{ student['parent_phone'] }}" 
+                            style="font-family: var(--font-mono); font-weight: 600;"
                             required
                         >
-                        <div class="form-text">Destination phone number for absence calls.</div>
+                        <div class="form-text">Primary recipient number for automated attendance alerts.</div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="preferred_language" class="form-label">AI Call Voice Language <span style="color: var(--secondary-red);">*</span></label>
+                        <select id="preferred_language" name="preferred_language" class="form-select" required>
+                            <option value="Telugu" {% if student['preferred_language'] == 'Telugu' %}selected{% endif %}>Telugu (తెలుగు)</option>
+                            <option value="English" {% if student['preferred_language'] == 'English' %}selected{% endif %}>English</option>
+                            <option value="Hindi" {% if student['preferred_language'] == 'Hindi' %}selected{% endif %}>Hindi (हिंदी)</option>
+                        </select>
+                        <div class="form-text">The parent's preferred spoken language for automated phone calls.</div>
                     </div>
                 </div>
-
-                <div class="form-group" style="max-width: 50%;">
-                    <label for="preferred_language" class="form-label" style="font-weight: 600;">Voice AI Call Language</label>
-                    <select id="preferred_language" name="preferred_language" class="form-select">
-                        <option value="Telugu" {% if student['preferred_language'] == 'Telugu' %}selected{% endif %}>Telugu (తెలుగు)</option>
-                        <option value="English" {% if student['preferred_language'] == 'English' %}selected{% endif %}>English</option>
-                        <option value="Hindi" {% if student['preferred_language'] == 'Hindi' %}selected{% endif %}>Hindi (हिन्दी)</option>
-                    </select>
-                    <div class="form-text">Primary regional language spoken to parent during AI calls.</div>
-                </div>
             </div>
 
-            <!-- Form Buttons -->
-            <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--border-color); padding-top: 1.25rem; margin-top: 1.5rem;">
-                <div style="display: flex; gap: 0.75rem; align-items: center;">
-                    <button type="submit" class="btn btn-primary" id="btnUpdateStudent" style="font-weight: 600; padding: 8px 24px;">
-                        💾 Save Changes
-                    </button>
-                    <a href="{{ url_for('student_detail', student_id=student['id']) }}" class="btn btn-secondary">
-                        Cancel
-                    </a>
-                </div>
+            <!-- Form Action Footer -->
+            <div style="display: flex; justify-content: flex-end; gap: 0.75rem; border-top: 1px solid var(--border-color); padding-top: 1.25rem;">
+                <a href="{{ url_for('student_detail', student_id=student['id']) }}" class="btn btn-secondary">
+                    Cancel
+                </a>
+                <button type="submit" class="btn btn-primary" id="btnUpdateStudent" style="padding: 0.6rem 1.75rem;">
+                    Update Student Record
+                </button>
             </div>
         </form>
-
-        <!-- Separate Delete Form for Safety -->
-        <div style="margin-top: 2rem; padding-top: 1.25rem; border-top: 2px dashed #fecaca; display: flex; justify-content: space-between; align-items: center;">
-            <div>
-                <strong style="color: var(--danger); font-size: 0.95rem;">🗑️ Delete Student Record</strong>
-                <p style="font-size: 0.82rem; color: var(--text-muted); margin: 2px 0 0 0;">
-                    Permanently delete this student from the institutional roster. This action cannot be reversed.
-                </p>
-            </div>
-            <form action="{{ url_for('delete_student', student_id=student['id']) }}" method="POST" style="margin: 0;" onsubmit="return confirm('Are you sure you want to permanently delete student {{ student['name']|escape }} ({{ student['roll_number']|escape }})? All attendance history for this student will also be removed.');">
-                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                <button type="submit" class="btn btn-secondary" style="color: var(--danger); border-color: #fca5a5; font-weight: 600;">
-                    Delete Student
-                </button>
-            </form>
-        </div>
     </div>
 </div>
 {% endblock %}

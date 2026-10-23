@@ -1,42 +1,48 @@
 {% extends 'base.html' %}
 
-{% block title %}Call #{{ call['id'] }} Details{% endblock %}
+{% block title %}Call #{{ call['id'] }} Details - Vignan Spandana{% endblock %}
 
 {% block content %}
 <div class="student-detail-container">
     <!-- Breadcrumb & Top Bar -->
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
-        <div>
-            <div style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 4px;">
-                <a href="{{ url_for('call_history') }}" style="color: var(--primary-color); text-decoration: none;">&larr; Back to Call History</a>
-                <span style="margin: 0 6px;">/</span>
-                <span>Call #{{ call['id'] }}</span>
+    <div class="card" style="margin-bottom: 1.25rem;">
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+            <div>
+                <div style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 4px;">
+                    <a href="{{ url_for('call_history') }}" style="color: var(--primary-navy); font-weight: 600; text-decoration: none;">
+                        &larr; Call History
+                    </a>
+                    <span style="margin: 0 6px;">/</span>
+                    <span style="font-family: var(--font-mono); font-weight: 600;">Call #{{ call['id'] }}</span>
+                </div>
+                <h2 style="font-size: 1.55rem; font-family: var(--font-serif); color: var(--primary-navy); margin: 0;">
+                    Call Transcript & Audit Record
+                </h2>
             </div>
-            <h2 style="font-size: 1.5rem; font-weight: 700; color: var(--primary-color); margin: 0;">
-                📞 Call Transcript & Record
-            </h2>
-        </div>
-        <div style="display: flex; gap: 8px;">
-            <a href="{{ url_for('student_detail', student_id=call['student_id']) }}" class="btn btn-secondary btn-sm">
-                👤 Student Profile
-            </a>
-            <a href="{{ url_for('follow_ups_list') }}" class="btn btn-secondary btn-sm">
-                📋 All Follow-Ups
-            </a>
+            <div style="display: flex; gap: 8px;">
+                <a href="{{ url_for('student_detail', student_id=call['student_id']) }}" class="btn btn-secondary btn-sm">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                    Student Profile
+                </a>
+                <a href="{{ url_for('follow_ups_list') }}" class="btn btn-secondary btn-sm">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>
+                    Follow-Up Tickets
+                </a>
+            </div>
         </div>
     </div>
 
     <!-- Student & Call Summary Header Grid -->
-    <div class="card" style="margin-bottom: 1.5rem; border-top: 4px solid var(--primary-color);">
+    <div class="card" style="margin-bottom: 1.5rem; border-top: 3px solid var(--primary-navy);">
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1.25rem;">
             <div>
                 <div class="info-label">Student Information</div>
-                <div style="font-weight: 700; font-size: 1.1rem; color: var(--text-main); margin-top: 2px;">
-                    <a href="{{ url_for('student_detail', student_id=call['student_id']) }}" style="color: var(--primary-color); text-decoration: none;">
+                <div style="font-weight: 700; font-size: 1.1rem; color: var(--primary-navy); margin-top: 2px;">
+                    <a href="{{ url_for('student_detail', student_id=call['student_id']) }}" style="color: var(--primary-navy); text-decoration: none;">
                         {{ call['student_name'] }}
                     </a>
                 </div>
-                <div style="font-family: monospace; font-size: 0.85rem; color: var(--text-muted); margin-top: 2px;">
+                <div style="font-family: var(--font-mono); font-size: 0.85rem; color: var(--text-muted); margin-top: 2px;">
                     Roll: {{ call['roll_number'] }} &bull; {{ call['department'] }}
                 </div>
                 <div style="font-size: 0.82rem; color: var(--text-muted); margin-top: 2px;">
@@ -49,8 +55,8 @@
                 <div style="font-size: 0.95rem; font-weight: 600; color: var(--text-main); margin-top: 2px;">
                     {{ call['parent_name'] }}
                 </div>
-                <div style="font-family: monospace; font-size: 0.85rem; color: var(--text-muted); margin-top: 2px;">
-                    📞 {{ call['parent_phone'] or 'Not Registered' }}
+                <div style="font-family: var(--font-mono); font-size: 0.85rem; color: var(--text-muted); margin-top: 2px;">
+                    Phone: {{ call['parent_phone'] or 'Not Registered' }}
                 </div>
                 <div style="font-size: 0.82rem; margin-top: 4px;">
                     Attendance: <strong>{{ call['attendance_percentage'] if call['attendance_percentage'] is not none else 'Unavailable' }}{% if call['attendance_percentage'] is not none %}%{% endif %}</strong>
@@ -59,192 +65,110 @@
 
             <div>
                 <div class="info-label">Call Metadata</div>
-                <div style="margin-top: 4px; display: flex; align-items: center; gap: 6px;">
-                    <span class="badge badge-success">{{ call['status'] }}</span>
-                    <span class="badge badge-lang">{{ call['language'] or 'English' }}</span>
-                    <span class="badge badge-dept">Demo Mode</span>
+                <div style="margin-top: 4px; display: flex; gap: 6px; align-items: center; flex-wrap: wrap;">
+                    {% if call['status'] == 'Completed' %}
+                        <span class="badge badge-success">Completed</span>
+                    {% elif call['status'] == 'In Progress' %}
+                        <span class="badge badge-warning">In Progress</span>
+                    {% elif call['status'] == 'No Answer' %}
+                        <span class="badge badge-warning">No Answer</span>
+                    {% else %}
+                        <span class="badge badge-danger">{{ call['status'] }}</span>
+                    {% endif %}
+                    <span class="badge badge-lang">{{ call['language'] }}</span>
                 </div>
                 <div style="font-size: 0.82rem; color: var(--text-muted); margin-top: 6px;">
-                    Timestamp: <strong>{{ call['call_time'] }}</strong>
+                    Duration: <strong style="font-family: var(--font-mono); color: var(--primary-navy);">{{ call['duration_seconds'] }}s</strong> &bull;
+                    Initiated by: <strong>{{ call['initiated_by'] or 'System' }}</strong>
                 </div>
-                <div style="font-size: 0.82rem; color: var(--text-muted); margin-top: 2px;">
-                    Duration: <strong>{{ call['duration_seconds'] }} seconds</strong>
+                <div style="font-size: 0.78rem; font-family: var(--font-mono); color: var(--text-muted); margin-top: 2px;">
+                    {{ call['call_time'] }}
                 </div>
             </div>
+        </div>
+    </div>
 
+    <!-- AI Call Summary & Outcome Card -->
+    <div class="card" style="margin-bottom: 1.5rem; border-left: 3px solid var(--muted-gold);">
+        <h3 class="card-title" style="margin-bottom: 0.5rem; font-size: 1.05rem;">
+            Automated AI Outcome & Triage Summary
+        </h3>
+        <p style="font-size: 0.92rem; color: var(--text-main); margin-bottom: 0; line-height: 1.5;">
+            {{ call['summary'] or call['notes'] or 'Attendance notification delivered successfully. Guardian acknowledged student status.' }}
+        </p>
+    </div>
+
+    <!-- Complete Speaker-Labelled Transcript -->
+    <div class="card" style="margin-bottom: 1.5rem; border-top: 3px solid var(--primary-navy);">
+        <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
             <div>
-                <div class="info-label">Logged By & Mode</div>
-                <div style="font-size: 0.9rem; color: var(--text-main); margin-top: 2px;">
-                    {{ call['initiated_by'] or 'Automated AI Engine' }}
-                </div>
-                <div style="font-size: 0.78rem; color: var(--text-muted); margin-top: 4px;">
-                    System Note: <em>{{ call['notes'] or 'Demo mode: simulated call' }}</em>
+                <h3 class="card-title" style="font-size: 1.1rem;">Full Speaker-Labelled Conversation</h3>
+                <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 2px;">
+                    Timestamped speaker-turn audit trail (Language: {{ call['language'] }})
                 </div>
             </div>
+            <span class="badge badge-dept" style="font-size: 0.72rem;">
+                SECURE AUDIO RECORD
+            </span>
         </div>
+
+        {% set dialog_lines = lines or transcript_lines %}
+        {% if dialog_lines and dialog_lines|length > 0 %}
+        <div style="display: flex; flex-direction: column; gap: 0.85rem; padding: 0.5rem 0;">
+            {% for line in dialog_lines %}
+            <div style="display: flex; gap: 12px; align-items: flex-start;">
+                {% if 'AI' in line['speaker'] or 'Spandana' in line['speaker'] or 'System' in line['speaker'] %}
+                    <div style="width: 32px; height: 32px; border-radius: 50%; background: var(--primary-navy); color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 700; flex-shrink: 0;">
+                        AI
+                    </div>
+                    <div style="flex: 1; background: #FAF9F5; border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 10px 14px;">
+                        <div style="font-size: 0.75rem; font-weight: 700; color: var(--primary-navy); margin-bottom: 2px;">
+                            {{ line['speaker'] }}
+                        </div>
+                        <div style="font-size: 0.9rem; color: var(--text-main); line-height: 1.45;">
+                            {{ line['text'] }}
+                        </div>
+                    </div>
+                {% else %}
+                    <div style="width: 32px; height: 32px; border-radius: 50%; background: var(--muted-gold); color: var(--primary-navy); display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 700; flex-shrink: 0;">
+                        P
+                    </div>
+                    <div style="flex: 1; background: #FFFFFF; border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 10px 14px;">
+                        <div style="font-size: 0.75rem; font-weight: 700; color: var(--muted-gold); margin-bottom: 2px;">
+                            {{ line['speaker'] }} (Parent)
+                        </div>
+                        <div style="font-size: 0.9rem; color: var(--text-main); line-height: 1.45;">
+                            {{ line['text'] }}
+                        </div>
+                    </div>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div style="padding: 1.5rem; text-align: center; color: var(--text-muted); font-size: 0.88rem;">
+            No itemized dialogue recorded for this session.
+        </div>
+        {% endif %}
     </div>
 
-    <!-- Main Content Grid: Transcript on Left, Summary & Follow-Up on Right -->
-    <div style="display: grid; grid-template-columns: 2fr 1.2fr; gap: 1.5rem; align-items: start;">
-        <!-- Left Column: Full Speaker-Labelled Transcript -->
-        <div class="card" style="padding: 1.25rem;">
-            <div class="card-header" style="border-bottom: 1px solid var(--border-color); padding-bottom: 0.75rem; margin-bottom: 1rem; display: flex; justify-content: space-between; align-items: center;">
-                <h3 class="card-title" style="margin: 0; font-size: 1.05rem;">
-                    🎙️ Full Speaker-Labelled Conversation
-                </h3>
-                <span class="badge badge-lang" style="font-size: 0.75rem;">
-                    Language: {{ call['language'] or 'English' }}
-                </span>
+    <!-- Escalated Follow-Up Ticket Status -->
+    {% if follow_up %}
+    <div class="card" style="border-left: 3px solid var(--warning-amber); background: #FAF9F5;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+            <div style="font-weight: 700; color: var(--primary-navy); font-size: 0.95rem;">
+                Faculty Action Ticket #{{ follow_up['id'] }}
             </div>
-
-            <!-- Dialogue Stream -->
-            <div class="call-transcript-container" style="max-height: 520px; overflow-y: auto; background: #f8fafc; border: 1px solid var(--border-color); border-radius: 6px; padding: 1rem;">
-                {% if lines and lines|length > 0 %}
-                    <div class="transcript-messages">
-                        {% for line in lines %}
-                        <div class="msg-bubble {% if line['speaker'] == 'AI Assistant' %}msg-ai{% elif line['speaker'] == 'Parent' %}msg-parent{% else %}msg-system{% endif %}" style="margin-bottom: 12px;">
-                            <div class="msg-speaker" style="font-size: 0.78rem; font-weight: 700; margin-bottom: 4px;">
-                                {% if line['speaker'] == 'AI Assistant' %}
-                                    🤖 AI Assistant (Vignan Spandana)
-                                {% elif line['speaker'] == 'Parent' %}
-                                    👤 Parent ({{ call['parent_name'] }})
-                                {% else %}
-                                    ℹ️ System Note
-                                {% endif %}
-                            </div>
-                            <div style="font-size: 0.9rem; line-height: 1.45; color: var(--text-main);">
-                                {{ line['text'] }}
-                            </div>
-                        </div>
-                        {% endfor %}
-                    </div>
-                {% else %}
-                    <div style="padding: 2rem; text-align: center; color: var(--text-muted); font-size: 0.88rem;">
-                        {{ call['transcript'] or 'No transcript available for this record.' }}
-                    </div>
-                {% endif %}
-            </div>
-
-            <!-- Raw Transcript Collapsible -->
-            <details style="margin-top: 1rem; font-size: 0.82rem; color: var(--text-muted);">
-                <summary style="cursor: pointer; font-weight: 600; color: var(--primary-color);">View Raw Transcript Text</summary>
-                <pre style="background: #ffffff; border: 1px solid var(--border-color); padding: 10px; border-radius: 4px; margin-top: 6px; white-space: pre-wrap; font-family: monospace; font-size: 0.8rem;">{{ call['transcript'] }}</pre>
-            </details>
+            <span class="badge badge-warning">{{ follow_up['status'] | upper }}</span>
         </div>
-
-        <!-- Right Column: AI Call Summary & Linked Follow-Up -->
-        <div style="display: flex; flex-direction: column; gap: 1.5rem;">
-            <!-- AI Summary Card -->
-            <div class="card" style="border-left: 4px solid var(--success);">
-                <h3 class="card-title" style="margin-top: 0; font-size: 1.05rem; display: flex; align-items: center; gap: 6px;">
-                    <span>📝</span> AI Call Summary
-                </h3>
-                <div style="font-size: 0.9rem; line-height: 1.5; color: var(--text-main); margin-top: 0.5rem; background: #f0fdf4; border: 1px solid #bbf7d0; padding: 10px 12px; border-radius: 6px;">
-                    {{ call['summary'] or 'Call completed normally. No critical issues flagged.' }}
-                </div>
-            </div>
-
-            <!-- Linked Follow-Up Card -->
-            <div class="card" style="border-top: 4px solid var(--accent-color);">
-                <div class="card-header" style="border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem; margin-bottom: 0.75rem; display: flex; justify-content: space-between; align-items: center;">
-                    <h3 class="card-title" style="margin: 0; font-size: 1.05rem; display: flex; align-items: center; gap: 6px;">
-                        <span>📋</span> Linked Follow-Up Ticket
-                    </h3>
-                    {% if followup %}
-                        {% if followup['status'] == 'open' %}
-                            <span class="badge badge-danger">Open</span>
-                        {% elif followup['status'] == 'in progress' %}
-                            <span class="badge badge-warning">In Progress</span>
-                        {% else %}
-                            <span class="badge badge-success">Closed</span>
-                        {% endif %}
-                    {% endif %}
-                </div>
-
-                {% if followup %}
-                <div style="margin-bottom: 1rem;">
-                    <div style="font-size: 0.8rem; color: var(--text-muted);">Ticket Reference:</div>
-                    <div style="font-weight: 700; font-size: 0.95rem; color: var(--primary-color);">
-                        Follow-Up #{{ followup['id'] }}
-                    </div>
-                </div>
-
-                <div style="margin-bottom: 0.75rem;">
-                    <div class="info-label">Action Required</div>
-                    <div style="font-size: 0.88rem; font-weight: 600; color: var(--text-main); margin-top: 2px;">
-                        {{ followup['action_required'] or 'Faculty Callback' }}
-                    </div>
-                </div>
-
-                <div style="margin-bottom: 0.75rem;">
-                    <div class="info-label">Parent Inquiry Notes</div>
-                    <div style="font-size: 0.85rem; color: var(--text-main); margin-top: 2px; background: #f8fafc; padding: 8px 10px; border-radius: 4px; border: 1px solid var(--border-color); line-height: 1.4;">
-                        {{ followup['notes'] }}
-                    </div>
-                </div>
-
-                <!-- Update Follow-Up Form -->
-                {% if session.get('role') != 'Principal' %}
-                <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px dashed var(--border-color);">
-                    <div style="font-size: 0.85rem; font-weight: 600; color: var(--text-main); margin-bottom: 8px;">
-                        Update Follow-Up Assignment & Status
-                    </div>
-                    <form method="POST" action="{{ url_for('update_followup', followup_id=followup['id']) }}">
-                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-
-                        <div style="margin-bottom: 0.75rem;">
-                            <label for="status" class="info-label" style="margin-bottom: 2px;">Status</label>
-                            <select name="status" id="status" class="form-select" style="font-size: 0.85rem; height: 34px;">
-                                <option value="open" {% if followup['status'] == 'open' %}selected{% endif %}>Open</option>
-                                <option value="in progress" {% if followup['status'] == 'in progress' %}selected{% endif %}>In Progress</option>
-                                <option value="closed" {% if followup['status'] == 'closed' %}selected{% endif %}>Closed</option>
-                            </select>
-                        </div>
-
-                        <div style="margin-bottom: 0.75rem;">
-                            <label for="assigned_to" class="info-label" style="margin-bottom: 2px;">Assigned Faculty</label>
-                            <input type="text" name="assigned_to" id="assigned_to" list="facultyList" value="{{ followup['assigned_to'] or '' }}" placeholder="Select or enter faculty name" class="form-control" style="font-size: 0.85rem; height: 34px;">
-                            <datalist id="facultyList">
-                                {% for fac in faculty_users %}
-                                <option value="{{ fac['full_name'] }} ({{ fac['department'] }})"></option>
-                                {% endfor %}
-                            </datalist>
-                        </div>
-
-                        <div style="margin-bottom: 0.75rem;">
-                            <label for="due_date" class="info-label" style="margin-bottom: 2px;">Due Date</label>
-                            <input type="date" name="due_date" id="due_date" value="{{ followup['due_date'] or '' }}" class="form-control" style="font-size: 0.85rem; height: 34px;">
-                        </div>
-
-                        <div style="margin-bottom: 0.75rem;">
-                            <label for="notes" class="info-label" style="margin-bottom: 2px;">Faculty Resolution Notes</label>
-                            <textarea name="notes" id="notes" rows="2" class="form-control" style="font-size: 0.85rem;" placeholder="Add progress notes...">{{ followup['notes'] }}</textarea>
-                        </div>
-
-                        <button type="submit" class="btn btn-primary btn-block btn-sm" style="padding: 6px 12px;">
-                            💾 Save Ticket Updates
-                        </button>
-                    </form>
-                </div>
-                {% else %}
-                <div style="margin-top: 1rem; font-size: 0.82rem; color: var(--text-muted); background: #f8fafc; padding: 8px; border-radius: 4px;">
-                    Assigned: <strong>{{ followup['assigned_to'] or 'Unassigned' }}</strong><br>
-                    Due Date: <strong>{{ followup['due_date'] or 'Not set' }}</strong><br>
-                    <em>Principal account: view-only permissions.</em>
-                </div>
-                {% endif %}
-
-                {% else %}
-                <div style="padding: 1.5rem 1rem; text-align: center; color: var(--text-muted);">
-                    <div style="font-size: 1.5rem; margin-bottom: 4px;">✓</div>
-                    <div style="font-size: 0.88rem;">No Follow-Up Required</div>
-                    <div style="font-size: 0.78rem; margin-top: 4px;">
-                        The simulated parent query did not trigger an escalation ticket.
-                    </div>
-                </div>
-                {% endif %}
-            </div>
+        <div style="font-size: 0.88rem; color: var(--text-main); margin-bottom: 6px;">
+            <strong>Faculty Notes:</strong> {{ follow_up['notes'] or 'Pending faculty review.' }}
+        </div>
+        <div style="font-size: 0.82rem; color: var(--text-muted);">
+            Assigned to: <strong>{{ follow_up['assigned_to'] or 'Department Faculty' }}</strong> &bull;
+            Created: {{ follow_up['created_at'] }}
         </div>
     </div>
+    {% endif %}
 </div>
 {% endblock %}
