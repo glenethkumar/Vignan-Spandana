@@ -1,5 +1,7 @@
 # 🏛️ Vignan Spandana — Institutional AI Parent Communication System
 
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/glenethkumar/Vignan-Spandana)
+
 An automated, role-scoped college parent communication platform designed for institutional governance, academic monitoring, and automated parent communication.
 
 > ⚠️ **Simulated Calls Notice**: All outbound phone calling features in this prototype are **strictly simulated** for demonstration and verification purposes. No real phone calls are dispatched, and no external telephony or AI API credits are consumed. See [`docs/REAL_CALLING_PLAN.md`](docs/REAL_CALLING_PLAN.md) for the architecture plan to connect real providers (Plivo, Sarvam, Pipecat).
