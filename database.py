@@ -196,12 +196,58 @@ def init_db(seed_data=True, db_path=None):
     if "updated_at" not in follow_cols:
         cursor.execute("ALTER TABLE follow_ups ADD COLUMN updated_at TIMESTAMP")
 
+    # 6. Daily Attendance Records table
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS attendance_records (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        student_id INTEGER NOT NULL REFERENCES students(id) ON DELETE CASCADE,
+        attendance_date TEXT NOT NULL,
+        status TEXT NOT NULL CHECK(status IN ('Present', 'Absent')),
+        marked_by TEXT NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE(student_id, attendance_date)
+    );
+    """)
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_attendance_date ON attendance_records(attendance_date);")
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_attendance_student ON attendance_records(student_id);")
+
     conn.commit()
 
     if seed_data:
         _seed_initial_data(cursor, conn)
 
     conn.close()
+
+
+def recalculate_student_attendance(conn, student_id: int):
+    """
+    Recalculates a student's attendance percentage from available attendance_records.
+    If no daily attendance records exist for the student, leaves the existing baseline untouched.
+    If records exist, updates attendance_percentage to round((present / total) * 100.0, 1).
+    Returns (calculated_pct, total_sessions, present_sessions).
+    """
+    row = conn.execute(
+        """
+        SELECT 
+            COUNT(*) as total_days,
+            SUM(CASE WHEN status = 'Present' THEN 1 ELSE 0 END) as present_days
+        FROM attendance_records
+        WHERE student_id = ?
+        """,
+        (student_id,)
+    ).fetchone()
+
+    if row and row["total_days"] > 0:
+        total = row["total_days"]
+        present = row["present_days"] or 0
+        new_pct = round((present / total) * 100.0, 1)
+        conn.execute(
+            "UPDATE students SET attendance_percentage = ? WHERE id = ?",
+            (new_pct, student_id)
+        )
+        return new_pct, total, present
+    return None, 0, 0
 
 
 def _seed_initial_data(cursor, conn):

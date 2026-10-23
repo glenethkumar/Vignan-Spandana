@@ -222,15 +222,32 @@ def reset_and_seed_database(target_db_path=DB_PATH):
     call_2_id = cursor.lastrowid
     cursor.execute("UPDATE follow_ups SET call_record_id = ? WHERE id = ?", (call_2_id, fu_2_id))
 
+    # 4. Seed Sample Daily Attendance Records (Recent days)
+    cursor.execute("SELECT id, roll_number FROM students")
+    all_students = cursor.fetchall()
+    sample_dates = ["2026-10-20", "2026-10-21", "2026-10-22"]
+    for s_row in all_students:
+        s_id = s_row[0]
+        roll = s_row[1]
+        # Keep students with intentionally missing attendance unrecorded
+        if roll not in ("211FA04062", "211FA05075"):
+            for dt in sample_dates:
+                # Student 2 (B. Divya Sri) marked Absent on 2026-10-22 to showcase absent student escalation
+                status = "Absent" if (s_id == divya_id and dt == "2026-10-22") else "Present"
+                cursor.execute("""
+                    INSERT INTO attendance_records (student_id, attendance_date, status, marked_by)
+                    VALUES (?, ?, ?, 'Dr. A. Srinivas (CSE Faculty)')
+                """, (s_id, dt, status))
+
     # Audit log
     cursor.execute("""
         INSERT INTO audit_logs (username, action, resource, details, ip_address)
-        VALUES ('system_seed', 'database_reset', 'system', 'Reset demo state with 10 students, 2 calls, and 2 follow-ups', '127.0.0.1')
+        VALUES ('system_seed', 'database_reset', 'system', 'Reset demo state with 10 students, 2 calls, 2 follow-ups, and daily attendance logs', '127.0.0.1')
     """)
 
     conn.commit()
     conn.close()
-    print("[+] Successfully seeded demo call records and follow-up tickets.")
+    print("[+] Successfully seeded demo call records, follow-up tickets, and daily attendance.")
 
 
 def generate_sample_spreadsheets():

@@ -130,6 +130,11 @@ def can_modify_students(user_role: str) -> bool:
     return user_role in ["Admin", "Department Coordinator"]
 
 
+def can_mark_attendance(user_role: str) -> bool:
+    """Admin, Department Coordinator, and Faculty can mark/edit attendance. Principal is read-only."""
+    return user_role in ["Admin", "Department Coordinator", "Faculty"]
+
+
 def can_manage_users(user_role: str) -> bool:
     """Only Admin can create, deactivate, and manage users and audit logs."""
     return user_role == "Admin"

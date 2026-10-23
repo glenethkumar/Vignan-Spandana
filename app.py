@@ -22,12 +22,13 @@ try:
 except ImportError:
     pass
 
-from database import init_db, get_db_connection, close_db, DB_PATH
+from database import init_db, get_db_connection, close_db, DB_PATH, recalculate_student_attendance
 from security import (
     hash_password, verify_password,
     generate_csrf_token, validate_csrf_token,
     is_rate_limited, record_failed_login, reset_failed_logins,
     can_access_student, can_modify_students, can_manage_users,
+    can_mark_attendance,
     record_audit
 )
 from adapters import MockTelephonyAdapter, MockAIAdapter, VoiceAssistantEngine
@@ -312,11 +313,17 @@ def student_detail(student_id):
         (student_id,)
     ).fetchall()
 
+    attendance_records = conn.execute(
+        "SELECT * FROM attendance_records WHERE student_id = ? ORDER BY attendance_date DESC LIMIT 30",
+        (student_id,)
+    ).fetchall()
+
     return render_template(
         "student_detail.html",
         student=student,
         call_records=call_records,
-        follow_ups=follow_ups
+        follow_ups=follow_ups,
+        attendance_records=attendance_records
     )
 
 
@@ -489,6 +496,209 @@ def simulate_call_demo(student_id):
         "transcript": script_data["transcript"],
         "lines": script_data["lines"]
     })
+
+
+# --------------------------------------------------------------------------
+# Routes: Daily Attendance Marking
+# --------------------------------------------------------------------------
+@app.route("/attendance/mark", methods=["GET", "POST"])
+@login_required(allowed_roles=["Admin", "Principal", "Department Coordinator", "Faculty"])
+def attendance_mark():
+    """
+    Daily attendance marking portal for faculty and coordinators.
+    Allows filtering by department, section, class/year, and date.
+    Supports viewing, recording, and correcting daily attendance records.
+    Automatically recalculates dynamic attendance percentages and surfaces absent students for parent calling.
+    """
+    user_role = session.get("role")
+    user_dept = session.get("department", "All")
+    conn = get_db_connection()
+
+    # Department scoping
+    req_dept = request.values.get("dept") or request.values.get("department")
+    if user_dept and user_dept != "All":
+        # Scoped faculty/coordinator can only access their assigned department
+        selected_dept = user_dept
+    else:
+        # Campus-wide role (Admin/Principal)
+        selected_dept = req_dept or "CSE"
+
+    if user_dept and user_dept != "All" and req_dept and req_dept != user_dept:
+        abort(403, description=f"Access Denied: You cannot mark attendance for department {req_dept}.")
+
+    # Date handling (defaults to today's date)
+    selected_date = (request.values.get("date") or request.values.get("attendance_date") or "").strip()
+    if not selected_date:
+        selected_date = datetime.now().strftime("%Y-%m-%d")
+    else:
+        try:
+            datetime.strptime(selected_date, "%Y-%m-%d")
+        except ValueError:
+            flash("Invalid date format. Expected YYYY-MM-DD.", "danger")
+            selected_date = datetime.now().strftime("%Y-%m-%d")
+
+    # Section and Year/Semester filters
+    selected_section = request.values.get("section") or "All"
+    selected_year = request.values.get("year") or request.values.get("year_semester") or "All"
+
+    if request.method == "POST":
+        # Principal has read-only oversight
+        if user_role == "Principal":
+            abort(403, description="Principal role has read-only oversight and cannot modify attendance.")
+
+        # Query all students in this scope to validate submitted IDs
+        query = "SELECT * FROM students WHERE department = ?"
+        params = [selected_dept]
+        if selected_section != "All":
+            query += " AND section = ?"
+            params.append(selected_section)
+        if selected_year != "All":
+            query += " AND year_semester = ?"
+            params.append(selected_year)
+
+        students_in_scope = conn.execute(query, params).fetchall()
+        student_id_map = {s["id"]: s for s in students_in_scope}
+
+        saved_count = 0
+        present_count = 0
+        absent_count = 0
+
+        for s_id, s in student_id_map.items():
+            form_status = request.form.get(f"status_{s_id}")
+            if form_status in ["Present", "Absent"]:
+                # UPSERT record
+                conn.execute(
+                    """
+                    INSERT INTO attendance_records (student_id, attendance_date, status, marked_by, updated_at)
+                    VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)
+                    ON CONFLICT(student_id, attendance_date) DO UPDATE SET
+                        status = excluded.status,
+                        marked_by = excluded.marked_by,
+                        updated_at = CURRENT_TIMESTAMP
+                    """,
+                    (s_id, selected_date, form_status, session.get("username", "Unknown"))
+                )
+                recalculate_student_attendance(conn, s_id)
+                saved_count += 1
+                if form_status == "Present":
+                    present_count += 1
+                else:
+                    absent_count += 1
+
+        conn.commit()
+
+        # Audit log
+        record_audit(
+            conn,
+            session.get("user_id"),
+            session.get("username", "Unknown"),
+            "attendance_marked",
+            resource=f"Dept: {selected_dept}, Date: {selected_date}",
+            details=f"Saved {saved_count} records (Present: {present_count}, Absent: {absent_count})",
+            ip_address=request.remote_addr
+        )
+
+        flash(
+            f"Successfully saved attendance for {saved_count} students on {selected_date} "
+            f"({present_count} Present, {absent_count} Absent).",
+            "success"
+        )
+
+        return redirect(url_for(
+            "attendance_mark",
+            dept=selected_dept,
+            section=selected_section,
+            year=selected_year,
+            date=selected_date
+        ))
+
+    # GET Method: Retrieve list of students and existing status on selected_date
+    if user_dept and user_dept != "All":
+        departments = [user_dept]
+    else:
+        dept_rows = conn.execute("SELECT DISTINCT department FROM students ORDER BY department ASC").fetchall()
+        departments = [d["department"] for d in dept_rows] or ["CSE", "ECE"]
+
+    section_rows = conn.execute(
+        "SELECT DISTINCT section FROM students WHERE department = ? ORDER BY section ASC",
+        (selected_dept,)
+    ).fetchall()
+    sections = [s["section"] for s in section_rows]
+
+    year_rows = conn.execute(
+        "SELECT DISTINCT year_semester FROM students WHERE department = ? ORDER BY year_semester ASC",
+        (selected_dept,)
+    ).fetchall()
+    years = [y["year_semester"] for y in year_rows]
+
+    # Fetch students matching criteria
+    student_query = "SELECT * FROM students WHERE department = ?"
+    student_params = [selected_dept]
+    if selected_section != "All":
+        student_query += " AND section = ?"
+        student_params.append(selected_section)
+    if selected_year != "All":
+        student_query += " AND year_semester = ?"
+        student_params.append(selected_year)
+    student_query += " ORDER BY roll_number ASC"
+
+    students = conn.execute(student_query, student_params).fetchall()
+
+    # Fetch existing attendance records for these students on selected_date
+    student_ids = [s["id"] for s in students]
+    records_by_student = {}
+    if student_ids:
+        placeholders = ",".join("?" for _ in student_ids)
+        rec_query = f"""
+            SELECT student_id, status, marked_by, updated_at
+            FROM attendance_records
+            WHERE attendance_date = ? AND student_id IN ({placeholders})
+        """
+        records = conn.execute(rec_query, [selected_date] + student_ids).fetchall()
+        records_by_student = {r["student_id"]: r for r in records}
+
+    students_data = []
+    absent_students = []
+    present_total = 0
+    absent_total = 0
+
+    for s in students:
+        rec = records_by_student.get(s["id"])
+        is_recorded = rec is not None
+        status = rec["status"] if is_recorded else "Present"
+
+        if is_recorded:
+            if status == "Present":
+                present_total += 1
+            else:
+                absent_total += 1
+
+        s_dict = dict(s)
+        s_dict["date_status"] = status
+        s_dict["is_recorded"] = is_recorded
+        s_dict["marked_by"] = rec["marked_by"] if is_recorded else None
+        students_data.append(s_dict)
+
+        if is_recorded and status == "Absent":
+            absent_students.append(s_dict)
+
+    return render_template(
+        "attendance_mark.html",
+        departments=departments,
+        selected_dept=selected_dept,
+        sections=sections,
+        selected_section=selected_section,
+        years=years,
+        selected_year=selected_year,
+        selected_date=selected_date,
+        students=students_data,
+        absent_students=absent_students,
+        total_students=len(students_data),
+        present_count=present_total,
+        absent_count=absent_total,
+        has_saved_records=bool(records_by_student),
+        user_role=user_role
+    )
 
 
 # --------------------------------------------------------------------------

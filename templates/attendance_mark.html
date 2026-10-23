@@ -1,0 +1,406 @@
+{% extends "base.html" %}
+
+{% block title %}Mark Daily Attendance - Vignan Spandana{% endblock %}
+
+{% block content %}
+<div class="card" style="margin-bottom: 1.25rem;">
+    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+        <div>
+            <h2>📋 Daily Attendance Marking</h2>
+            <p style="color: var(--text-muted); font-size: 0.92rem; margin-top: 2px;">
+                Record or correct class attendance for a specific date. Students marked absent can be escalated directly to the AI parent-calling simulation.
+            </p>
+        </div>
+
+        <div style="display: flex; gap: 0.5rem; align-items: center;">
+            <a href="{{ url_for('dashboard') }}" class="btn btn-secondary btn-sm">
+                &larr; Back to Directory
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Filter Selection Bar -->
+<div class="card" style="margin-bottom: 1.25rem; background: #f8fafc;">
+    <form method="GET" action="{{ url_for('attendance_mark') }}" style="display: flex; flex-wrap: wrap; gap: 1rem; align-items: flex-end;">
+        <!-- Department Filter -->
+        <div style="flex: 1; min-width: 140px;">
+            <label for="deptSelect" style="display: block; font-size: 0.82rem; font-weight: 600; color: var(--text-muted); margin-bottom: 4px;">
+                DEPARTMENT
+            </label>
+            {% if session.get('department') and session.get('department') != 'All' %}
+                <input type="text" class="form-input" value="{{ selected_dept }}" readonly style="background: #e2e8f0; cursor: not-allowed;" />
+                <input type="hidden" name="dept" value="{{ selected_dept }}" />
+            {% else %}
+                <select id="deptSelect" name="dept" class="form-select" onchange="this.form.submit()">
+                    {% for d in departments %}
+                        <option value="{{ d }}" {% if selected_dept == d %}selected{% endif %}>{{ d }}</option>
+                    {% endfor %}
+                </select>
+            {% endif %}
+        </div>
+
+        <!-- Section Filter -->
+        <div style="flex: 1; min-width: 120px;">
+            <label for="sectionSelect" style="display: block; font-size: 0.82rem; font-weight: 600; color: var(--text-muted); margin-bottom: 4px;">
+                SECTION
+            </label>
+            <select id="sectionSelect" name="section" class="form-select" onchange="this.form.submit()">
+                <option value="All" {% if selected_section == 'All' %}selected{% endif %}>All Sections</option>
+                {% for sec in sections %}
+                    <option value="{{ sec }}" {% if selected_section == sec %}selected{% endif %}>Section {{ sec }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <!-- Year/Semester Filter -->
+        <div style="flex: 1; min-width: 160px;">
+            <label for="yearSelect" style="display: block; font-size: 0.82rem; font-weight: 600; color: var(--text-muted); margin-bottom: 4px;">
+                CLASS / YEAR
+            </label>
+            <select id="yearSelect" name="year" class="form-select" onchange="this.form.submit()">
+                <option value="All" {% if selected_year == 'All' %}selected{% endif %}>All Classes</option>
+                {% for y in years %}
+                    <option value="{{ y }}" {% if selected_year == y %}selected{% endif %}>{{ y }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <!-- Attendance Date Selector -->
+        <div style="flex: 1; min-width: 160px;">
+            <label for="attendanceDate" style="display: block; font-size: 0.82rem; font-weight: 600; color: var(--text-muted); margin-bottom: 4px;">
+                ATTENDANCE DATE
+            </label>
+            <input 
+                type="date" 
+                id="attendanceDate" 
+                name="date" 
+                class="form-input" 
+                value="{{ selected_date }}" 
+                max="{{ datetime_now }}"
+                required
+                onchange="this.form.submit()"
+            />
+        </div>
+
+        <div>
+            <button type="submit" class="btn btn-secondary btn-sm" style="height: 38px;">
+                🔍 Refresh List
+            </button>
+        </div>
+    </form>
+</div>
+
+<!-- Quick Statistics Banner -->
+<div class="stats-grid" style="margin-bottom: 1.25rem;">
+    <div class="stat-card">
+        <div class="stat-label">Students in Selection</div>
+        <div class="stat-number" id="statTotal">{{ total_students }}</div>
+        <div class="stat-hint">{{ selected_dept }} &bull; Section {{ selected_section }}</div>
+    </div>
+    <div class="stat-card success-border">
+        <div class="stat-label">Present Count</div>
+        <div class="stat-number" id="statPresent" style="color: var(--success);">{{ present_count }}</div>
+        <div class="stat-hint">For {{ selected_date }}</div>
+    </div>
+    <div class="stat-card alert-border">
+        <div class="stat-label">Absent Count</div>
+        <div class="stat-number" id="statAbsent" style="color: var(--danger);">{{ absent_count }}</div>
+        <div class="stat-hint">
+            {% if absent_count > 0 %}Requires parent notification{% else %}All students accounted for{% endif %}
+        </div>
+    </div>
+</div>
+
+{% if has_saved_records %}
+<div class="alert alert-info" style="margin-bottom: 1.25rem; display: flex; align-items: center; justify-content: space-between;">
+    <div>
+        <strong>ℹ️ Existing Record Loaded:</strong> Attendance for <strong>{{ selected_date }}</strong> was previously saved. You can modify any student's status below and click <strong>"Save Attendance"</strong> to update the record.
+    </div>
+    <span class="badge badge-success">Saved in SQLite</span>
+</div>
+{% endif %}
+
+<!-- Absent Students Escalation Card (Feature 4) -->
+{% if absent_students and absent_students|length > 0 %}
+<div class="card" style="margin-bottom: 1.5rem; border: 1px solid #fecaca; background: #fff5f5;">
+    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; margin-bottom: 0.75rem;">
+        <div>
+            <h3 style="color: var(--danger); margin: 0; font-size: 1.05rem; display: flex; align-items: center; gap: 0.4rem;">
+                <span>🚨</span> Absent Students on {{ selected_date }} (Parent Outreach)
+            </h3>
+            <p style="font-size: 0.85rem; color: #991b1b; margin-top: 3px;">
+                The following students were marked Absent. Click "Call Parent" to launch the simulated AI phone notification.
+            </p>
+        </div>
+        <span class="badge badge-danger">{{ absent_students|length }} Absent</span>
+    </div>
+
+    <div class="table-responsive">
+        <table class="data-table" style="background: #ffffff;">
+            <thead>
+                <tr>
+                    <th>Roll Number</th>
+                    <th>Student Name</th>
+                    <th>Parent / Guardian</th>
+                    <th>Registered Phone</th>
+                    <th>Language</th>
+                    <th>Overall Attendance</th>
+                    <th style="text-align: right;">Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for abs in absent_students %}
+                <tr>
+                    <td style="font-family: monospace; font-weight: 600;">{{ abs.roll_number }}</td>
+                    <td><strong>{{ abs.name }}</strong></td>
+                    <td>{{ abs.parent_name }}</td>
+                    <td>
+                        {% if abs.parent_phone %}
+                            <span style="font-family: monospace; font-size: 0.88rem;">{{ abs.parent_phone }}</span>
+                        {% else %}
+                            <span style="color: var(--danger); font-size: 0.82rem; font-style: italic;">No Phone Registered</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <span class="badge badge-lang">{{ abs.preferred_language or 'Telugu' }}</span>
+                    </td>
+                    <td>
+                        {% if abs.attendance_percentage is not none %}
+                            {% if abs.attendance_percentage < 75.0 %}
+                                <span class="badge badge-danger">⚠️ {{ abs.attendance_percentage }}%</span>
+                            {% else %}
+                                <span class="badge badge-success">✓ {{ abs.attendance_percentage }}%</span>
+                            {% endif %}
+                        {% else %}
+                            <span class="badge badge-dept" style="color: var(--text-muted); background: #f1f5f9;">Pending</span>
+                        {% endif %}
+                    </td>
+                    <td style="text-align: right;">
+                        <button 
+                            type="button" 
+                            class="btn btn-call btn-sm"
+                            onclick="triggerCallParent({{ abs.id }}, '{{ abs.name|escape }}', '{{ abs.roll_number|escape }}', '{{ abs.department|escape }}', '{{ abs.parent_phone|escape }}', '{{ abs.attendance_percentage }}', '{{ abs.preferred_language|escape }}')"
+                            title="Launch simulated AI parent communication"
+                        >
+                            📞 Call Parent
+                        </button>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endif %}
+
+<!-- Main Attendance Marking Form -->
+<form method="POST" action="{{ url_for('attendance_mark') }}" id="attendanceMarkForm">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+    <input type="hidden" name="department" value="{{ selected_dept }}" />
+    <input type="hidden" name="section" value="{{ selected_section }}" />
+    <input type="hidden" name="year_semester" value="{{ selected_year }}" />
+    <input type="hidden" name="attendance_date" value="{{ selected_date }}" />
+
+    <div class="card">
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.75rem; margin-bottom: 1rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.75rem;">
+            <div>
+                <h3 style="margin: 0; font-size: 1.1rem; color: var(--primary-color);">
+                    Student Attendance Roster
+                </h3>
+                <span style="font-size: 0.85rem; color: var(--text-muted);">
+                    Mark attendance for <strong>{{ selected_date }}</strong>
+                </span>
+            </div>
+
+            <!-- Quick Batch Toggle Actions -->
+            <div style="display: flex; gap: 0.5rem; align-items: center;">
+                <button type="button" id="btnMarkAllPresent" class="btn btn-secondary btn-sm" onclick="markAll('Present')">
+                    ✅ All Present
+                </button>
+                <button type="button" id="btnMarkAllAbsent" class="btn btn-secondary btn-sm" onclick="markAll('Absent')">
+                    ❌ Mark All Absent
+                </button>
+                {% if user_role != 'Principal' %}
+                <button type="submit" class="btn btn-primary btn-sm" style="font-weight: 600;">
+                    💾 Save Attendance
+                </button>
+                {% endif %}
+            </div>
+        </div>
+
+        {% if students and students|length > 0 %}
+        <div class="table-responsive">
+            <table class="data-table" id="attendanceTable">
+                <thead>
+                    <tr>
+                        <th style="width: 50px;">#</th>
+                        <th>Roll Number</th>
+                        <th>Student Name</th>
+                        <th>Section</th>
+                        <th>Overall Att %</th>
+                        <th style="text-align: center; width: 220px;">Daily Status ({{ selected_date }})</th>
+                        <th>Parent Contact</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for s in students %}
+                    <tr id="row-{{ s.id }}">
+                        <td style="color: var(--text-muted); font-size: 0.82rem;">{{ loop.index }}</td>
+                        <td style="font-family: monospace; font-weight: 600;">
+                            <a href="{{ url_for('student_detail', student_id=s.id) }}" title="View profile">
+                                {{ s.roll_number }}
+                            </a>
+                        </td>
+                        <td>
+                            <strong>{{ s.name }}</strong>
+                        </td>
+                        <td>
+                            <span class="badge badge-dept">{{ s.section }}</span>
+                        </td>
+                        <td>
+                            {% if s.attendance_percentage is not none %}
+                                {% if s.attendance_percentage < 75.0 %}
+                                    <span class="badge badge-danger">⚠️ {{ s.attendance_percentage }}%</span>
+                                {% else %}
+                                    <span class="badge badge-success">✓ {{ s.attendance_percentage }}%</span>
+                                {% endif %}
+                            {% else %}
+                                <span class="badge badge-dept" style="color: var(--text-muted); background: #f1f5f9;">Pending</span>
+                            {% endif %}
+                        </td>
+                        <td style="text-align: center;">
+                            {% if user_role == 'Principal' %}
+                                <!-- Read-only view for Principal -->
+                                {% if s.date_status == 'Present' %}
+                                    <span class="badge badge-success">Present</span>
+                                {% else %}
+                                    <span class="badge badge-danger">Absent</span>
+                                {% endif %}
+                            {% else %}
+                                <!-- Interactive Toggle for Faculty / Coordinator / Admin -->
+                                <div style="display: inline-flex; border: 1px solid var(--border-color); border-radius: 6px; overflow: hidden;">
+                                    <label style="margin: 0; padding: 6px 14px; font-size: 0.85rem; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 4px; user-select: none;"
+                                           class="status-label-present {% if s.date_status == 'Present' %}active-present{% endif %}">
+                                        <input 
+                                            type="radio" 
+                                            name="status_{{ s.id }}" 
+                                            value="Present" 
+                                            {% if s.date_status == 'Present' %}checked{% endif %} 
+                                            onchange="handleStatusChange({{ s.id }}, 'Present')"
+                                            style="margin: 0;"
+                                        />
+                                        <span>Present</span>
+                                    </label>
+                                    <label style="margin: 0; padding: 6px 14px; font-size: 0.85rem; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 4px; user-select: none;"
+                                           class="status-label-absent {% if s.date_status == 'Absent' %}active-absent{% endif %}">
+                                        <input 
+                                            type="radio" 
+                                            name="status_{{ s.id }}" 
+                                            value="Absent" 
+                                            {% if s.date_status == 'Absent' %}checked{% endif %} 
+                                            onchange="handleStatusChange({{ s.id }}, 'Absent')"
+                                            style="margin: 0;"
+                                        />
+                                        <span>Absent</span>
+                                    </label>
+                                </div>
+                            {% endif %}
+                        </td>
+                        <td style="font-size: 0.85rem; color: var(--text-muted);">
+                            {{ s.parent_name }}
+                            {% if s.parent_phone %}
+                                &bull; <span style="font-family: monospace;">{{ s.parent_phone }}</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Sticky Footer Save Bar -->
+        {% if user_role != 'Principal' %}
+        <div style="margin-top: 1.5rem; display: flex; justify-content: space-between; align-items: center; padding-top: 1rem; border-top: 1px solid var(--border-color);">
+            <div style="font-size: 0.85rem; color: var(--text-muted);">
+                Saving records for date: <strong>{{ selected_date }}</strong>. Dynamic attendance percentages will be recalculated automatically.
+            </div>
+            <button type="submit" class="btn btn-primary" style="padding: 8px 24px; font-size: 0.95rem; font-weight: 600;">
+                💾 Save Attendance Records
+            </button>
+        </div>
+        {% endif %}
+
+        {% else %}
+        <div style="text-align: center; padding: 2.5rem; color: var(--text-muted);">
+            <div style="font-size: 2rem; margin-bottom: 0.5rem;">👨‍🎓</div>
+            <p>No students found matching <strong>Department: {{ selected_dept }}</strong>, <strong>Section: {{ selected_section }}</strong>.</p>
+            <p style="font-size: 0.85rem;">Try adjusting the section or class filters above.</p>
+        </div>
+        {% endif %}
+    </div>
+</form>
+
+<!-- Include Call Parent Modal -->
+{% include "call_modal.html" %}
+
+<style>
+.active-present {
+    background: #dcfce7 !important;
+    color: #166534 !important;
+}
+.active-absent {
+    background: #fee2e2 !important;
+    color: #991b1b !important;
+}
+</style>
+
+<script>
+function handleStatusChange(studentId, newStatus) {
+    const row = document.getElementById('row-' + studentId);
+    if (!row) return;
+
+    const presentLabel = row.querySelector('.status-label-present');
+    const absentLabel = row.querySelector('.status-label-absent');
+
+    if (newStatus === 'Present') {
+        if (presentLabel) presentLabel.classList.add('active-present');
+        if (absentLabel) absentLabel.classList.remove('active-absent');
+    } else {
+        if (absentLabel) absentLabel.classList.add('active-absent');
+        if (presentLabel) presentLabel.classList.remove('active-present');
+    }
+
+    updateCounters();
+}
+
+function markAll(status) {
+    const radios = document.querySelectorAll(`input[type="radio"][value="${status}"]`);
+    radios.forEach(radio => {
+        radio.checked = true;
+        const studentId = radio.name.replace('status_', '');
+        handleStatusChange(studentId, status);
+    });
+    updateCounters();
+}
+
+function updateCounters() {
+    let present = 0;
+    let absent = 0;
+
+    const allRadios = document.querySelectorAll('input[type="radio"]:checked');
+    allRadios.forEach(r => {
+        if (r.value === 'Present') present++;
+        if (r.value === 'Absent') absent++;
+    });
+
+    const statPresent = document.getElementById('statPresent');
+    const statAbsent = document.getElementById('statAbsent');
+
+    if (statPresent) statPresent.textContent = present;
+    if (statAbsent) statAbsent.textContent = absent;
+}
+
+document.addEventListener('DOMContentLoaded', updateCounters);
+</script>
+{% endblock %}

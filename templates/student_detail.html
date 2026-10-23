@@ -84,6 +84,61 @@
             </div>
         </div>
 
+        <!-- Daily Attendance History Card -->
+        <div class="card" style="margin-bottom: 1.5rem;">
+            <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <h3 class="card-title">Daily Attendance Session History</h3>
+                    <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 2px;">
+                        Date-wise classroom attendance recorded in SQLite
+                    </div>
+                </div>
+                {% if session.get('role') != 'Principal' %}
+                <a href="{{ url_for('attendance_mark', dept=student['department'], section=student['section']) }}" class="btn btn-secondary btn-sm" style="font-size: 0.78rem;">
+                    📋 Mark / Correct Attendance
+                </a>
+                {% endif %}
+            </div>
+
+            {% if attendance_records and attendance_records|length > 0 %}
+            <div class="table-responsive">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Status</th>
+                            <th>Recorded By</th>
+                            <th>Updated</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for att in attendance_records %}
+                        <tr>
+                            <td style="font-family: monospace; font-weight: 600;">{{ att['attendance_date'] }}</td>
+                            <td>
+                                {% if att['status'] == 'Present' %}
+                                    <span class="badge badge-success">✓ Present</span>
+                                {% else %}
+                                    <span class="badge badge-danger">✗ Absent</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ att['marked_by'] }}</td>
+                            <td style="font-size: 0.82rem; color: var(--text-muted);">{{ att['updated_at'] }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div style="text-align: center; padding: 1.25rem; color: var(--text-muted); font-size: 0.88rem;">
+                No itemized daily attendance sessions logged yet for this student.
+                {% if student['attendance_percentage'] is not none %}
+                    <br/><span style="font-size: 0.8rem;">(Current aggregate: <strong>{{ student['attendance_percentage'] }}%</strong>)</span>
+                {% endif %}
+            </div>
+            {% endif %}
+        </div>
+
         <!-- Call History Section -->
         <div class="card">
             <div class="card-header">
