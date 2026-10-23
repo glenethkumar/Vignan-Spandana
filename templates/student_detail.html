@@ -1,0 +1,295 @@
+{% extends "base.html" %}
+
+{% block title %}{{ student['name'] }} ({{ student['roll_number'] }}) - Vignan Spandana{% endblock %}
+
+{% block content %}
+<!-- Breadcrumb Header -->
+<div style="margin-bottom: 1.25rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;">
+    <div>
+        <a href="{{ url_for('dashboard') }}" style="font-size: 0.9rem;">&larr; Back to Directory</a>
+        <h2 style="margin-top: 4px;">{{ student['name'] }}</h2>
+        <div style="font-size: 0.85rem; color: var(--text-muted);">
+            Roll No: <strong style="color: var(--text-main);">{{ student['roll_number'] }}</strong> &bull;
+            Department: <strong style="color: #0369a1;">{{ student['department'] }}</strong> &bull;
+            Class: <strong>{{ student['year_semester'] }} (Sec {{ student['section'] }})</strong>
+        </div>
+    </div>
+    <div style="display: flex; gap: 0.5rem;">
+        {% if session.get('role') != 'Principal' %}
+        <button 
+            type="button" 
+            class="btn btn-call" 
+            onclick="triggerCallParent({{ student['id'] }}, '{{ student['name']|escape }}', '{{ student['roll_number']|escape }}', '{{ student['department']|escape }}', '{{ student['parent_phone']|escape }}', '{{ student['attendance_percentage'] }}', '{{ student['preferred_language']|escape }}')"
+        >
+            📞 Call Parent (AI)
+        </button>
+        <a href="#followUpForm" class="btn btn-secondary">
+            📝 Add Follow-Up Note
+        </a>
+        {% else %}
+        <span class="badge badge-dept" style="padding: 6px 12px;">
+            👓 Principal Administrative Inspection View
+        </span>
+        {% endif %}
+    </div>
+</div>
+
+<div class="profile-grid">
+    <!-- Left Column: Student Academic & Parent Info -->
+    <div>
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">Student Profile & Academic Status</h3>
+                {% if student['attendance_percentage'] < 75.0 %}
+                    <span class="badge badge-danger">Attendance Alert: {{ student['attendance_percentage'] }}%</span>
+                {% else %}
+                    <span class="badge badge-success">Good Attendance: {{ student['attendance_percentage'] }}%</span>
+                {% endif %}
+            </div>
+
+            <div class="info-list">
+                <div class="info-item">
+                    <div class="info-label">Full Name</div>
+                    <div class="info-value">{{ student['name'] }}</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">Roll Number</div>
+                    <div class="info-value" style="font-family: monospace;">{{ student['roll_number'] }}</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">Department / Branch</div>
+                    <div class="info-value">{{ student['department'] }}</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">Year & Semester</div>
+                    <div class="info-value">{{ student['year_semester'] }}</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">Section</div>
+                    <div class="info-value">Section {{ student['section'] }}</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">Overall Attendance</div>
+                    <div class="info-value">
+                        {% if student['attendance_percentage'] is not none %}
+                            <strong>{{ student['attendance_percentage'] }}%</strong>
+                            {% if student['attendance_percentage'] < 75.0 %}
+                                <span style="font-size: 0.8rem; color: var(--danger);">(Shortage warning)</span>
+                            {% endif %}
+                        {% else %}
+                            <span style="color: var(--text-muted); font-size: 0.9rem;">Unavailable (Pending)</span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Call History Section -->
+        <div class="card">
+            <div class="card-header">
+                <div>
+                    <h3 class="card-title">Parent AI Call History</h3>
+                    <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 2px;">
+                        Automated AI voice calls made to parent
+                    </div>
+                </div>
+                {% if session.get('role') != 'Principal' %}
+                <!-- Tool for faculty presentation: simulate mock log -->
+                <form action="{{ url_for('simulate_call', student_id=student['id']) }}" method="POST" style="margin: 0;">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button type="submit" class="btn btn-secondary btn-sm" title="Adds a mock call record to database for faculty demonstration">
+                        + Simulate Mock Call Record
+                    </button>
+                </form>
+                {% endif %}
+            </div>
+
+            {% if call_records and call_records|length > 0 %}
+            <div class="table-responsive">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Call Time</th>
+                            <th>Status</th>
+                            <th>Language</th>
+                            <th>Duration</th>
+                            <th>Summary / Notes</th>
+                            <th>Initiated By</th>
+                            <th style="text-align: right;">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for call in call_records %}
+                        <tr>
+                            <td style="white-space: nowrap; font-size: 0.85rem;">
+                                {{ call['call_time'] }}
+                            </td>
+                            <td>
+                                {% if call['status'] == 'Completed' %}
+                                    <span class="badge badge-success">Completed</span>
+                                {% elif call['status'] == 'No Answer' %}
+                                    <span class="badge badge-warning">No Answer</span>
+                                {% else %}
+                                    <span class="badge badge-dept">{{ call['status'] }}</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <span class="badge badge-lang">{{ call['language'] }}</span>
+                            </td>
+                            <td style="font-size: 0.85rem; font-family: monospace;">{{ call['duration_seconds'] }}s</td>
+                            <td style="max-width: 250px;">
+                                <div style="font-size: 0.82rem; color: var(--text-main); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="{{ call['summary'] or call['notes'] }}">
+                                    {{ call['summary'] or call['notes'] or 'No summary recorded.' }}
+                                </div>
+                            </td>
+                            <td style="font-size: 0.82rem; color: var(--text-muted);">
+                                {{ call['initiated_by'] or 'System' }}
+                            </td>
+                            <td style="text-align: right; white-space: nowrap;">
+                                <a href="{{ url_for('call_detail', call_id=call['id']) }}" class="btn btn-secondary btn-sm" style="padding: 2px 8px; font-size: 0.78rem;">
+                                    📜 View Call
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <!-- Empty state as requested by user -->
+            <div class="empty-state">
+                <div class="empty-state-icon">📞</div>
+                <h3>No Call Records Yet</h3>
+                <p style="max-width: 420px; margin: 0 auto; font-size: 0.9rem;">
+                    There is currently no call history for this student. When the automated AI voice calling system is connected, call timestamps, durations, and multilingual transcripts will be archived here.
+                </p>
+                {% if session.get('role') != 'Principal' %}
+                <div style="margin-top: 1rem;">
+                    <button 
+                        type="button" 
+                        class="btn btn-call btn-sm" 
+                        onclick="triggerCallParent({{ student['id'] }}, '{{ student['name']|escape }}', '{{ student['roll_number']|escape }}', '{{ student['department']|escape }}', '{{ student['parent_phone']|escape }}', '{{ student['attendance_percentage'] }}', '{{ student['preferred_language']|escape }}')"
+                    >
+                        Test "Call Parent" Action
+                    </button>
+                </div>
+                {% endif %}
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Follow-Up Notes Section -->
+        <div class="card" id="followUpSection">
+            <div class="card-header">
+                <h3 class="card-title">Staff / Faculty Follow-Up Notes</h3>
+            </div>
+
+            {% if follow_ups and follow_ups|length > 0 %}
+            <div style="display: flex; flex-direction: column; gap: 0.75rem; margin-bottom: 1.5rem;">
+                {% for note in follow_ups %}
+                <div style="background: #f8fafc; border: 1px solid var(--border-color); border-left: 3px solid var(--accent-color); border-radius: 4px; padding: 0.85rem 1rem;">
+                    <div style="display: flex; justify-content: space-between; font-size: 0.82rem; color: var(--text-muted); margin-bottom: 4px;">
+                        <span><strong>{{ note['teacher_name'] }}</strong></span>
+                        <span>{{ note['created_at'] }}</span>
+                    </div>
+                    <div style="font-size: 0.92rem; color: var(--text-main);">
+                        {{ note['notes'] }}
+                    </div>
+                    {% if note['action_required'] %}
+                    <div style="margin-top: 6px;">
+                        <span class="badge badge-warning">{{ note['action_required'] }}</span>
+                    </div>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 1.5rem; text-align: center; padding: 1rem 0;">
+                No follow-up notes recorded yet for this student.
+            </div>
+            {% endif %}
+
+            {% if session.get('role') != 'Principal' %}
+            <div id="followUpForm" style="border-top: 1px solid var(--border-color); padding-top: 1rem;">
+                <h4 style="font-size: 0.95rem; margin-bottom: 0.75rem;">Record New Follow-Up Note</h4>
+                <form action="{{ url_for('add_followup', student_id=student['id']) }}" method="POST">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <div class="form-group">
+                        <label for="notes" class="form-label">Counseling / Follow-up Observation</label>
+                        <textarea id="notes" name="notes" class="form-control" rows="3" placeholder="Enter notes regarding attendance shortage, parent feedback, or remedial guidance..." required></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="action_required" class="form-label">Next Action / Status</label>
+                        <select id="action_required" name="action_required" class="form-select">
+                            <option value="Attendance Warning Issued">Attendance Warning Issued</option>
+                            <option value="Parent Meeting Scheduled">Parent Meeting Scheduled</option>
+                            <option value="Call Back Next Week">Call Back Next Week</option>
+                            <option value="Counseling Completed">Counseling Completed</option>
+                            <option value="Issue Resolved">Issue Resolved</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-sm">
+                        Save Note to Database
+                    </button>
+                </form>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Right Column: Parent Contact Card & AI Calling Preview -->
+    <div>
+        <div class="card" style="border-top: 4px solid var(--accent-color);">
+            <div class="card-header">
+                <h3 class="card-title">Parent Contact Details</h3>
+            </div>
+
+            <div style="margin-bottom: 1rem;">
+                <div class="info-label">Parent / Guardian Name</div>
+                <div class="info-value" style="font-size: 1.05rem;">{{ student['parent_name'] }}</div>
+            </div>
+
+            <div style="margin-bottom: 1rem;">
+                <div class="info-label">Phone Number</div>
+                <div class="info-value" style="font-family: monospace; font-size: 1.05rem;">
+                    📞 {{ student['parent_phone'] }}
+                </div>
+            </div>
+
+            <div style="margin-bottom: 1.25rem;">
+                <div class="info-label">AI Call Voice Language</div>
+                <div style="margin-top: 4px;">
+                    <span class="badge badge-lang" style="font-size: 0.9rem; padding: 4px 8px;">
+                        🗣️ {{ student['preferred_language'] }}
+                    </span>
+                </div>
+                <div class="form-text" style="margin-top: 4px;">
+                    The parent prefers spoken communication in {{ student['preferred_language'] }}.
+                </div>
+            </div>
+
+            {% if session.get('role') != 'Principal' %}
+            <button 
+                type="button" 
+                class="btn btn-call btn-block"
+                style="padding: 0.65rem;"
+                onclick="triggerCallParent({{ student['id'] }}, '{{ student['name']|escape }}', '{{ student['roll_number']|escape }}', '{{ student['department']|escape }}', '{{ student['parent_phone']|escape }}', '{{ student['attendance_percentage'] }}', '{{ student['preferred_language']|escape }}')"
+            >
+                📞 Dispatch AI Voice Call
+            </button>
+            {% endif %}
+        </div>
+
+        <div class="card" style="background-color: #f8fafc;">
+            <h4 style="font-size: 0.95rem; margin-bottom: 0.5rem; color: var(--primary-color);">
+                🛡️ Access Control Status
+            </h4>
+            <p style="font-size: 0.85rem; color: var(--text-muted); line-height: 1.4;">
+                Student Department: <strong>{{ student['department'] }}</strong><br>
+                User Department Scope: <strong>{{ session.get('department') }}</strong><br>
+                User Role: <strong>{{ session.get('role') }}</strong>
+            </p>
+        </div>
+    </div>
+</div>
+{% endblock %}

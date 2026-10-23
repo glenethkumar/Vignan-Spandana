@@ -1,0 +1,14 @@
+services:
+  - type: web
+    name: vignan-spandana
+    runtime: python
+    plan: free
+    buildCommand: "pip install -r requirements.txt && python seed_demo.py"
+    startCommand: "gunicorn app:app"
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.8
+      - key: FLASK_DEBUG
+        value: "0"
+      - key: FLASK_SECRET_KEY
+        generateValue: true

@@ -1,0 +1,94 @@
+{% extends "base.html" %}
+
+{% block title %}Add New Student - Vignan Spandana{% endblock %}
+
+{% block content %}
+<div style="max-width: 700px; margin: 0 auto;">
+    <div style="margin-bottom: 1.25rem;">
+        <a href="{{ url_for('dashboard') }}" style="font-size: 0.9rem;">&larr; Back to Dashboard</a>
+        <h2 style="margin-top: 4px;">Enroll New Student</h2>
+        <p style="color: var(--text-muted); font-size: 0.92rem;">
+            Manually enter a student record to test parent communication profiles.
+        </p>
+    </div>
+
+    <div class="card">
+        <form action="{{ url_for('add_student') }}" method="POST">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                <div class="form-group">
+                    <label for="roll_number" class="form-label">Roll Number *</label>
+                    <input type="text" id="roll_number" name="roll_number" class="form-control" placeholder="e.g. 211FA04077" required>
+                </div>
+                <div class="form-group">
+                    <label for="name" class="form-label">Student Name *</label>
+                    <input type="text" id="name" name="name" class="form-control" placeholder="e.g. T. Haritha" required>
+                </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem;">
+                <div class="form-group">
+                    <label for="department" class="form-label">Department *</label>
+                    {% if session.get('department') and session.get('department') != 'All' %}
+                        <input type="text" id="department" name="department" class="form-control" value="{{ session.get('department') }}" readonly>
+                        <div class="form-text">Enforced to your department.</div>
+                    {% else %}
+                        <select id="department" name="department" class="form-select">
+                            <option value="CSE">CSE</option>
+                            <option value="ECE">ECE</option>
+                            <option value="IT">IT</option>
+                            <option value="MECH">MECH</option>
+                        </select>
+                    {% endif %}
+                </div>
+                <div class="form-group">
+                    <label for="year_semester" class="form-label">Year & Semester</label>
+                    <input type="text" id="year_semester" name="year_semester" class="form-control" value="III Year - Sem 1">
+                </div>
+                <div class="form-group">
+                    <label for="section" class="form-label">Section</label>
+                    <input type="text" id="section" name="section" class="form-control" value="A">
+                </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                <div class="form-group">
+                    <label for="parent_name" class="form-label">Parent / Guardian Name *</label>
+                    <input type="text" id="parent_name" name="parent_name" class="form-control" placeholder="e.g. T. Appa Rao" required>
+                </div>
+                <div class="form-group">
+                    <label for="parent_phone" class="form-label">Parent Mobile Phone *</label>
+                    <input type="text" id="parent_phone" name="parent_phone" class="form-control" placeholder="e.g. +91 98480 99999" required>
+                </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                <div class="form-group">
+                    <label for="preferred_language" class="form-label">Voice AI Call Language</label>
+                    <select id="preferred_language" name="preferred_language" class="form-select">
+                        <option value="Telugu" selected>Telugu (తెలుగు)</option>
+                        <option value="Hindi">Hindi (हिन्दी)</option>
+                        <option value="English">English</option>
+                    </select>
+                    <div class="form-text">Primary language spoken to the parent.</div>
+                </div>
+                <div class="form-group">
+                    <label for="attendance_percentage" class="form-label">Attendance Percentage (%)</label>
+                    <input type="number" step="0.1" min="0" max="100" id="attendance_percentage" name="attendance_percentage" class="form-control" value="82.0">
+                    <div class="form-text">Values below 75% trigger shortage alert.</div>
+                </div>
+            </div>
+
+            <div style="display: flex; gap: 0.75rem; margin-top: 1rem;">
+                <button type="submit" class="btn btn-primary">
+                    Save Student Record
+                </button>
+                <a href="{{ url_for('dashboard') }}" class="btn btn-secondary">
+                    Cancel
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

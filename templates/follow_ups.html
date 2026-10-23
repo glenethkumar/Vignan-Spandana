@@ -1,0 +1,215 @@
+{% extends 'base.html' %}
+
+{% block title %}Parent Inquiry Follow-Ups{% endblock %}
+
+{% block content %}
+<div class="dashboard-container">
+    <!-- Header Section -->
+    <div class="page-header" style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
+        <div>
+            <h2 style="font-size: 1.5rem; font-weight: 700; color: var(--primary-color); margin: 0;">
+                📋 Faculty Follow-Up Queue
+            </h2>
+            <div style="font-size: 0.88rem; color: var(--text-muted); margin-top: 4px;">
+                Inquiries escalated from AI parent voice calls requiring departmental faculty callback
+            </div>
+        </div>
+        <div style="display: flex; gap: 8px;">
+            <a href="{{ url_for('call_history') }}" class="btn btn-secondary btn-sm">
+                📞 Call History
+            </a>
+            <a href="{{ url_for('dashboard') }}" class="btn btn-secondary btn-sm">
+                👥 Student Directory
+            </a>
+        </div>
+    </div>
+
+    <!-- Filter Bar -->
+    <div class="card" style="margin-bottom: 1.5rem; padding: 1rem 1.25rem;">
+        <form method="GET" action="{{ url_for('follow_ups_list') }}" style="display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end;">
+            <!-- Status Filter -->
+            <div style="flex: 1; min-width: 150px;">
+                <label for="status" class="info-label" style="margin-bottom: 4px;">Ticket Status</label>
+                <select name="status" id="status" class="form-select" style="height: 38px; font-size: 0.88rem;">
+                    <option value="All" {% if selected_status == 'All' %}selected{% endif %}>All Statuses</option>
+                    <option value="open" {% if selected_status == 'open' %}selected{% endif %}>Open</option>
+                    <option value="in progress" {% if selected_status == 'in progress' %}selected{% endif %}>In Progress</option>
+                    <option value="closed" {% if selected_status == 'closed' %}selected{% endif %}>Closed</option>
+                </select>
+            </div>
+
+            <!-- Department Filter -->
+            <div style="flex: 1; min-width: 150px;">
+                <label for="department" class="info-label" style="margin-bottom: 4px;">Department</label>
+                <select name="department" id="department" class="form-select" style="height: 38px; font-size: 0.88rem;" {% if session.get('role') in ['Department Coordinator', 'Faculty'] and session.get('department') != 'All' %}disabled{% endif %}>
+                    {% if session.get('role') in ['Admin', 'Principal'] %}
+                        <option value="All" {% if selected_dept == 'All' %}selected{% endif %}>All Departments</option>
+                    {% endif %}
+                    {% for dept in available_depts %}
+                        <option value="{{ dept }}" {% if selected_dept == dept %}selected{% endif %}>{{ dept }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div style="display: flex; gap: 8px;">
+                <button type="submit" class="btn btn-primary" style="height: 38px; padding: 0 16px;">
+                    🔍 Filter
+                </button>
+                <a href="{{ url_for('follow_ups_list') }}" class="btn btn-secondary" style="height: 38px; padding: 0 14px; display: inline-flex; align-items: center;">
+                    ↺ Reset
+                </a>
+            </div>
+        </form>
+    </div>
+
+    <!-- Follow-Ups List Table -->
+    <div class="card" style="padding: 0; overflow: hidden;">
+        <div class="card-header" style="padding: 1rem 1.25rem; background: #fafbfc; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center;">
+            <div style="font-weight: 600; color: var(--primary-color);">
+                Active Follow-Up Tickets: <span>{{ follow_ups|length }}</span>
+            </div>
+            <div style="font-size: 0.8rem; color: var(--text-muted);">
+                Ordered by urgency (Open &rarr; In Progress &rarr; Closed)
+            </div>
+        </div>
+
+        {% if follow_ups and follow_ups|length > 0 %}
+        <div class="table-responsive">
+            <table class="data-table" style="margin: 0;">
+                <thead>
+                    <tr>
+                        <th style="width: 70px;">Ticket #</th>
+                        <th>Student & Roll</th>
+                        <th>Dept</th>
+                        <th>Action Required & Inquiry Notes</th>
+                        <th>Linked Call</th>
+                        <th>Assigned Faculty</th>
+                        <th>Due Date</th>
+                        <th>Status</th>
+                        {% if session.get('role') != 'Principal' %}
+                        <th style="text-align: right; width: 180px;">Update Ticket</th>
+                        {% endif %}
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for fu in follow_ups %}
+                    <tr>
+                        <td style="font-family: monospace; font-size: 0.82rem; color: var(--text-muted);">
+                            #{{ fu['id'] }}
+                        </td>
+                        <td>
+                            <a href="{{ url_for('student_detail', student_id=fu['student_id']) }}" style="font-weight: 600; color: var(--primary-color); text-decoration: none;">
+                                {{ fu['student_name'] }}
+                            </a>
+                            <div style="font-size: 0.78rem; font-family: monospace; color: var(--text-muted);">
+                                {{ fu['roll_number'] }}
+                            </div>
+                            <div style="font-size: 0.76rem; color: var(--text-muted);">
+                                📞 {{ fu['parent_phone'] or 'No phone' }}
+                            </div>
+                        </td>
+                        <td>
+                            <span class="badge badge-dept">{{ fu['department'] }}</span>
+                        </td>
+                        <td style="max-width: 320px;">
+                            <div style="font-weight: 600; font-size: 0.84rem; color: var(--text-main);">
+                                {{ fu['action_required'] or 'Parent Callback' }}
+                            </div>
+                            <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 2px; line-height: 1.35;">
+                                {{ fu['notes'] }}
+                            </div>
+                            <div style="font-size: 0.74rem; color: #94a3b8; margin-top: 4px;">
+                                Created: {{ fu['created_at'] }}
+                            </div>
+                        </td>
+                        <td>
+                            {% if fu['call_record_id'] %}
+                            <a href="{{ url_for('call_detail', call_id=fu['call_record_id']) }}" class="btn btn-secondary btn-sm" style="padding: 2px 8px; font-size: 0.76rem;" title="View Transcript">
+                                📜 Call #{{ fu['call_record_id'] }} ({{ fu['call_language'] or 'AI' }})
+                            </a>
+                            {% else %}
+                            <span style="font-size: 0.8rem; color: var(--text-muted);">Manual / Direct</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div style="font-size: 0.84rem; font-weight: 500; color: var(--text-main);">
+                                {{ fu['assigned_to'] or 'Unassigned' }}
+                            </div>
+                        </td>
+                        <td>
+                            {% if fu['due_date'] %}
+                                <span style="font-size: 0.82rem; font-family: monospace;">{{ fu['due_date'] }}</span>
+                            {% else %}
+                                <span style="font-size: 0.8rem; color: var(--text-muted);">&mdash;</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if fu['status'] == 'open' %}
+                                <span class="badge badge-danger">Open</span>
+                            {% elif fu['status'] == 'in progress' %}
+                                <span class="badge badge-warning">In Progress</span>
+                            {% else %}
+                                <span class="badge badge-success">Closed</span>
+                            {% endif %}
+                        </td>
+                        {% if session.get('role') != 'Principal' %}
+                        <td style="text-align: right;">
+                            <!-- Inline quick update modal toggle or expandable form -->
+                            <details style="text-align: left;">
+                                <summary class="btn btn-secondary btn-sm" style="padding: 4px 10px; font-size: 0.78rem; cursor: pointer; display: inline-block;">
+                                    ✏️ Edit
+                                </summary>
+                                <div style="position: absolute; right: 20px; z-index: 10; background: #ffffff; border: 1px solid var(--border-color); box-shadow: 0 4px 12px rgba(0,0,0,0.12); padding: 12px; border-radius: 6px; width: 280px; margin-top: 4px;">
+                                    <form method="POST" action="{{ url_for('update_followup', followup_id=fu['id']) }}">
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                        
+                                        <div style="margin-bottom: 8px;">
+                                            <label class="info-label" style="font-size: 0.75rem;">Status</label>
+                                            <select name="status" class="form-select" style="font-size: 0.82rem; height: 30px;">
+                                                <option value="open" {% if fu['status'] == 'open' %}selected{% endif %}>Open</option>
+                                                <option value="in progress" {% if fu['status'] == 'in progress' %}selected{% endif %}>In Progress</option>
+                                                <option value="closed" {% if fu['status'] == 'closed' %}selected{% endif %}>Closed</option>
+                                            </select>
+                                        </div>
+
+                                        <div style="margin-bottom: 8px;">
+                                            <label class="info-label" style="font-size: 0.75rem;">Assigned Faculty</label>
+                                            <input type="text" name="assigned_to" value="{{ fu['assigned_to'] or '' }}" placeholder="Faculty Name" class="form-control" style="font-size: 0.82rem; height: 30px;">
+                                        </div>
+
+                                        <div style="margin-bottom: 8px;">
+                                            <label class="info-label" style="font-size: 0.75rem;">Due Date</label>
+                                            <input type="date" name="due_date" value="{{ fu['due_date'] or '' }}" class="form-control" style="font-size: 0.82rem; height: 30px;">
+                                        </div>
+
+                                        <div style="margin-bottom: 8px;">
+                                            <label class="info-label" style="font-size: 0.75rem;">Resolution Notes</label>
+                                            <textarea name="notes" rows="2" class="form-control" style="font-size: 0.8rem;">{{ fu['notes'] }}</textarea>
+                                        </div>
+
+                                        <button type="submit" class="btn btn-primary btn-block btn-sm" style="font-size: 0.8rem; padding: 4px 8px;">
+                                            Save Changes
+                                        </button>
+                                    </form>
+                                </div>
+                            </details>
+                        </td>
+                        {% endif %}
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div style="padding: 3rem 1.5rem; text-align: center; color: var(--text-muted);">
+            <div style="font-size: 2.2rem; margin-bottom: 0.5rem;">🎉</div>
+            <div style="font-weight: 600; font-size: 1.05rem; color: var(--text-main);">No Follow-Up Tickets Pending</div>
+            <p style="font-size: 0.85rem; max-width: 400px; margin: 0.5rem auto 1.25rem;">
+                There are currently no open follow-up inquiries matching your filter. Parent calls with unanswered questions will automatically register here.
+            </p>
+            <a href="{{ url_for('follow_ups_list') }}" class="btn btn-secondary btn-sm">Reset Filter</a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

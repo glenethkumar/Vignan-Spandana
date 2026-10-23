@@ -1,0 +1,108 @@
+<!-- Simulated Call Demo Interactive Popup Modal -->
+<div id="simCallModalOverlay" class="modal-overlay" style="display: none;" onclick="handleModalOverlayClick(event)">
+    <div class="modal-card" onclick="event.stopPropagation()">
+        <!-- Modal Header -->
+        <div class="modal-header">
+            <div>
+                <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                    <h3 style="margin: 0; font-size: 1.15rem; color: var(--primary-color);">
+                        📞 Outbound AI Call Simulation
+                    </h3>
+                    <span class="badge badge-warning" style="font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.5px; padding: 2px 8px;">
+                        Demo mode: simulated call
+                    </span>
+                </div>
+                <div style="font-size: 0.82rem; color: var(--text-muted); margin-top: 4px;">
+                    Student: <strong id="simModalStudentName" style="color: var(--text-main);">-</strong> 
+                    (<span id="simModalRoll">-</span>) &bull; 
+                    Dept: <span id="simModalDept">-</span> &bull; 
+                    Attendance: <strong id="simModalAttendance">-</strong>
+                </div>
+            </div>
+            <button type="button" id="btnModalClose" class="modal-close-btn" onclick="closeCallModal()" title="Close">&times;</button>
+        </div>
+
+        <!-- Configuration Bar: Language & Trigger -->
+        <div class="modal-config-bar">
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <label for="simModalLang" style="font-size: 0.85rem; font-weight: 600; color: var(--text-main); margin: 0;">
+                    Script Language:
+                </label>
+                <select id="simModalLang" class="form-select" style="width: auto; padding: 4px 10px; font-size: 0.85rem; height: 32px;">
+                    <option value="English">English</option>
+                    <option value="Telugu">Telugu (తెలుగు)</option>
+                </select>
+            </div>
+
+            <div style="display: flex; gap: 8px; align-items: center;">
+                <button type="button" id="btnStartCall" class="btn btn-call btn-sm" onclick="startSimulatedCall()">
+                    ▶️ Start Call
+                </button>
+            </div>
+        </div>
+
+        <!-- Status Timeline Stepper: Dialing (2s) -> Connected -> Transcript (1.5s/line) -> Call ended -->
+        <div class="call-timeline-stepper">
+            <div class="timeline-step" id="stepDialing">
+                <div class="step-dot">1</div>
+                <div class="step-label">Dialing... (2s)</div>
+            </div>
+            <div class="step-connector"></div>
+            <div class="timeline-step" id="stepConnected">
+                <div class="step-dot">2</div>
+                <div class="step-label">Connected</div>
+            </div>
+            <div class="step-connector"></div>
+            <div class="timeline-step" id="stepTranscript">
+                <div class="step-dot">3</div>
+                <div class="step-label">Live Speech</div>
+            </div>
+            <div class="step-connector"></div>
+            <div class="timeline-step" id="stepEnded">
+                <div class="step-dot">4</div>
+                <div class="step-label">Call Ended</div>
+            </div>
+        </div>
+
+        <!-- Status Banner with Timer -->
+        <div id="simCallStatusBar" class="call-status-banner status-idle">
+            <span id="simStatusIcon">⚪</span>
+            <span id="simStatusText">Ready to simulate parent call. Select language and click Start Call.</span>
+            <span id="simCallTimer" style="margin-left: auto; font-family: monospace; font-weight: 600;">00:00</span>
+        </div>
+
+        <!-- Scrollable Conversation Stream -->
+        <div class="call-transcript-container" id="simTranscriptContainer">
+            <div id="simTranscriptPlaceholder" class="empty-transcript-hint">
+                <div style="font-size: 1.8rem; margin-bottom: 6px;">🎙️</div>
+                <div>Live speaker-labelled dialogue will appear here once connected.</div>
+            </div>
+            <div id="simTranscriptStream" class="transcript-messages"></div>
+        </div>
+
+        <!-- Post-Call Summary Card (Revealed upon call completion) -->
+        <div id="simCallSummaryCard" class="call-summary-card" style="display: none;">
+            <div style="font-weight: 600; color: var(--success); display: flex; align-items: center; justify-content: space-between;">
+                <span>✅ Call Completed & Saved to Database</span>
+                <span id="simCallSavedBadge" class="badge badge-success" style="font-size: 0.72rem;">CallRecord #<span id="simSavedRecordId"></span></span>
+            </div>
+            <div style="font-size: 0.84rem; margin-top: 6px; color: var(--text-main);" id="simSummaryText">
+                -
+            </div>
+            <div style="font-size: 0.8rem; margin-top: 6px; padding: 6px 10px; background: #ffffff; border: 1px solid #bbf7d0; border-radius: 4px; color: #166534; display: flex; align-items: center; gap: 6px;">
+                <span>📋</span>
+                <span><strong>Follow-Up Ticket Created:</strong> Question beyond AI scope escalated for Department Faculty callback.</span>
+            </div>
+        </div>
+
+        <!-- Modal Footer -->
+        <div class="modal-footer">
+            <span style="font-size: 0.8rem; color: var(--text-muted);">
+                Parent Phone: <strong id="simModalPhone" style="font-family: monospace; color: var(--text-main);">-</strong>
+            </span>
+            <button type="button" id="btnModalDone" class="btn btn-secondary btn-sm" onclick="closeCallModal()">
+                Close
+            </button>
+        </div>
+    </div>
+</div>

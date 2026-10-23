@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <title>{% block title %}Vignan Spandana{% endblock %} - AI Parent Communication System</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    {% block extra_head %}{% endblock %}
+</head>
+<body>
+    <header class="site-header">
+        <div class="header-container">
+            <div class="brand-wrapper">
+                <div class="brand-logo">VS</div>
+                <div class="brand-text">
+                    <h1>Vignan Spandana</h1>
+                    <div class="brand-subtitle">AI Parent Communication System</div>
+                </div>
+            </div>
+
+            {% if session.get('user_id') %}
+            <nav class="nav-links">
+                <a href="{{ url_for('dashboard') }}" class="{% if request.endpoint == 'dashboard' %}active{% endif %}">Directory</a>
+                <a href="{{ url_for('call_history') }}" class="{% if request.endpoint in ['call_history', 'call_detail'] %}active{% endif %}">Call History</a>
+                <a href="{{ url_for('follow_ups_list') }}" class="{% if request.endpoint == 'follow_ups_list' %}active{% endif %}">Follow-Ups</a>
+                
+                {% if session.get('role') in ['Admin', 'Department Coordinator'] %}
+                <a href="{{ url_for('import_students') }}" class="{% if request.endpoint == 'import_students' %}active{% endif %}">Import Data</a>
+                <a href="{{ url_for('add_student') }}" class="{% if request.endpoint == 'add_student' %}active{% endif %}">+ Add Student</a>
+                {% endif %}
+
+                {% if session.get('role') == 'Admin' %}
+                <a href="{{ url_for('admin_users') }}" class="{% if request.endpoint in ['admin_users', 'admin_audit_logs'] %}active{% endif %}">Admin Controls</a>
+                {% endif %}
+
+                <div class="user-badge">
+                    <span>{{ session.get('full_name', session.get('username')) }}</span>
+                    <span class="role-pill">{{ session.get('role', 'User') }}{% if session.get('department') and session.get('department') != 'All' %} - {{ session.get('department') }}{% endif %}</span>
+                </div>
+
+                <a href="{{ url_for('logout') }}" class="btn-logout">Logout</a>
+            </nav>
+            {% endif %}
+        </div>
+    </header>
+
+    <main class="main-content">
+        <!-- Flash messages -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+            <div class="flash-messages">
+                {% for category, message in messages %}
+                <div class="alert alert-{{ category }}">
+                    <span>{{ message }}</span>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+        {% endwith %}
+
+        {% block content %}{% endblock %}
+    </main>
+
+    <footer class="site-footer">
+        <div><strong>Vignan Spandana</strong> &bull; Institutional AI Parent Communication System</div>
+        <div style="font-size: 0.8rem; margin-top: 4px; color: #94a3b8;">
+            Role-Scoped Campus Access &bull; Stage 1 Security Hardened &bull; Multilingual Ready (Telugu / English)
+        </div>
+    </footer>
+
+    {% include 'call_modal.html' %}
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    {% block extra_scripts %}{% endblock %}
+</body>
+</html>

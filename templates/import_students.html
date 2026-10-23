@@ -1,0 +1,132 @@
+{% extends "base.html" %}
+
+{% block title %}Import Students - Vignan Spandana{% endblock %}
+
+{% block content %}
+<div style="max-width: 800px; margin: 0 auto;">
+    <div style="margin-bottom: 1.25rem;">
+        <a href="{{ url_for('dashboard') }}" style="font-size: 0.9rem;">&larr; Back to Dashboard</a>
+        <h2 style="margin-top: 4px;">Import Students via Excel / CSV</h2>
+        <p style="color: var(--text-muted); font-size: 0.92rem;">
+            Bulk-load student profiles, parent contact phone numbers, and language preferences into the database.
+            {% if session.get('department') and session.get('department') != 'All' %}
+            <br><span class="badge badge-dept">Enforced Scope: Only Department <strong>{{ session.get('department') }}</strong> records permitted.</span>
+            {% endif %}
+        </p>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title">Upload Spreadsheet File</h3>
+            <a href="{{ url_for('download_sample_csv') }}" class="btn btn-secondary btn-sm" download>
+                📥 Download Sample CSV Template
+            </a>
+        </div>
+
+        <form action="{{ url_for('import_students') }}" method="POST" enctype="multipart/form-data">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+            <div class="form-group">
+                <label for="file" class="form-label">Select .CSV or .XLSX File</label>
+                <input 
+                    type="file" 
+                    id="file" 
+                    name="file" 
+                    class="form-control" 
+                    accept=".csv, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel"
+                    required
+                >
+                <div class="form-text">
+                    Supported formats: <strong>.csv</strong>, <strong>.xlsx</strong>.
+                </div>
+            </div>
+
+            <div style="display: flex; gap: 0.75rem; margin-top: 1.5rem;">
+                <button type="submit" class="btn btn-primary">
+                    📤 Upload and Process Students
+                </button>
+                <a href="{{ url_for('dashboard') }}" class="btn btn-secondary">
+                    Cancel
+                </a>
+            </div>
+        </form>
+    </div>
+
+    <!-- Instructions & Sample Columns Guide -->
+    <div class="card">
+        <h3 class="card-title" style="margin-bottom: 0.75rem;">Expected Column Schema</h3>
+        <p style="font-size: 0.88rem; color: var(--text-muted); margin-bottom: 1rem;">
+            The file parser will automatically recognize the following headers (case-insensitive):
+        </p>
+
+        <div class="table-responsive">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Field Name</th>
+                        <th>Accepted Header Aliases</th>
+                        <th>Example Value</th>
+                        <th>Default if Missing</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Roll Number</strong></td>
+                        <td><code>roll_number</code>, <code>roll_no</code>, <code>roll</code></td>
+                        <td>211FA04001</td>
+                        <td><span class="badge badge-danger">Required</span></td>
+                    </tr>
+                    <tr>
+                        <td><strong>Student Name</strong></td>
+                        <td><code>name</code>, <code>student_name</code></td>
+                        <td>K. Sai Praneeth</td>
+                        <td><span class="badge badge-danger">Required</span></td>
+                    </tr>
+                    <tr>
+                        <td><strong>Department</strong></td>
+                        <td><code>department</code>, <code>dept</code>, <code>branch</code></td>
+                        <td>CSE</td>
+                        <td>{{ session.get('department') if session.get('department') != 'All' else 'CSE' }}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Class / Year</strong></td>
+                        <td><code>year_semester</code>, <code>class</code>, <code>year</code></td>
+                        <td>III Year - Sem 1</td>
+                        <td>III Year</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Section</strong></td>
+                        <td><code>section</code>, <code>sec</code></td>
+                        <td>A</td>
+                        <td>A</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Parent Name</strong></td>
+                        <td><code>parent_name</code>, <code>parent</code>, <code>guardian</code></td>
+                        <td>Venkateswara Rao</td>
+                        <td>Parent</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Parent Phone</strong></td>
+                        <td><code>parent_phone</code>, <code>phone</code>, <code>mobile</code></td>
+                        <td>+91 98480 12345</td>
+                        <td><span class="badge badge-danger">Required</span></td>
+                    </tr>
+                    <tr>
+                        <td><strong>Preferred Language</strong></td>
+                        <td><code>preferred_language</code>, <code>language</code>, <code>lang</code></td>
+                        <td>Telugu / Hindi / English</td>
+                        <td>Telugu</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Attendance %</strong></td>
+                        <td><code>attendance_percentage</code>, <code>attendance</code></td>
+                        <td>78.5</td>
+                        <td>85.0</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

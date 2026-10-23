@@ -1,0 +1,37 @@
+# Environment files & Secrets
+.env
+.env.*
+!.env.example
+
+# SQLite Database files
+*.db
+*.sqlite
+*.sqlite3
+
+# Python bytecode & cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyd
+
+# Testing & Coverage cache
+.pytest_cache/
+.coverage
+htmlcov/
+
+# User uploads & Temporary files
+uploads/
+tmp/
+temp/
+
+# Virtual Environments
+venv/
+.venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+
+# Operating System files
+.DS_Store
+Thumbs.db
