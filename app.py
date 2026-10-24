@@ -2328,8 +2328,14 @@ def api_speech_status():
     return jsonify({
         "configured": sarvam_service.is_configured(),
         "primary_language": "Telugu (te-IN)",
-        "model_tts": "bulbul:v1",
-        "model_stt": "saaras:v1"
+        "model_tts": "bulbul:v4-flash",
+        "model_stt": "saaras:v4",
+        "supported_speakers": [
+            {"id": "kavitha_te_conversation", "name": "Kavitha", "gender": "Female", "style": "Conversational (Default)"},
+            {"id": "kavitha_te_narration", "name": "Kavitha", "gender": "Female", "style": "Formal Narration"},
+            {"id": "pooja_te_conversation", "name": "Pooja", "gender": "Female", "style": "Warm Conversational"},
+            {"id": "tarun_te_narration", "name": "Tarun", "gender": "Male", "style": "Academic Narration"}
+        ]
     })
 
 
@@ -2337,12 +2343,12 @@ def api_speech_status():
 def api_speech_tts():
     """
     Synthesizes natural Telugu audio from text using Sarvam AI Bulbul TTS.
-    Expects JSON: { "text": "...", "speaker": "meera", "pace": 1.0, "language_code": "te-IN" }.
+    Expects JSON: { "text": "...", "speaker": "kavitha_te_conversation", "pace": 1.0, "language_code": "te-IN" }.
     Secret API calls stay entirely on the backend; SARVAM_API_KEY is never exposed.
     """
     data = request.get_json(silent=True) or {}
     text = str(data.get("text", "")).strip()
-    speaker = str(data.get("speaker", "meera")).strip()
+    speaker = str(data.get("speaker", "kavitha_te_conversation")).strip()
     language_code = str(data.get("language_code", "te-IN")).strip()
     try:
         pace = float(data.get("pace", 1.0))

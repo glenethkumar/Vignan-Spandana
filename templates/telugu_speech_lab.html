@@ -62,7 +62,7 @@
                             Telugu Text-to-Speech (TTS)
                         </h3>
                         <div style="font-size: 0.78rem; color: var(--text-muted);">
-                            Primary Language: <strong>Telugu (తెలుగు te-IN)</strong> &bull; Model: <code>bulbul:v1</code>
+                            Primary Language: <strong>Telugu (తెలుగు te-IN)</strong> &bull; Model: <code>bulbul:v4-flash</code>
                         </div>
                     </div>
                 </div>
@@ -111,10 +111,10 @@
                         Voice Persona (Speaker):
                     </label>
                     <select id="ttsSpeakerSelect" class="form-select" style="font-size: 0.85rem;">
-                        <option value="meera" selected>Meera (Female - Academic & Clear)</option>
-                        <option value="pavithra">Pavithra (Female - Warm)</option>
-                        <option value="arvind">Arvind (Male - Formal)</option>
-                        <option value="amol">Amol (Male - Conversational)</option>
+                        <option value="kavitha_te_conversation" selected>Kavitha (Conversational Female - Default)</option>
+                        <option value="kavitha_te_narration">Kavitha (Formal Narration Female)</option>
+                        <option value="pooja_te_conversation">Pooja (Warm Conversational Female)</option>
+                        <option value="tarun_te_narration">Tarun (Academic & Clear Male)</option>
                     </select>
                 </div>
 
@@ -359,7 +359,7 @@ async function generateTeluguAudio() {
             },
             body: JSON.stringify({
                 text: text,
-                speaker: speakerSelect ? speakerSelect.value : 'meera',
+                speaker: speakerSelect ? speakerSelect.value : 'kavitha_te_conversation',
                 pace: paceSelect ? parseFloat(paceSelect.value) : 1.0,
                 language_code: 'te-IN'
             })

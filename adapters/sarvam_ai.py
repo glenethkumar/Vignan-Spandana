@@ -49,6 +49,64 @@ class SarvamAIService:
 
     DEFAULT_TTS_MODEL = "bulbul:v4-flash"
     DEFAULT_STT_MODEL = "saaras:v4"
+    DEFAULT_SPEAKER = "kavitha_te_conversation"
+
+    # Official bulbul:v4-flash Telugu voice personas
+    TELUGU_V4_SPEAKERS = {
+        "kavitha_te_conversation": "Kavitha (Telugu Female - Conversational)",
+        "kavitha_te_narration": "Kavitha (Telugu Female - Formal Narration)",
+        "pooja_te_conversation": "Pooja (Telugu Female - Warm Conversational)",
+        "tarun_te_narration": "Tarun (Telugu Male - Academic Narration)",
+    }
+
+    # Bidirectional alias mapping between legacy v1 names and bulbul:v4-flash personas
+    SPEAKER_ALIASES_TO_V4 = {
+        "meera": "kavitha_te_conversation",
+        "pavithra": "pooja_te_conversation",
+        "arvind": "tarun_te_narration",
+        "amol": "tarun_te_narration",
+        "kavitha": "kavitha_te_conversation",
+        "pooja": "pooja_te_conversation",
+        "tarun": "tarun_te_narration",
+        "female": "kavitha_te_conversation",
+        "male": "tarun_te_narration",
+    }
+
+    SPEAKER_ALIASES_TO_V1 = {
+        "kavitha_te_conversation": "meera",
+        "kavitha_te_narration": "meera",
+        "pooja_te_conversation": "pavithra",
+        "tarun_te_narration": "arvind",
+        "kavitha": "meera",
+        "pooja": "pavithra",
+        "tarun": "arvind",
+    }
+
+    @classmethod
+    def normalize_speaker(cls, speaker: Optional[str], model: Optional[str] = None) -> str:
+        """
+        Ensures the speaker persona is valid for the target Bulbul model.
+        Maps legacy names ('meera', 'pavithra', 'arvind') to bulbul:v4-flash personas
+        ('kavitha_te_conversation', etc.) and vice versa for v1 REST fallback.
+        """
+        raw = (speaker or "").strip().lower()
+        target_model = (model or cls.DEFAULT_TTS_MODEL).lower()
+        is_v4 = "v4" in target_model or "flash" in target_model
+
+        if is_v4:
+            if raw in cls.TELUGU_V4_SPEAKERS:
+                return raw
+            if raw in cls.SPEAKER_ALIASES_TO_V4:
+                return cls.SPEAKER_ALIASES_TO_V4[raw]
+            if "_te_" in raw:
+                return raw
+            return cls.DEFAULT_SPEAKER
+        else:
+            if raw in cls.SPEAKER_ALIASES_TO_V1:
+                return cls.SPEAKER_ALIASES_TO_V1[raw]
+            if raw in ["meera", "pavithra", "arvind", "amol"]:
+                return raw
+            return "meera"
 
     def __init__(self, api_key: Optional[str] = None):
         self._explicit_key = api_key
@@ -57,12 +115,12 @@ class SarvamAIService:
     @property
     def api_key(self) -> str:
         """Retrieves active API key from explicit constructor, environment, or dynamically reloaded .env."""
-        if self._explicit_key:
+        if self._explicit_key is not None:
             return self._explicit_key.strip()
 
         key = os.environ.get("SARVAM_API_KEY", "")
-        if not key:
-            # Dynamically reload .env in case it was created/modified after process startup
+        # Only reload from .env if not set and not actively running unit tests (e.g. pytest monkeypatch)
+        if not key and not os.environ.get("PYTEST_CURRENT_TEST") and not os.environ.get("TESTING"):
             try:
                 from dotenv import load_dotenv
                 project_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -94,7 +152,7 @@ class SarvamAIService:
         self,
         text: str,
         language_code: str = PRIMARY_LANGUAGE_CODE,
-        speaker: str = "meera",
+        speaker: str = DEFAULT_SPEAKER,
         model: Optional[str] = None,
         pace: float = 1.0,
         speech_sample_rate: int = 22050
@@ -132,12 +190,14 @@ class SarvamAIService:
                     # Model fallback: map bulbul:v1 to bulbul:v4-flash for modern SDK
                     selected_model = model or self.DEFAULT_TTS_MODEL
                     if selected_model == "bulbul:v1":
-                        selected_model = "bulbul:v2"
+                        selected_model = self.DEFAULT_TTS_MODEL
+
+                    target_speaker = self.normalize_speaker(speaker, selected_model)
 
                     resp = client.text_to_speech.convert(
                         text=clean_text,
                         language_code=language_code or self.PRIMARY_LANGUAGE_CODE,
-                        speaker=speaker or "meera",
+                        speaker=target_speaker,
                         model=selected_model,
                         pace=max(0.5, min(2.0, pace)),
                         speech_sample_rate=speech_sample_rate
@@ -151,7 +211,7 @@ class SarvamAIService:
                             "mime_type": "audio/wav",
                             "format": "wav",
                             "language_code": language_code or self.PRIMARY_LANGUAGE_CODE,
-                            "speaker": speaker,
+                            "speaker": target_speaker,
                             "text": clean_text,
                             "model": selected_model,
                             "engine": "sarvamai-sdk"
@@ -216,12 +276,13 @@ class SarvamAIService:
 
         # Compatible payload supporting both v1 and v4 schemas
         tts_model = model or "bulbul:v1"
+        rest_speaker = self.normalize_speaker(speaker, tts_model)
         payload = {
             "inputs": [clean_text],
             "text": clean_text,
             "target_language_code": language_code,
             "language_code": language_code,
-            "speaker": speaker or "meera",
+            "speaker": rest_speaker,
             "pitch": 0,
             "pace": max(0.5, min(2.0, pace)),
             "loudness": 1.5,
