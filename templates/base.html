@@ -11,7 +11,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,500;0,600;0,700;1,400;1,600&family=Source+Sans+3:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
     
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}?v=3.0">
     {% block extra_head %}{% endblock %}
 </head>
 <body>
@@ -25,19 +25,7 @@
             <!-- Institutional Header & VIIT Emblem -->
             <div class="sidebar-brand">
                 <div class="sidebar-brand-crest">
-                    <svg class="viit-emblem" viewBox="0 0 48 48" width="40" height="40" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="VIIT College Seal">
-                        <circle cx="24" cy="24" r="23" fill="#17263C" stroke="#B49A62" stroke-width="1.8"/>
-                        <circle cx="24" cy="24" r="20" fill="none" stroke="#B49A62" stroke-width="0.75" stroke-dasharray="2 1.5"/>
-                        <!-- Open Book -->
-                        <path d="M14 28.5C17 27 21 27.5 24 29C27 27.5 31 27 34 28.5V19C31 17.5 27 18 24 19.5C21 18 17 17.5 14 19V28.5Z" fill="#F7F5F0" stroke="#B49A62" stroke-width="1" stroke-linejoin="round"/>
-                        <line x1="24" y1="19.5" x2="24" y2="29" stroke="#17263C" stroke-width="1"/>
-                        <!-- Torch of Enlightenment -->
-                        <path d="M24 10C24 10 26.5 13 25.5 15C24.5 16 23.5 16 22.5 15C21.5 13.5 24 10 24 10Z" fill="#C9363E"/>
-                        <path d="M24 12C24 12 25 13.5 24.5 14.5C24 15 23.5 15 23 14.5C22.5 13.8 24 12 24 12Z" fill="#B49A62"/>
-                        <!-- VIIT Monogram -->
-                        <text x="24" y="36.5" text-anchor="middle" font-family="'Lora', Georgia, serif" font-size="6.5" font-weight="700" fill="#B49A62" letter-spacing="1">VIIT</text>
-                        <text x="24" y="41.5" text-anchor="middle" font-family="'Source Sans 3', sans-serif" font-size="3.2" font-weight="600" fill="#E4E1DA" letter-spacing="0.5">ESTD 2002</text>
-                    </svg>
+                    <img src="{{ url_for('static', filename='images/viit_emblem.png') }}" alt="VIIT College Seal" class="viit-emblem-img">
                 </div>
                 <div class="sidebar-brand-text">
                     <h1 class="sidebar-brand-title">VIGNAN SPANDANA</h1>
@@ -225,19 +213,10 @@
         <!-- Unauthenticated View Header -->
         <header class="login-topbar">
             <div class="login-topbar-brand">
-                <svg class="viit-emblem" viewBox="0 0 48 48" width="36" height="36" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <circle cx="24" cy="24" r="23" fill="#17263C" stroke="#B49A62" stroke-width="1.8"/>
-                    <circle cx="24" cy="24" r="20" fill="none" stroke="#B49A62" stroke-width="0.75" stroke-dasharray="2 1.5"/>
-                    <path d="M14 28.5C17 27 21 27.5 24 29C27 27.5 31 27 34 28.5V19C31 17.5 27 18 24 19.5C21 18 17 17.5 14 19V28.5Z" fill="#F7F5F0" stroke="#B49A62" stroke-width="1" stroke-linejoin="round"/>
-                    <line x1="24" y1="19.5" x2="24" y2="29" stroke="#17263C" stroke-width="1"/>
-                    <path d="M24 10C24 10 26.5 13 25.5 15C24.5 16 23.5 16 22.5 15C21.5 13.5 24 10 24 10Z" fill="#C9363E"/>
-                    <path d="M24 12C24 12 25 13.5 24.5 14.5C24 15 23.5 15 23 14.5C22.5 13.8 24 12 24 12Z" fill="#B49A62"/>
-                    <text x="24" y="36.5" text-anchor="middle" font-family="'Lora', Georgia, serif" font-size="6.5" font-weight="700" fill="#B49A62" letter-spacing="1">VIIT</text>
-                    <text x="24" y="41.5" text-anchor="middle" font-family="'Source Sans 3', sans-serif" font-size="3.2" font-weight="600" fill="#E4E1DA" letter-spacing="0.5">ESTD 2002</text>
-                </svg>
+                <img src="{{ url_for('static', filename='images/viit_emblem.png') }}" alt="VIIT College Seal" class="login-topbar-emblem-img">
                 <div>
                     <h1 class="login-topbar-title">VIGNAN SPANDANA</h1>
-                    <div class="login-topbar-subtitle">Vignan's Institute of Information Technology, Visakhapatnam</div>
+                    <div class="login-topbar-subtitle">Vignan's Institute of Information Technology (Autonomous), Visakhapatnam</div>
                 </div>
             </div>
             <div>

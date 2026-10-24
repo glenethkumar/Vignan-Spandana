@@ -7,19 +7,30 @@
 @import url('https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,500;0,600;0,700;1,400;1,600&family=Source+Sans+3:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap');
 
 :root {
-  /* Proposed Institutional Color Palette */
-  --primary-navy: #17263C;
-  --secondary-red: #C9363E;
-  --warm-ivory: #F7F5F0;
-  --white-panel: #FFFFFF;
-  --muted-gold: #B49A62;
-  --gold-subtle: #F3EFE6;
+  /* Authentic VIIT Emblem Brand Colors (Extracted directly from college seal) */
+  --viit-blue: #004B99;          /* Deep Royal Blue of outer ring & wheel spokes */
+  --viit-dark-blue: #002D5E;     /* Deep Structural Navy for Sidebar & Identity Panels */
+  --viit-purple: #7A60A1;        /* Academic Purple / Violet of background wheel sectors */
+  --viit-purple-dark: #5C457D;   /* Darker Purple for text and active borders */
+  --viit-purple-light: #F3EFF9;  /* Soft lavender tint for badges and highlights */
+  --viit-cyan: #0198F1;          /* Star Azure / Cyan for central star & active indicators */
+  --viit-cyan-light: #E6F5FE;    /* Soft cyan tint for info chips */
+  --viit-gold: #B49A62;          /* Subtle Academic Muted Gold */
+  --viit-gold-subtle: #F6F3EB;   /* Warm gold-toned ivory tint */
+  
+  /* Primary Functional Palette */
+  --primary-navy: #004B99;       /* Grounded in VIIT Deep Royal Blue */
+  --secondary-red: #C9363E;      /* Reserved for errors, alerts, and critical shortages */
+  --warm-ivory: #F7F5F0;         /* Main workspace background */
+  --white-panel: #FFFFFF;        /* Data tables, cards, form panels */
+  --muted-gold: #B49A62;         /* Accent rules and institutional highlights */
+  --gold-subtle: #F6F3EB;
   --gold-hover: #9E844E;
-  --text-main: #26313D;
-  --text-secondary: #667085;
-  --border-color: #E4E1DA;
-  --border-subtle: #EFECE6;
-  --border-dark: #D1CCC0;
+  --text-main: #1E293B;          /* High-readability slate text */
+  --text-secondary: #64748B;     /* Muted metadata text */
+  --border-color: #E2E8F0;       /* Crisp, clean borders */
+  --border-subtle: #F1F5F9;
+  --border-dark: #CBD5E1;
   --success-green: #287653;
   --success-bg: #EDF7F2;
   --success-border: #BCE2CE;
@@ -31,18 +42,18 @@
   --danger-border: #F8C8C8;
 
   /* Aliases for component consistency */
-  --primary-color: var(--primary-navy);
-  --primary-hover: #0E1A2B;
-  --secondary-color: var(--muted-gold);
-  --accent-color: var(--muted-gold);
+  --primary-color: var(--viit-blue);
+  --primary-hover: #003875;
+  --secondary-color: var(--viit-purple);
+  --accent-color: var(--viit-gold);
   --bg-color: var(--warm-ivory);
   --card-bg: var(--white-panel);
   --text-muted: var(--text-secondary);
   --success: var(--success-green);
   --warning: var(--warning-amber);
   --danger: var(--danger-red);
-  --info: var(--primary-navy);
-  --info-bg: #EEF3F8;
+  --info: var(--viit-blue);
+  --info-bg: var(--viit-cyan-light);
 
   /* Typography */
   --font-serif: 'Lora', Georgia, 'Times New Roman', serif;
@@ -54,9 +65,9 @@
   --radius: 6px;
   --radius-md: 8px;
   --radius-lg: 10px;
-  --shadow-sm: 0 1px 3px rgba(23, 38, 60, 0.05);
-  --shadow-md: 0 4px 14px rgba(23, 38, 60, 0.06), 0 1px 3px rgba(23, 38, 60, 0.04);
-  --shadow-lg: 0 10px 25px rgba(23, 38, 60, 0.08), 0 2px 6px rgba(23, 38, 60, 0.04);
+  --shadow-sm: 0 1px 3px rgba(0, 45, 94, 0.05);
+  --shadow-md: 0 4px 14px rgba(0, 45, 94, 0.07), 0 1px 3px rgba(0, 45, 94, 0.04);
+  --shadow-lg: 0 10px 25px rgba(0, 45, 94, 0.10), 0 2px 6px rgba(0, 45, 94, 0.04);
 }
 
 * {
@@ -122,7 +133,7 @@ a:hover {
 .app-sidebar {
   width: 270px;
   min-width: 270px;
-  background-color: var(--primary-navy);
+  background-color: var(--viit-dark-blue);
   color: #FFFFFF;
   display: flex;
   flex-direction: column;
@@ -131,7 +142,7 @@ a:hover {
   height: 100vh;
   z-index: 100;
   border-right: 1px solid rgba(180, 154, 98, 0.25);
-  box-shadow: 2px 0 12px rgba(23, 38, 60, 0.12);
+  box-shadow: 2px 0 12px rgba(0, 45, 94, 0.15);
   transition: transform 0.25s ease-in-out;
 }
 
@@ -141,7 +152,7 @@ a:hover {
   align-items: center;
   gap: 12px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-  background: rgba(0, 0, 0, 0.15);
+  background: rgba(0, 0, 0, 0.18);
 }
 
 .sidebar-brand-crest {
@@ -149,6 +160,13 @@ a:hover {
   display: flex;
   align-items: center;
   justify-content: center;
+}
+
+.viit-emblem-img {
+  width: 44px;
+  height: 44px;
+  object-fit: contain;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.25));
 }
 
 .sidebar-brand-text {
@@ -184,7 +202,7 @@ a:hover {
   padding: 0.85rem 0.65rem;
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 3px;
 }
 
 .sidebar-group-label {
@@ -192,7 +210,7 @@ a:hover {
   font-weight: 700;
   letter-spacing: 0.09em;
   text-transform: uppercase;
-  color: rgba(228, 225, 218, 0.5);
+  color: rgba(228, 225, 218, 0.55);
   padding: 0.75rem 0.75rem 0.25rem;
 }
 
@@ -200,7 +218,7 @@ a:hover {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 0.58rem 0.85rem;
+  padding: 0.62rem 0.85rem;
   color: #D1D9E0;
   font-size: 0.88rem;
   font-weight: 500;
@@ -211,17 +229,18 @@ a:hover {
 }
 
 .sidebar-nav-link:hover {
-  background-color: rgba(255, 255, 255, 0.08);
+  background-color: rgba(255, 255, 255, 0.09);
   color: #FFFFFF;
   text-decoration: none;
   transform: translateX(2px);
 }
 
 .sidebar-nav-link.active {
-  background-color: rgba(180, 154, 98, 0.16);
-  color: #FFFFFF;
-  border-left-color: var(--muted-gold);
-  font-weight: 600;
+  background-color: var(--viit-purple) !important;
+  color: #FFFFFF !important;
+  border-left-color: var(--viit-cyan) !important;
+  font-weight: 700;
+  box-shadow: 0 2px 8px rgba(122, 96, 161, 0.45);
 }
 
 .sidebar-nav-link svg {
@@ -235,7 +254,7 @@ a:hover {
 }
 
 .sidebar-nav-link.active svg {
-  color: var(--muted-gold);
+  color: #FFFFFF !important;
 }
 
 .sidebar-pill-badge {
@@ -1989,5 +2008,574 @@ a:hover {
     padding: 0.85rem 1rem;
     flex-direction: column;
     text-align: center;
+  }
+}
+
+/* ==========================================================================
+   Institutional Login Layout (Split-Card Identity & Authorization Pane)
+   ========================================================================== */
+.login-view-wrapper {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background-color: var(--warm-ivory);
+}
+
+.login-topbar {
+  background-color: var(--viit-dark-blue);
+  color: #FFFFFF;
+  padding: 0.85rem 2rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 2px solid var(--viit-gold);
+  box-shadow: 0 2px 10px rgba(0, 45, 94, 0.12);
+}
+
+.login-topbar-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.login-topbar-emblem-img {
+  width: 42px;
+  height: 42px;
+  object-fit: contain;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+}
+
+.login-topbar-title {
+  font-family: var(--font-serif);
+  font-size: 1.15rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  color: #FFFFFF;
+  margin: 0;
+  line-height: 1.15;
+}
+
+.login-topbar-subtitle {
+  font-size: 0.72rem;
+  font-family: var(--font-sans);
+  color: #E2E8F0;
+  font-weight: 500;
+  margin-top: 2px;
+}
+
+.login-main-container {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2.5rem 1.25rem;
+}
+
+.login-container {
+  width: 100%;
+  max-width: 960px;
+  display: flex;
+  justify-content: center;
+}
+
+.login-split-card {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 1fr 1.15fr;
+  background: var(--white-panel);
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 16px 45px rgba(0, 45, 94, 0.14), 0 2px 8px rgba(0, 45, 94, 0.06);
+  border: 1px solid var(--border-color);
+}
+
+/* Left Institutional Identity Pane */
+.login-brand-pane {
+  background: linear-gradient(155deg, #002D5E 0%, #004B99 55%, #002347 100%);
+  color: #FFFFFF;
+  padding: 3rem 2.25rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  position: relative;
+  border-right: 1px solid rgba(180, 154, 98, 0.35);
+}
+
+.login-brand-pane::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 4px;
+  background: linear-gradient(180deg, var(--viit-gold) 0%, var(--viit-cyan) 50%, var(--viit-purple) 100%);
+}
+
+.brand-pane-header {
+  margin-bottom: 2rem;
+}
+
+.brand-pane-emblem {
+  width: 92px;
+  height: 92px;
+  object-fit: contain;
+  margin-bottom: 1.25rem;
+  filter: drop-shadow(0 6px 16px rgba(0, 0, 0, 0.4));
+}
+
+.college-affiliation-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--viit-gold);
+  background: rgba(180, 154, 98, 0.12);
+  border: 1px solid rgba(180, 154, 98, 0.3);
+  padding: 3px 9px;
+  border-radius: 20px;
+  margin-bottom: 0.75rem;
+}
+
+.college-full-name {
+  font-family: var(--font-serif);
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: #FFFFFF;
+  line-height: 1.25;
+  margin-bottom: 0.5rem;
+}
+
+.college-accreditation {
+  font-size: 0.8rem;
+  color: #CBD5E1;
+  line-height: 1.4;
+  margin-bottom: 1.5rem;
+}
+
+.brand-features-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-top: 1rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.brand-feature-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.brand-feature-icon {
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  background: rgba(1, 152, 241, 0.15);
+  color: var(--viit-cyan);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  border: 1px solid rgba(1, 152, 241, 0.3);
+}
+
+.brand-feature-title {
+  font-size: 0.84rem;
+  font-weight: 600;
+  color: #FFFFFF;
+}
+
+.brand-feature-desc {
+  font-size: 0.74rem;
+  color: #94A3B8;
+  line-height: 1.35;
+}
+
+.brand-pane-footer {
+  font-size: 0.72rem;
+  color: rgba(226, 232, 240, 0.75);
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  padding-top: 1rem;
+  margin-top: 1.5rem;
+}
+
+/* Right Authorization Form Pane */
+.login-form-pane {
+  padding: 3rem 2.5rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  background-color: var(--white-panel);
+}
+
+.login-form-pane h2 {
+  font-family: var(--font-serif);
+  font-size: 1.55rem;
+  font-weight: 700;
+  color: var(--viit-dark-blue);
+  margin-bottom: 0.35rem;
+  line-height: 1.2;
+}
+
+.login-auth-badge {
+  display: inline-block;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--viit-blue);
+  background: var(--viit-cyan-light);
+  border: 1px solid rgba(1, 152, 241, 0.3);
+  padding: 2px 8px;
+  border-radius: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: 0.65rem;
+}
+
+.login-header-desc {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  line-height: 1.45;
+  margin-bottom: 1.5rem;
+}
+
+.login-form-group {
+  margin-bottom: 1.15rem;
+}
+
+.login-form-group label {
+  display: block;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--text-main);
+  margin-bottom: 0.35rem;
+  letter-spacing: 0.01em;
+}
+
+.login-input {
+  width: 100%;
+  padding: 0.68rem 0.85rem;
+  font-size: 0.92rem;
+  font-family: var(--font-sans);
+  color: var(--text-main);
+  background-color: #FFFFFF;
+  border: 1px solid var(--border-dark);
+  border-radius: var(--radius);
+  transition: all 0.15s ease;
+}
+
+.login-input:focus {
+  outline: none;
+  border-color: var(--viit-blue);
+  box-shadow: 0 0 0 3px rgba(0, 75, 153, 0.15);
+}
+
+.btn-login-submit {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  font-family: var(--font-sans);
+  color: #FFFFFF;
+  background-color: var(--viit-blue);
+  border: none;
+  border-radius: var(--radius);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 1.25rem;
+  transition: all 0.18s ease;
+  box-shadow: 0 2px 6px rgba(0, 75, 153, 0.25);
+}
+
+.btn-login-submit:hover {
+  background-color: var(--primary-hover);
+  box-shadow: 0 4px 12px rgba(0, 75, 153, 0.35);
+  transform: translateY(-1px);
+}
+
+/* Quick Logins Role Chips */
+.quick-logins {
+  margin-top: 1.75rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--border-color);
+}
+
+.quick-logins-title {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--text-secondary);
+  margin-bottom: 0.65rem;
+}
+
+.role-chips-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 6px;
+}
+
+.role-chip-btn {
+  background: var(--warm-ivory);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  padding: 0.5rem 0.65rem;
+  text-align: left;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  display: flex;
+  flex-direction: column;
+}
+
+.role-chip-btn strong {
+  font-size: 0.8rem;
+  color: var(--viit-dark-blue);
+}
+
+.role-chip-btn span {
+  font-size: 0.68rem;
+  color: var(--text-secondary);
+  margin-top: 1px;
+}
+
+.role-chip-btn:hover {
+  background: #FFFFFF;
+  border-color: var(--viit-blue);
+  box-shadow: 0 2px 6px rgba(0, 45, 94, 0.08);
+  transform: translateY(-1px);
+}
+
+@media (max-width: 860px) {
+  .login-split-card {
+    grid-template-columns: 1fr;
+  }
+  .login-brand-pane {
+    padding: 2rem 1.5rem;
+  }
+  .login-brand-pane::after {
+    display: none;
+  }
+  .login-form-pane {
+    padding: 2rem 1.5rem;
+  }
+  .role-chips-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ==========================================================================
+   Attendance Command Deck (Executive Dashboard Horizontal Deck)
+   ========================================================================== */
+.attendance-command-deck {
+  background: var(--white-panel);
+  border-radius: 10px;
+  border: 1px solid var(--border-color);
+  box-shadow: 0 3px 14px rgba(0, 45, 94, 0.05);
+  margin-bottom: 1.5rem;
+  overflow: hidden;
+}
+
+.deck-header {
+  padding: 1.25rem 1.5rem 1rem;
+  border-bottom: 1px solid var(--border-subtle);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+  background: linear-gradient(180deg, #FFFFFF 0%, #FAFAFA 100%);
+}
+
+.deck-title-area {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.deck-title-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.deck-title {
+  font-family: var(--font-serif);
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: var(--viit-dark-blue);
+  margin: 0;
+}
+
+.deck-subtitle {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+.deck-grid-banner {
+  display: grid;
+  grid-template-columns: 1.2fr 2fr 1.1fr;
+  divide-x: 1px solid var(--border-color);
+}
+
+.deck-col {
+  padding: 1.25rem 1.5rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.deck-col:not(:last-child) {
+  border-right: 1px solid var(--border-color);
+}
+
+/* Deck Col 1: Roster Scope */
+.deck-stat-label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 4px;
+}
+
+.deck-stat-main {
+  font-size: 1.85rem;
+  font-weight: 700;
+  color: var(--viit-dark-blue);
+  line-height: 1.1;
+  font-family: var(--font-serif);
+}
+
+.deck-stat-sub {
+  font-size: 0.76rem;
+  color: var(--text-secondary);
+  margin-top: 4px;
+}
+
+/* Deck Col 2: Real-time Attendance Track */
+.attendance-track-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.track-legend-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  font-size: 0.84rem;
+}
+
+.track-legend-left {
+  font-weight: 600;
+  color: var(--text-main);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.track-legend-counts {
+  display: flex;
+  gap: 12px;
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+
+.track-count-present {
+  color: var(--success-green);
+}
+
+.track-count-absent {
+  color: var(--danger-red);
+}
+
+.attendance-progress-track {
+  height: 10px;
+  border-radius: 5px;
+  background-color: var(--danger-bg);
+  border: 1px solid var(--border-color);
+  overflow: hidden;
+  position: relative;
+  display: flex;
+}
+
+.attendance-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #287653 0%, #34A853 100%);
+  transition: width 0.3s ease;
+}
+
+.track-footer-meta {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+}
+
+/* Deck Col 3: Critical Alert & Outreach CTA */
+.deck-alert-box {
+  background: var(--warning-bg);
+  border: 1px solid var(--warning-border);
+  border-radius: 6px;
+  padding: 0.65rem 0.85rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.65rem;
+}
+
+.deck-alert-number {
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: var(--danger-red);
+  line-height: 1;
+}
+
+.deck-alert-text {
+  font-size: 0.76rem;
+  color: var(--warning-amber);
+  font-weight: 600;
+}
+
+.btn-deck-call {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  background-color: var(--viit-blue);
+  color: #FFFFFF;
+  font-size: 0.82rem;
+  font-weight: 600;
+  padding: 0.5rem 0.85rem;
+  border-radius: 6px;
+  text-decoration: none;
+  transition: all 0.15s ease;
+}
+
+.btn-deck-call:hover {
+  background-color: var(--primary-hover);
+  color: #FFFFFF;
+  text-decoration: none;
+  box-shadow: 0 2px 8px rgba(0, 75, 153, 0.25);
+}
+
+@media (max-width: 960px) {
+  .deck-grid-banner {
+    grid-template-columns: 1fr;
+  }
+  .deck-col:not(:last-child) {
+    border-right: none;
+    border-bottom: 1px solid var(--border-color);
   }
 }
