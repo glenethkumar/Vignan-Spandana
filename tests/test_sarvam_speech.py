@@ -353,3 +353,104 @@ def test_security_sarvam_key_never_exposed_in_client():
     with open(gitignore_path, "r", encoding="utf-8") as f:
         gitignore_content = f.read()
     assert ".env" in gitignore_content
+
+
+# ==============================================================================
+# 5. Official sarvamai SDK Unit Tests (Mocked - Zero Credits Consumed)
+# ==============================================================================
+
+def test_sdk_tts_conversion_mocked(client, monkeypatch):
+    """
+    Test Telugu TTS generation using the official sarvamai Python SDK client.
+    Uses mocked SDK responses to avoid consuming live API credits.
+    """
+    from sarvamai import SarvamAI
+    monkeypatch.setenv("SARVAM_API_KEY", "mock_sdk_api_key_123")
+
+    mock_sdk_resp = MagicMock()
+    mock_sdk_resp.audios = ["UklGRsdkMockAudioBase64String1234567890"]
+
+    service = SarvamAIService()
+    with patch.object(SarvamAI, "text_to_speech", create=True) as mock_tts_prop:
+        mock_convert = MagicMock(return_value=mock_sdk_resp)
+        mock_tts_prop.convert = mock_convert
+
+        result = service.text_to_speech(
+            text="నమస్కారం, విద్యార్థి హాజరు వివరాలు.",
+            language_code="te-IN",
+            speaker="meera",
+            model="bulbul:v4-flash"
+        )
+
+        assert result["success"] is True
+        assert result["audio_base64"] == "UklGRsdkMockAudioBase64String1234567890"
+        assert result["language_code"] == "te-IN"
+        assert result["engine"] == "sarvamai-sdk"
+
+
+def test_sdk_stt_transcription_mocked(client, monkeypatch):
+    """
+    Test Telugu STT transcription using the official sarvamai Python SDK client.
+    Uses mocked SDK responses to avoid consuming live API credits.
+    """
+    from sarvamai import SarvamAI
+    monkeypatch.setenv("SARVAM_API_KEY", "mock_sdk_api_key_123")
+
+    mock_sdk_resp = MagicMock()
+    mock_sdk_resp.transcript = "విద్యార్థి అనారోగ్యం కారణంగా రాలేదు."
+    mock_sdk_resp.language_code = "te-IN"
+
+    dummy_audio = b"RIFF" + b"\x24\x00\x00\x00WAVEfmt " + b"\x00" * 80
+    service = SarvamAIService()
+
+    with patch.object(SarvamAI, "speech_to_text", create=True) as mock_stt_prop:
+        mock_transcribe = MagicMock(return_value=mock_sdk_resp)
+        mock_stt_prop.transcribe = mock_transcribe
+
+        result = service.speech_to_text(
+            audio_bytes=dummy_audio,
+            filename="parent_response.wav",
+            language_code="te-IN",
+            model="saaras:v4"
+        )
+
+        assert result["success"] is True
+        assert result["transcript"] == "విద్యార్థి అనారోగ్యం కారణంగా రాలేదు."
+        assert result["language_code"] == "te-IN"
+        assert result["engine"] == "sarvamai-sdk"
+
+
+def test_sdk_credential_and_credit_errors_mocked(monkeypatch):
+    """
+    Verify SDK exceptions (UnauthorizedError, PaymentRequiredError, TooManyRequestsError)
+    are accurately caught and mapped to clear institutional error messages.
+    """
+    from sarvamai import SarvamAI, UnauthorizedError, PaymentRequiredError, TooManyRequestsError
+    monkeypatch.setenv("SARVAM_API_KEY", "bad_or_unfunded_key")
+
+    service = SarvamAIService()
+
+    # 1. Unauthorized error (401)
+    with patch.object(SarvamAI, "text_to_speech", create=True) as mock_tts:
+        mock_tts.convert.side_effect = UnauthorizedError(body="Invalid Key")
+        res = service.text_to_speech("నమస్కారం")
+        assert res["success"] is False
+        assert res["error_code"] == "INVALID_CREDENTIALS"
+        assert res["status_code"] == 401
+
+    # 2. Payment Required error (402)
+    with patch.object(SarvamAI, "text_to_speech", create=True) as mock_tts:
+        mock_tts.convert.side_effect = PaymentRequiredError(body="Out of credits")
+        res = service.text_to_speech("నమస్కారం")
+        assert res["success"] is False
+        assert res["error_code"] == "INSUFFICIENT_CREDITS"
+        assert res["status_code"] == 402
+
+    # 3. Rate Limit error (429)
+    with patch.object(SarvamAI, "speech_to_text", create=True) as mock_stt:
+        dummy_audio = b"RIFF" + b"\x24\x00\x00\x00WAVEfmt " + b"\x00" * 80
+        mock_stt.transcribe.side_effect = TooManyRequestsError(body="Rate limit")
+        res = service.speech_to_text(dummy_audio)
+        assert res["success"] is False
+        assert res["error_code"] == "RATE_LIMIT_EXCEEDED"
+        assert res["status_code"] == 429

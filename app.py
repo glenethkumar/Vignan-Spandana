@@ -15,10 +15,15 @@ from flask import (
 from datetime import datetime, timedelta
 import pandas as pd
 
-# Load environment variables from .env file if available
+# Load environment variables from .env file reliably
 try:
     from dotenv import load_dotenv
-    load_dotenv()
+    _project_dir = os.path.dirname(os.path.abspath(__file__))
+    _env_path = os.path.join(_project_dir, ".env")
+    if os.path.exists(_env_path):
+        load_dotenv(_env_path, override=True)
+    else:
+        load_dotenv()
 except ImportError:
     pass
 
