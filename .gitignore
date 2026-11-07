@@ -36,3 +36,7 @@ venv.bak/
 # Operating System files
 .DS_Store
 Thumbs.db
+
+# Raw image drops
+WhatsApp Image*.jpeg
+VS_Images/

@@ -1,8 +1,8 @@
 """
-Vignan Spandana - Mock Provider Adapters Interface
+Vignan Spandana - Provider Adapters Interface
 Establishes clean abstract interfaces for telephony and speech/AI
-so real external providers (Plivo, Exotel, Sarvam, Gemini) can be
-cleanly plugged in later without altering core business logic.
+so real external providers (Outpero, Twilio, Gemini) can be
+cleanly plugged in without altering core business logic.
 """
 
 from abc import ABC, abstractmethod
@@ -10,7 +10,7 @@ from typing import Dict, Any, Optional
 
 
 class TelephonyAdapter(ABC):
-    """Abstract interface for Telephony providers (Plivo, Twilio, Exotel, etc.)."""
+    """Abstract interface for Telephony providers (Outpero, Twilio, Exotel, etc.)."""
 
     @abstractmethod
     def initiate_call(self, to_phone: str, call_id: str, metadata: Dict[str, Any]) -> Dict[str, Any]:
@@ -29,7 +29,7 @@ class TelephonyAdapter(ABC):
 
 
 class AIAdapter(ABC):
-    """Abstract interface for Conversational Speech/AI providers (Sarvam, Bhashini, Gemini, etc.)."""
+    """Abstract interface for Conversational Speech/AI providers (Gemini, OpenAI, etc.)."""
 
     @abstractmethod
     def generate_greeting(self, student_name: str, language: str) -> str:

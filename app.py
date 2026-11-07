@@ -39,7 +39,7 @@ from security import (
 )
 from adapters import (
     MockTelephonyAdapter, MockAIAdapter, VoiceAssistantEngine,
-    SarvamAIService
+    OutperoTelephonyAdapter
 )
 
 app = Flask(__name__)
@@ -75,11 +75,11 @@ app.config.update(
 # Register teardown to guarantee DB connections are always closed
 app.teardown_appcontext(close_db)
 
-# Initialize Mock, Voice Assistant, and Sarvam Speech Adapters
+# Initialize Mock, Outpero Telephony, and Voice Assistant Adapters
 telephony_adapter = MockTelephonyAdapter()
+outpero_adapter = OutperoTelephonyAdapter()
 ai_adapter = MockAIAdapter()
 voice_assistant_engine = VoiceAssistantEngine()
-sarvam_service = SarvamAIService()
 
 # Ensure database and seed records exist at startup
 init_db(seed_data=True)
@@ -2306,113 +2306,131 @@ def api_assistant_chat():
 
 
 # --------------------------------------------------------------------------
-# Routes: Telugu AI Speech (Sarvam AI TTS & STT)
+# Routes: Outpero AI Telephony & Webhooks
 # --------------------------------------------------------------------------
-@app.route("/telugu-speech")
-@app.route("/speech-test")
-def telugu_speech_lab():
+@app.route("/api/telephony/status", methods=["GET"])
+def api_telephony_status():
     """
-    Renders the dedicated Telugu AI Speech test interface.
-    Allows entering Telugu text, hearing generated audio (Bulbul TTS),
-    and viewing transcription of spoken Telugu responses (Saarika/Saaras STT).
+    Returns configuration status and capabilities of telephony adapters.
+    Keeps credentials strictly confidential; never exposes secrets.
     """
-    return render_template(
-        "telugu_speech_lab.html",
-        is_sarvam_configured=sarvam_service.is_configured()
-    )
-
-
-@app.route("/api/speech/status", methods=["GET"])
-def api_speech_status():
-    """Returns configuration status and model metadata for Telugu speech service."""
     return jsonify({
-        "configured": sarvam_service.is_configured(),
-        "primary_language": "Telugu (te-IN)",
-        "model_tts": "bulbul:v4-flash",
-        "model_stt": "saaras:v4",
-        "supported_speakers": [
-            {"id": "kavitha_te_conversation", "name": "Kavitha", "gender": "Female", "style": "Conversational (Default)"},
-            {"id": "kavitha_te_narration", "name": "Kavitha", "gender": "Female", "style": "Formal Narration"},
-            {"id": "pooja_te_conversation", "name": "Pooja", "gender": "Female", "style": "Warm Conversational"},
-            {"id": "tarun_te_narration", "name": "Tarun", "gender": "Male", "style": "Academic Narration"}
-        ]
+        "mock_telephony": {
+            "status": "active",
+            "description": "Demonstration simulation mode for campus testing"
+        },
+        "outpero": {
+            "configured": outpero_adapter.is_configured(),
+            "campaign_configured": bool(outpero_adapter.campaign_slug),
+            "base_url": outpero_adapter.base_url,
+            "provider": "Outpero AI Phone Calling",
+            "languages": ["Telugu", "Hindi", "Tamil", "Kannada", "Malayalam", "Marathi", "English"]
+        }
     })
 
 
-@app.route("/api/speech/tts", methods=["POST"])
-def api_speech_tts():
+@app.route("/api/webhooks/outpero", methods=["POST"])
+def api_outpero_webhook():
     """
-    Synthesizes natural Telugu audio from text using Sarvam AI Bulbul TTS.
-    Expects JSON: { "text": "...", "speaker": "kavitha_te_conversation", "pace": 1.0, "language_code": "te-IN" }.
-    Secret API calls stay entirely on the backend; SARVAM_API_KEY is never exposed.
+    Inbound webhook endpoint receiving post-call event data from Outpero.
+    Updates call records and faculty follow-up statuses with actual duration,
+    conversation summary, and full dialog transcript upon call conclusion.
     """
+    # 1. Optional Webhook Authentication
+    incoming_secret = (
+        request.headers.get("X-Outpero-Webhook-Secret")
+        or request.args.get("secret")
+    )
+    if not outpero_adapter.verify_webhook_secret(incoming_secret):
+        return jsonify({"success": False, "error": "Unauthorized: Invalid webhook secret"}), 401
+
+    payload = request.get_json(silent=True) or {}
+    parsed = outpero_adapter.parse_post_call_webhook(payload)
+
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    student_id = parsed.get("student_id")
+    internal_call_id = parsed.get("internal_call_id")
+    remote_call_id = parsed.get("provider_call_id")
+
+    # If student_id or call_id was captured, update or insert into call_records
+    if student_id:
+        now = datetime.now()
+        now_str = now.strftime("%Y-%m-%d %H:%M:%S")
+
+        cursor.execute("""
+            INSERT INTO call_records (
+                student_id, status, language, duration_seconds, start_time, end_time,
+                transcript, summary, notes, initiated_by, call_time
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """, (
+            student_id,
+            parsed.get("status", "Completed"),
+            "Telugu",
+            parsed.get("duration_seconds", 0),
+            now_str,
+            now_str,
+            parsed.get("transcript", ""),
+            f"[Outpero AI Call] {parsed.get('summary', '')}",
+            f"Outpero Call ID: {remote_call_id or internal_call_id}",
+            "Outpero AI Automated Telephony",
+            now_str
+        ))
+        conn.commit()
+
+    return jsonify({
+        "success": True,
+        "message": "Webhook processed successfully",
+        "parsed": {
+            "call_id": internal_call_id or remote_call_id,
+            "status": parsed.get("status"),
+            "duration_seconds": parsed.get("duration_seconds")
+        }
+    }), 200
+
+
+@app.route("/api/telephony/outpero/dispatch", methods=["POST"])
+def api_outpero_dispatch_call():
+    """
+    Explicitly queues an outbound telephone call via Outpero AI calling if configured.
+    Falls back gracefully with an informative error if Outpero credentials are not present.
+    """
+    if "user_id" not in session:
+        return jsonify({"success": False, "error": "Authentication required"}), 401
+
     data = request.get_json(silent=True) or {}
-    text = str(data.get("text", "")).strip()
-    speaker = str(data.get("speaker", "kavitha_te_conversation")).strip()
-    language_code = str(data.get("language_code", "te-IN")).strip()
-    try:
-        pace = float(data.get("pace", 1.0))
-    except (ValueError, TypeError):
-        pace = 1.0
+    student_id = data.get("student_id")
+    if not student_id:
+        return jsonify({"success": False, "error": "student_id is required"}), 400
 
-    if not text:
-        return jsonify({
-            "success": False,
-            "error": "Telugu text is required to synthesize audio."
-        }), 400
+    conn = get_db_connection()
+    student = conn.execute("SELECT * FROM students WHERE id = ?", (student_id,)).fetchone()
+    if not student:
+        return jsonify({"success": False, "error": "Student record not found"}), 404
 
-    result = sarvam_service.text_to_speech(
-        text=text,
-        language_code=language_code,
-        speaker=speaker,
-        pace=pace
+    call_id = f"outpero_{student_id}_{int(datetime.now().timestamp())}"
+    metadata = {
+        "student_id": student["id"],
+        "student_name": student["name"],
+        "roll_number": student["roll_number"],
+        "department": student["department"],
+        "attendance_percentage": student["attendance_percentage"],
+        "parent_phone": student["parent_phone"],
+        "language": "Telugu"
+    }
+
+    result = outpero_adapter.initiate_call(
+        to_phone=student["parent_phone"],
+        call_id=call_id,
+        metadata=metadata
     )
 
-    if not result.get("success"):
-        status_code = result.get("status_code", 400)
-        if result.get("error_code") == "KEY_MISSING":
-            status_code = 503
-        return jsonify(result), status_code
+    status_code = 200 if result.get("success") else 400
+    if result.get("error_code") == "NOT_CONFIGURED":
+        status_code = 503
 
-    return jsonify(result)
-
-
-@app.route("/api/speech/stt", methods=["POST"])
-def api_speech_stt():
-    """
-    Transcribes spoken Telugu audio into text using Sarvam AI Saarika/Saaras STT.
-    Expects multipart/form-data with 'audio_file' (or 'file') and optional 'language_code'.
-    Secret API calls stay entirely on the backend; SARVAM_API_KEY is never exposed.
-    """
-    uploaded_file = request.files.get("audio_file") or request.files.get("file")
-    language_code = (request.form.get("language_code") or "te-IN").strip()
-
-    if not uploaded_file or not uploaded_file.filename:
-        return jsonify({
-            "success": False,
-            "error": "No audio file provided. Please record audio or upload an audio file."
-        }), 400
-
-    audio_bytes = uploaded_file.read()
-    if len(audio_bytes) < 44:
-        return jsonify({
-            "success": False,
-            "error": "Audio file is empty or too short."
-        }), 400
-
-    result = sarvam_service.speech_to_text(
-        audio_bytes=audio_bytes,
-        filename=uploaded_file.filename,
-        language_code=language_code
-    )
-
-    if not result.get("success"):
-        status_code = result.get("status_code", 400)
-        if result.get("error_code") == "KEY_MISSING":
-            status_code = 503
-        return jsonify(result), status_code
-
-    return jsonify(result)
+    return jsonify(result), status_code
 
 
 # --------------------------------------------------------------------------

@@ -8,9 +8,11 @@ Provides:
 - Audit logging (zero password/secret leakage)
 """
 
+import os
 import time
 import secrets
 import hmac
+import hashlib
 import re
 from typing import Optional, Dict, List, Tuple
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -100,9 +102,45 @@ def clear_all_rate_limits() -> None:
 
 
 # --------------------------------------------------------------------------
-# Department and Role Permissions
+# Environment & Demo Mode
 # --------------------------------------------------------------------------
-VALID_ROLES = ["Admin", "Principal", "Department Coordinator", "Faculty"]
+def is_demo_mode() -> bool:
+    """Returns True if the system is operating in simulated Demo Mode."""
+    return os.environ.get("DEMO_MODE", "1").strip().lower() in ("1", "true", "yes")
+
+
+# --------------------------------------------------------------------------
+# Privacy & Phone Masking
+# --------------------------------------------------------------------------
+def mask_phone_number(phone_str: Optional[str]) -> str:
+    """
+    Masks a phone number for privacy display by default (e.g. '+91 98*** **210').
+    Raw contact numbers must never be displayed unmasked without explicit authorization.
+    """
+    if not phone_str:
+        return "Not Registered"
+    raw = str(phone_str).strip()
+    digits = re.sub(r"\D", "", raw)
+    if len(digits) < 10:
+        return "****"
+    # Format standard 10-digit Indian mobile
+    last3 = digits[-3:]
+    first2 = digits[-10:-8]
+    return f"+91 {first2}*** **{last3}"
+
+
+# --------------------------------------------------------------------------
+# Department, Class and Role Permissions
+# --------------------------------------------------------------------------
+VALID_ROLES = [
+    "Admin",
+    "Principal",
+    "Department Coordinator",
+    "Faculty",
+    "College Coordinator",
+    "Hostel Dean",
+    "Bus Correspondent"
+]
 VALID_DEPARTMENTS = ["CSE", "ECE", "IT", "MECH", "All"]
 
 
@@ -113,17 +151,108 @@ def can_access_student(user_role: str, user_dept: str, student_dept: str) -> boo
     - Principal: All (Read-focused)
     - Department Coordinator: Only their department
     - Faculty: Only their department
+    - Issue Owners (College, Hostel, Bus): Can view student records if relevant to their category
     """
     if not user_role or not student_dept:
         return False
 
-    if user_role in ["Admin", "Principal"]:
+    if user_role in ["Admin", "Principal", "College Coordinator", "Hostel Dean", "Bus Correspondent"]:
         return True
 
     if user_role in ["Department Coordinator", "Faculty"]:
         return (user_dept or "").strip().upper() == student_dept.strip().upper()
 
     return False
+
+
+def can_faculty_access_class(conn, user_id: int, user_role: str, user_dept: str,
+                             department: str, year: str, section: str) -> bool:
+    """
+    Strict server-side validation ensuring faculty can only view or manage classes explicitly
+    assigned to them. Admin and Principal can access all classes.
+    """
+    if not user_role or not department:
+        return False
+
+    if user_role in ["Admin", "Principal"]:
+        return True
+
+    if user_role != "Faculty":
+        # Department Coordinators can access their department's classes
+        if user_role == "Department Coordinator":
+            return (user_dept or "").strip().upper() == department.strip().upper()
+        return False
+
+    # Check database assignment table
+    if conn and user_id:
+        row = conn.execute(
+            """
+            SELECT id FROM faculty_class_assignments
+            WHERE user_id = ? AND UPPER(department) = ? AND UPPER(year) = ? AND UPPER(section) = ?
+            """,
+            (user_id, department.strip().upper(), year.strip().upper(), section.strip().upper())
+        ).fetchone()
+        if row:
+            return True
+
+    # Fallback to department matching if no granular class assignment is seeded
+    # but still enforce that faculty cannot switch department
+    return False
+
+
+def can_start_campaign(user_role: str) -> bool:
+    """
+    Strict server-side check: ONLY Admin can confirm, start, pause, or stop calling campaigns.
+    Faculty can create drafts (steps 1-5) and submit to Admin, but can NEVER start calls.
+    """
+    return user_role == "Admin"
+
+
+def can_access_issue(user_role: str, issue_category: str) -> bool:
+    """
+    Issue category access control:
+    - Admin: Can view and manage all categories (College, Hostel, Bus).
+    - College Coordinator: Can view only 'college' issues.
+    - Hostel Dean: Can view only 'hostel' issues.
+    - Bus Correspondent: Can view only 'bus' issues.
+    - Others: Blocked.
+    """
+    if not user_role or not issue_category:
+        return False
+
+    if user_role == "Admin":
+        return True
+
+    cat = issue_category.strip().lower()
+    if user_role == "College Coordinator" and cat == "college":
+        return True
+    if user_role == "Hostel Dean" and cat == "hostel":
+        return True
+    if user_role == "Bus Correspondent" and cat == "bus":
+        return True
+
+    return False
+
+
+def can_manage_academic_units(user_role: str) -> bool:
+    """Only Admin can add, edit, or deactivate Departments, Years, and Sections."""
+    return user_role == "Admin"
+
+
+def verify_webhook_signature(payload_bytes: bytes, signature_header: Optional[str], secret: Optional[str]) -> bool:
+    """
+    Verifies HMAC-SHA256 signature for incoming webhooks.
+    """
+    if not secret:
+        # If no secret configured, reject or handle in debug mode
+        return False
+    if not signature_header:
+        return False
+
+    expected = hmac.new(secret.encode("utf-8"), payload_bytes, hashlib.sha256).hexdigest()
+    # Support signature with or without 'sha256=' prefix
+    clean_sig = signature_header.replace("sha256=", "").strip()
+    return hmac.compare_digest(expected, clean_sig)
 
 
 def can_modify_students(user_role: str) -> bool:

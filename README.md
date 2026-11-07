@@ -4,7 +4,7 @@
 
 An automated, role-scoped college parent communication platform designed for institutional governance, academic monitoring, and automated parent communication.
 
-> ⚠️ **Simulated Calls Notice**: All outbound phone calling features in this prototype are **strictly simulated** for demonstration and verification purposes. No real phone calls are dispatched, and no external telephony or AI API credits are consumed. See [`docs/REAL_CALLING_PLAN.md`](docs/REAL_CALLING_PLAN.md) for the architecture plan to connect real providers (Plivo, Sarvam, Pipecat).
+> ⚠️ **Simulated Calls Notice**: All outbound phone calling features in this prototype are **strictly simulated** for demonstration and verification purposes. No real phone calls are dispatched, and no external telephony or AI API credits are consumed. See [`docs/REAL_CALLING_PLAN.md`](docs/REAL_CALLING_PLAN.md) for the architecture plan to connect real providers (Outpero AI Telephony).
 
 ---
 
@@ -112,7 +112,7 @@ The system provides pre-configured role-based institutional accounts:
 ## 📖 Faculty & Architecture Documentation
 
 - 📘 **[5-Minute Demo Flow Guide](docs/DEMO_GUIDE.md)**: Click-by-click demonstration steps, script dialogue, and talking points for executive presentations.
-- 📐 **[Real Calling Architecture Plan](docs/REAL_CALLING_PLAN.md)**: Architectural blueprint detailing how `TelephonyAdapter` (Plivo) and `AIAdapter` (Sarvam + Pipecat) replace mock simulation for production PSTN dialing.
+- 📐 **[Real Calling Architecture Plan](docs/REAL_CALLING_PLAN.md)**: Architectural blueprint detailing how `TelephonyAdapter` (Outpero) connects to real telephone networks via Outpero's AI Phone Calling platform.
 
 ---
 

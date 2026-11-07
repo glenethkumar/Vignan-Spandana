@@ -95,16 +95,6 @@
                     <span>AI Voice Assistant</span>
                 </a>
 
-                <!-- Telugu AI Speech -->
-                <a href="{{ url_for('telugu_speech_lab') }}" class="sidebar-nav-link {% if request.endpoint == 'telugu_speech_lab' %}active{% endif %}">
-                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
-                        <path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path>
-                        <path d="M19.07 4.93a10 10 0 0 1 0 14.14"></path>
-                    </svg>
-                    <span>Telugu AI Speech</span>
-                    <span class="sidebar-pill-badge">Sarvam</span>
-                </a>
 
                 <!-- Call History -->
                 <a href="{{ url_for('call_history') }}" class="sidebar-nav-link {% if request.endpoint in ['call_history', 'call_detail'] %}active{% endif %}">
@@ -220,8 +210,7 @@
                 </div>
             </div>
             <div>
-                <a href="{{ url_for('voice_assistant') }}" style="color: #FFFFFF; font-size: 0.85rem; font-weight: 500; margin-right: 14px;">Voice Assistant</a>
-                <a href="{{ url_for('telugu_speech_lab') }}" style="color: var(--muted-gold); font-size: 0.85rem; font-weight: 500;">Telugu Speech Lab</a>
+                <a href="{{ url_for('voice_assistant') }}" style="color: #FFFFFF; font-size: 0.85rem; font-weight: 500;">Voice Assistant</a>
             </div>
         </header>
         {% endif %}

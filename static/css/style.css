@@ -7,47 +7,70 @@
 @import url('https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,500;0,600;0,700;1,400;1,600&family=Source+Sans+3:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap');
 
 :root {
-  /* Authentic VIIT Emblem Brand Colors (Extracted directly from college seal) */
-  --viit-blue: #004B99;          /* Deep Royal Blue of outer ring & wheel spokes */
-  --viit-dark-blue: #002D5E;     /* Deep Structural Navy for Sidebar & Identity Panels */
-  --viit-purple: #7A60A1;        /* Academic Purple / Violet of background wheel sectors */
-  --viit-purple-dark: #5C457D;   /* Darker Purple for text and active borders */
-  --viit-purple-light: #F3EFF9;  /* Soft lavender tint for badges and highlights */
-  --viit-cyan: #0198F1;          /* Star Azure / Cyan for central star & active indicators */
-  --viit-cyan-light: #E6F5FE;    /* Soft cyan tint for info chips */
-  --viit-gold: #B49A62;          /* Subtle Academic Muted Gold */
-  --viit-gold-subtle: #F6F3EB;   /* Warm gold-toned ivory tint */
+  /* VIIT Clean Institutional Palette (Blue, White, Light Grey; Orange for Issues/Alerts) */
+  --viit-blue: #0f2b48;          /* Primary VIIT Navy */
+  --viit-dark-blue: #091a2c;     /* Deep Structural Blue for Sidebar */
+  --viit-blue-light: #e0e7ff;    /* Soft blue tint */
+  --viit-cyan: #0284c7;          /* Action Sky Blue */
   
   /* Primary Functional Palette */
-  --primary-navy: #004B99;       /* Grounded in VIIT Deep Royal Blue */
-  --secondary-red: #C9363E;      /* Reserved for errors, alerts, and critical shortages */
-  --warm-ivory: #F7F5F0;         /* Main workspace background */
-  --white-panel: #FFFFFF;        /* Data tables, cards, form panels */
-  --muted-gold: #B49A62;         /* Accent rules and institutional highlights */
-  --gold-subtle: #F6F3EB;
-  --gold-hover: #9E844E;
-  --text-main: #1E293B;          /* High-readability slate text */
-  --text-secondary: #64748B;     /* Muted metadata text */
-  --border-color: #E2E8F0;       /* Crisp, clean borders */
-  --border-subtle: #F1F5F9;
-  --border-dark: #CBD5E1;
-  --success-green: #287653;
-  --success-bg: #EDF7F2;
-  --success-border: #BCE2CE;
-  --warning-amber: #9A681B;
-  --warning-bg: #FDF8EE;
-  --warning-border: #F5DEB3;
-  --danger-red: #C9363E;
-  --danger-bg: #FDF2F2;
-  --danger-border: #F8C8C8;
+  --primary-navy: #0f2b48;
+  --bg-color: #f8fafc;           /* Light grey background */
+  --white-panel: #ffffff;        /* Pure white cards and tables */
+  --text-main: #0f172a;          /* Slate 900 for high readability */
+  --text-secondary: #475569;     /* Slate 600 for metadata */
+  --border-color: #e2e8f0;       /* Slate 200 crisp borders */
+  --border-subtle: #f1f5f9;
+  --border-dark: #cbd5e1;
 
-  /* Aliases for component consistency */
+  /* Orange: STRICTLY reserved for Issues & System Alerts */
+  --issue-orange: #ea580c;       /* Alert / Issue Orange */
+  --issue-orange-light: #fff7ed; /* Light orange alert background */
+  --issue-orange-border: #fed7aa;/* Orange border */
+  --warning-amber: #ea580c;      /* Replaces amber with orange for issues */
+  --warning-bg: #fff7ed;
+  --warning-border: #fed7aa;
+
+  /* Functional Status */
+  --success-green: #15803d;      /* Calm institutional green */
+  --success-bg: #f0fdf4;
+  --success-border: #bbf7d0;
+  --danger-red: #b91c1c;         /* Clean red for errors */
+  --danger-bg: #fef2f2;
+  --danger-border: #fecaca;
+
+  /* Aliases */
   --primary-color: var(--viit-blue);
-  --primary-hover: #003875;
-  --secondary-color: var(--viit-purple);
-  --accent-color: var(--viit-gold);
-  --bg-color: var(--warm-ivory);
+  --primary-hover: #0a1f35;
+  --secondary-color: #334155;
+  --accent-color: var(--viit-blue);
+  --viit-gold: #0f2b48;          /* Neutralized: No gold */
+  --muted-gold: #0f2b48;
+  --gold-subtle: #f8fafc;
+  --gold-hover: #091a2c;
+  --warm-ivory: #f8fafc;
   --card-bg: var(--white-panel);
+  --text-muted: var(--text-secondary);
+  --success: var(--success-green);
+  --warning: var(--issue-orange);
+  --danger: var(--danger-red);
+  --info: var(--viit-blue);
+  --info-bg: #f0f9ff;
+
+  /* Typography */
+  --font-serif: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-sans: 'Source Sans 3', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+
+  /* Elevation & Geometry */
+  --radius-sm: 4px;
+  --radius: 6px;
+  --radius-md: 8px;
+  --radius-lg: 10px;
+  --shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.05);
+  --shadow-md: 0 4px 6px -1px rgba(15, 23, 42, 0.07), 0 2px 4px -2px rgba(15, 23, 42, 0.05);
+  --shadow-lg: 0 10px 15px -3px rgba(15, 23, 42, 0.08), 0 4px 6px -4px rgba(15, 23, 42, 0.04);
+}
   --text-muted: var(--text-secondary);
   --success: var(--success-green);
   --warning: var(--warning-amber);
