@@ -32,17 +32,17 @@
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
                 Edit Student
             </a>
-            <form action="{{ url_for('delete_student', student_id=student['id']) }}" method="POST" style="margin: 0;" onsubmit="return confirm('Are you sure you want to permanently delete student {{ student['name']|escape }} ({{ student['roll_number']|escape }})? This action cannot be undone.');">
+            <form action="{{ url_for('delete_student', student_id=student['id']) }}" method="POST" style="margin: 0;" onsubmit="return confirm('Are you sure you want to archive student {{ student['name']|escape }} ({{ student['roll_number']|escape }})? Historical records will be safely preserved.');">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <button type="submit" class="btn btn-secondary btn-sm" style="color: var(--secondary-red); border-color: var(--danger-border);" id="btnDeleteStudent">
                     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
-                    Delete
+                    Archive
                 </button>
             </form>
             <button 
                 type="button" 
                 class="btn btn-call btn-sm" 
-                onclick="triggerCallParent({{ student['id'] }}, '{{ student['name']|escape }}', '{{ student['roll_number']|escape }}', '{{ student['department']|escape }}', '{{ student['parent_phone']|escape }}', '{{ student['attendance_percentage'] }}', '{{ student['preferred_language']|escape }}')"
+                onclick="triggerCallParent({{ student['id'] }}, '{{ student['name']|escape }}', '{{ student['roll_number']|escape }}', '{{ student['department']|escape }}', '{{ student['parent_phone']|mask_phone|escape }}', '{{ student['attendance_percentage'] }}', '{{ student['preferred_language']|escape }}')"
             >
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>
                 Call Parent (AI)
@@ -271,7 +271,7 @@
                     <button 
                         type="button" 
                         class="btn btn-call btn-sm" 
-                        onclick="triggerCallParent({{ student['id'] }}, '{{ student['name']|escape }}', '{{ student['roll_number']|escape }}', '{{ student['department']|escape }}', '{{ student['parent_phone']|escape }}', '{{ student['attendance_percentage'] }}', '{{ student['preferred_language']|escape }}')"
+                        onclick="triggerCallParent({{ student['id'] }}, '{{ student['name']|escape }}', '{{ student['roll_number']|escape }}', '{{ student['department']|escape }}', '{{ student['parent_phone']|mask_phone|escape }}', '{{ student['attendance_percentage'] }}', '{{ student['preferred_language']|escape }}')"
                     >
                         Test "Call Parent" Action
                     </button>
@@ -358,7 +358,7 @@
             <div style="margin-bottom: 1rem;">
                 <div class="info-label">Mobile Phone Number</div>
                 <div class="info-value" style="font-family: var(--font-mono); font-size: 1.05rem; font-weight: 600;">
-                    {{ student['parent_phone'] }}
+                    {{ student['parent_phone']|mask_phone }}
                 </div>
             </div>
 
@@ -379,7 +379,7 @@
                 type="button" 
                 class="btn btn-call btn-block"
                 style="padding: 0.65rem;"
-                onclick="triggerCallParent({{ student['id'] }}, '{{ student['name']|escape }}', '{{ student['roll_number']|escape }}', '{{ student['department']|escape }}', '{{ student['parent_phone']|escape }}', '{{ student['attendance_percentage'] }}', '{{ student['preferred_language']|escape }}')"
+                onclick="triggerCallParent({{ student['id'] }}, '{{ student['name']|escape }}', '{{ student['roll_number']|escape }}', '{{ student['department']|escape }}', '{{ student['parent_phone']|mask_phone|escape }}', '{{ student['attendance_percentage'] }}', '{{ student['preferred_language']|escape }}')"
             >
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>
                 Dispatch AI Voice Call

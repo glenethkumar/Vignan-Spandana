@@ -401,6 +401,91 @@ def recalculate_student_attendance(conn, student_id: int):
     return None, 0, 0
 
 
+def reopen_issue(conn, issue_id: int, changed_by: str = "AI Confirmation Call",
+                 parent_feedback: str = None) -> dict:
+    """
+    Reopens an issue when the parent confirms the issue was not solved.
+    Increments reopen_count, sets is_critical=1 when reopen_count >= 3,
+    appends to issue_timeline, and keeps the loop running.
+    """
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM issues WHERE id = ?", (issue_id,))
+    issue = cursor.fetchone()
+    if not issue:
+        return {"success": False, "error": "Issue not found"}
+
+    reopen_count = (issue["reopen_count"] or 0) + 1
+    is_critical = 1 if reopen_count >= 3 else 0
+
+    cursor.execute("""
+        UPDATE issues
+        SET status = 'Reopened',
+            reopen_count = ?,
+            is_critical = ?,
+            parent_feedback = COALESCE(?, parent_feedback),
+            updated_at = CURRENT_TIMESTAMP
+        WHERE id = ?
+    """, (reopen_count, is_critical, parent_feedback, issue_id))
+
+    notes = f"Parent reported issue not resolved. Reopen cycle #{reopen_count}."
+    if is_critical:
+        notes += " Flagged CRITICAL (reopen count >= 3)."
+
+    cursor.execute("""
+        INSERT INTO issue_timeline (issue_id, from_status, to_status, changed_by, notes)
+        VALUES (?, ?, 'Reopened', ?, ?)
+    """, (issue_id, issue["status"], changed_by, notes))
+
+    conn.commit()
+    return {
+        "success": True,
+        "issue_id": issue_id,
+        "reopen_count": reopen_count,
+        "is_critical": is_critical,
+        "status": "Reopened"
+    }
+
+
+def record_class_upload(conn, department: str, year: str, section: str, attendance_date: str,
+                        uploaded_by: str, filename: str, total_count: int, present_count: int,
+                        absent_count: int, invalid_count: int = 0, no_phone_count: int = 0) -> dict:
+    """
+    Records an upload for a class and date.
+    Enforces the single active upload rule per class + date:
+    If an existing active upload exists for this class + date, marks it as 'replaced'
+    and links replaced_by = new_upload_id, preserving complete upload history.
+    """
+    cursor = conn.cursor()
+    cursor.execute("""
+        SELECT id FROM uploads
+        WHERE UPPER(department) = UPPER(?) AND UPPER(year) = UPPER(?) AND UPPER(section) = UPPER(?)
+          AND attendance_date = ? AND status = 'active'
+    """, (department, year, section, attendance_date))
+    existing = cursor.fetchone()
+
+    cursor.execute("""
+        INSERT INTO uploads (
+            department, year, section, attendance_date, uploaded_by, filename,
+            total_count, present_count, absent_count, invalid_count, no_phone_count, status
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'active')
+    """, (department.upper(), year.upper(), section.upper(), attendance_date, uploaded_by, filename,
+          total_count, present_count, absent_count, invalid_count, no_phone_count))
+    new_upload_id = cursor.lastrowid
+
+    replaced_id = None
+    if existing:
+        replaced_id = existing[0]
+        cursor.execute("UPDATE uploads SET status = 'replaced', replaced_by = ? WHERE id = ?",
+                       (new_upload_id, replaced_id))
+
+    conn.commit()
+    return {
+        "upload_id": new_upload_id,
+        "replaced_upload_id": replaced_id,
+        "status": "active"
+    }
+
+
 def _seed_initial_data(cursor, conn):
     """Inserts realistic demo data: departments, classes, ~40 students, campaigns, and issues."""
     # 1. Seed Academic Units (Departments, Years, Sections)

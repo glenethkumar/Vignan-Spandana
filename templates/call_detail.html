@@ -56,7 +56,7 @@
                     {{ call['parent_name'] }}
                 </div>
                 <div style="font-family: var(--font-mono); font-size: 0.85rem; color: var(--text-muted); margin-top: 2px;">
-                    Phone: {{ call['parent_phone'] or 'Not Registered' }}
+                    Phone: {{ call['parent_phone']|mask_phone }}
                 </div>
                 <div style="font-size: 0.82rem; margin-top: 4px;">
                     Attendance: <strong>{{ call['attendance_percentage'] if call['attendance_percentage'] is not none else 'Unavailable' }}{% if call['attendance_percentage'] is not none %}%{% endif %}</strong>

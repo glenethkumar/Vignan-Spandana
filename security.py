@@ -144,23 +144,42 @@ VALID_ROLES = [
 VALID_DEPARTMENTS = ["CSE", "ECE", "IT", "MECH", "All"]
 
 
-def can_access_student(user_role: str, user_dept: str, student_dept: str) -> bool:
+def can_access_student(user_role: str, user_dept: str, student_dept_or_dict,
+                       conn=None, user_id: Optional[int] = None) -> bool:
     """
-    Determines if a user has permission to access a student's record based on department scoping:
-    - Admin: All
-    - Principal: All (Read-focused)
+    Determines if a user has permission to access a student's record based on role scoping:
+    - Admin, Principal (Admin alias): All students
+    - College Coordinator, Hostel Dean, Bus Correspondent: All students (for issue resolution context)
+    - Faculty: Only their assigned classes (department, year, section) if full record provided, or own department
     - Department Coordinator: Only their department
-    - Faculty: Only their department
-    - Issue Owners (College, Hostel, Bus): Can view student records if relevant to their category
     """
-    if not user_role or not student_dept:
+    if not user_role or not student_dept_or_dict:
         return False
 
     if user_role in ["Admin", "Principal", "College Coordinator", "Hostel Dean", "Bus Correspondent"]:
         return True
 
-    if user_role in ["Department Coordinator", "Faculty"]:
-        return (user_dept or "").strip().upper() == student_dept.strip().upper()
+    # Extract fields from string, dict, or sqlite3.Row
+    dept = ""
+    year = ""
+    sec = ""
+    if isinstance(student_dept_or_dict, str):
+        dept = student_dept_or_dict
+    elif hasattr(student_dept_or_dict, "keys"):
+        dept = student_dept_or_dict["department"] if "department" in student_dept_or_dict.keys() else ""
+        year = student_dept_or_dict["year_semester"] if "year_semester" in student_dept_or_dict.keys() else (student_dept_or_dict["year"] if "year" in student_dept_or_dict.keys() else "")
+        sec = student_dept_or_dict["section"] if "section" in student_dept_or_dict.keys() else ""
+    elif hasattr(student_dept_or_dict, "get"):
+        dept = student_dept_or_dict.get("department") or ""
+        year = student_dept_or_dict.get("year_semester") or student_dept_or_dict.get("year") or ""
+        sec = student_dept_or_dict.get("section") or ""
+
+    # If user is Faculty with a database connection and class fields are present
+    if user_role == "Faculty" and conn and user_id and dept and year and sec:
+        return can_faculty_access_class(conn, user_id, user_role, user_dept, dept, year, sec)
+
+    if user_role in ["Department Coordinator", "Faculty", "Coordinator"]:
+        return (user_dept or "").strip().upper() == (dept or "").strip().upper()
 
     return False
 
@@ -169,7 +188,7 @@ def can_faculty_access_class(conn, user_id: int, user_role: str, user_dept: str,
                              department: str, year: str, section: str) -> bool:
     """
     Strict server-side validation ensuring faculty can only view or manage classes explicitly
-    assigned to them. Admin and Principal can access all classes.
+    assigned to them. Admin and Principal (Admin alias) can access all classes.
     """
     if not user_role or not department:
         return False
@@ -178,40 +197,53 @@ def can_faculty_access_class(conn, user_id: int, user_role: str, user_dept: str,
         return True
 
     if user_role != "Faculty":
-        # Department Coordinators can access their department's classes
         if user_role == "Department Coordinator":
             return (user_dept or "").strip().upper() == department.strip().upper()
         return False
 
-    # Check database assignment table
+    # Check database assignment table for granular assignment
     if conn and user_id:
+        # Normalize year (e.g. 'III Year - Sem 1' -> 'III')
+        norm_year = str(year).strip().upper()
+        if "III" in norm_year:
+            norm_year_token = "III"
+        elif "IV" in norm_year:
+            norm_year_token = "IV"
+        elif "II" in norm_year:
+            norm_year_token = "II"
+        elif "I" in norm_year:
+            norm_year_token = "I"
+        else:
+            norm_year_token = norm_year
+
         row = conn.execute(
             """
             SELECT id FROM faculty_class_assignments
-            WHERE user_id = ? AND UPPER(department) = ? AND UPPER(year) = ? AND UPPER(section) = ?
+            WHERE user_id = ? AND UPPER(department) = ? 
+              AND (UPPER(year) = ? OR UPPER(year) = ?) 
+              AND UPPER(section) = ?
             """,
-            (user_id, department.strip().upper(), year.strip().upper(), section.strip().upper())
+            (user_id, department.strip().upper(), norm_year, norm_year_token, section.strip().upper())
         ).fetchone()
         if row:
             return True
 
-    # Fallback to department matching if no granular class assignment is seeded
-    # but still enforce that faculty cannot switch department
     return False
 
 
 def can_start_campaign(user_role: str) -> bool:
     """
-    Strict server-side check: ONLY Admin can confirm, start, pause, or stop calling campaigns.
+    Strict server-side check: ONLY Admin (and Principal as Admin alias) can confirm, start, pause,
+    resume, or stop calling campaigns.
     Faculty can create drafts (steps 1-5) and submit to Admin, but can NEVER start calls.
     """
-    return user_role == "Admin"
+    return user_role in ["Admin", "Principal"]
 
 
 def can_access_issue(user_role: str, issue_category: str) -> bool:
     """
     Issue category access control:
-    - Admin: Can view and manage all categories (College, Hostel, Bus).
+    - Admin, Principal: Can view and manage all categories (College, Hostel, Bus).
     - College Coordinator: Can view only 'college' issues.
     - Hostel Dean: Can view only 'hostel' issues.
     - Bus Correspondent: Can view only 'bus' issues.
@@ -220,7 +252,7 @@ def can_access_issue(user_role: str, issue_category: str) -> bool:
     if not user_role or not issue_category:
         return False
 
-    if user_role == "Admin":
+    if user_role in ["Admin", "Principal"]:
         return True
 
     cat = issue_category.strip().lower()
@@ -235,8 +267,8 @@ def can_access_issue(user_role: str, issue_category: str) -> bool:
 
 
 def can_manage_academic_units(user_role: str) -> bool:
-    """Only Admin can add, edit, or deactivate Departments, Years, and Sections."""
-    return user_role == "Admin"
+    """Only Admin (and Principal alias) can add, edit, or deactivate Departments, Years, and Sections."""
+    return user_role in ["Admin", "Principal"]
 
 
 def verify_webhook_signature(payload_bytes: bytes, signature_header: Optional[str], secret: Optional[str]) -> bool:
@@ -256,8 +288,8 @@ def verify_webhook_signature(payload_bytes: bytes, signature_header: Optional[st
 
 
 def can_modify_students(user_role: str) -> bool:
-    """Admin, Department Coordinator, and Faculty can add, edit, and delete student records. Principal is read-only."""
-    return user_role in ["Admin", "Department Coordinator", "Faculty"]
+    """Admin, Principal (Admin alias), Department Coordinator, and Faculty can add, edit, and archive student records."""
+    return user_role in ["Admin", "Principal", "Department Coordinator", "Faculty"]
 
 
 def validate_phone_number(phone_str: Optional[str]) -> Tuple[bool, Optional[str]]:
@@ -277,13 +309,13 @@ def validate_phone_number(phone_str: Optional[str]) -> Tuple[bool, Optional[str]
 
 
 def can_mark_attendance(user_role: str) -> bool:
-    """Admin, Department Coordinator, and Faculty can mark/edit attendance. Principal is read-only."""
-    return user_role in ["Admin", "Department Coordinator", "Faculty"]
+    """Admin, Principal (Admin alias), Department Coordinator, and Faculty can mark/edit attendance."""
+    return user_role in ["Admin", "Principal", "Department Coordinator", "Faculty"]
 
 
 def can_manage_users(user_role: str) -> bool:
-    """Only Admin can create, deactivate, and manage users and audit logs."""
-    return user_role == "Admin"
+    """Only Admin (and Principal as Admin alias) can create, deactivate, and manage users and audit logs."""
+    return user_role in ["Admin", "Principal"]
 
 
 # --------------------------------------------------------------------------

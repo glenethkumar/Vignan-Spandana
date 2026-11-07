@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+
+{% block title %}Upload History - {{ department }}-{{ year }}-{{ section }} - Vignan Spandana{% endblock %}
+
+{% block content %}
+<div class="card" style="margin-bottom: 1.25rem;">
+    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.75rem;">
+        <div>
+            <div style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 4px;">
+                <a href="{{ url_for('class_view', department=department, year=year, section=section) }}" style="color: var(--primary-navy); font-weight: 600; text-decoration: none;">
+                    &larr; Back to Class {{ department }}-{{ year }}-{{ section }}
+                </a>
+            </div>
+            <h2 style="margin: 0; font-size: 1.55rem; font-family: var(--font-serif); color: var(--primary-navy);">
+                Upload History & Version Tracking
+            </h2>
+            <p style="color: var(--text-muted); font-size: 0.9rem; margin-top: 4px; margin-bottom: 0;">
+                Audited record of all student and attendance roster uploads for {{ department }} Year {{ year }} Section {{ section }}.
+            </p>
+        </div>
+        <div>
+            <span class="badge" style="background: var(--viit-blue); color: #ffffff; padding: 0.35rem 0.75rem; border-radius: 4px; font-weight: 600; font-size: 0.85rem;">
+                Class: {{ department }}-{{ year }}-{{ section }}
+            </span>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+        <h3 style="margin: 0; font-size: 1.15rem; font-family: var(--font-serif); color: var(--primary-navy);">
+            Class Upload Roster
+        </h3>
+        <span style="font-size: 0.85rem; color: var(--text-muted);">
+            Total Uploads: {{ uploads|length }}
+        </span>
+    </div>
+
+    {% if uploads %}
+    <div class="table-responsive">
+        <table class="table" style="width: 100%; border-collapse: collapse;">
+            <thead>
+                <tr style="border-bottom: 2px solid var(--border-color); text-align: left; font-size: 0.8rem; text-transform: uppercase; color: var(--text-muted);">
+                    <th style="padding: 0.65rem 0.75rem;">ID</th>
+                    <th style="padding: 0.65rem 0.75rem;">Attendance Date</th>
+                    <th style="padding: 0.65rem 0.75rem;">File Name</th>
+                    <th style="padding: 0.65rem 0.75rem;">Total</th>
+                    <th style="padding: 0.65rem 0.75rem;">Present / Absent</th>
+                    <th style="padding: 0.65rem 0.75rem;">Status</th>
+                    <th style="padding: 0.65rem 0.75rem;">Replaced By</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for up in uploads %}
+                <tr style="border-bottom: 1px solid var(--border-color); font-size: 0.875rem;">
+                    <td style="padding: 0.65rem 0.75rem; font-weight: 600;">#{{ up.id }}</td>
+                    <td style="padding: 0.65rem 0.75rem;">{{ up.attendance_date }}</td>
+                    <td style="padding: 0.65rem 0.75rem; font-family: monospace;">{{ up.filename }}</td>
+                    <td style="padding: 0.65rem 0.75rem;">{{ up.total_count }}</td>
+                    <td style="padding: 0.65rem 0.75rem;">
+                        <span style="color: var(--color-success); font-weight: 600;">{{ up.present_count }}</span> / 
+                        <span style="color: var(--color-danger); font-weight: 600;">{{ up.absent_count }}</span>
+                    </td>
+                    <td style="padding: 0.65rem 0.75rem;">
+                        {% if up.status == 'active' %}
+                        <span class="badge" style="background: #e6f4ea; color: #137333; font-weight: 600; padding: 0.2rem 0.5rem; border-radius: 4px;">
+                            Active
+                        </span>
+                        {% elif up.status == 'replaced' %}
+                        <span class="badge" style="background: #f1f3f4; color: #5f6368; font-weight: 600; padding: 0.2rem 0.5rem; border-radius: 4px;">
+                            Replaced
+                        </span>
+                        {% else %}
+                        <span class="badge" style="background: #fef7e0; color: #b06000; font-weight: 600; padding: 0.2rem 0.5rem; border-radius: 4px;">
+                            {{ up.status }}
+                        </span>
+                        {% endif %}
+                    </td>
+                    <td style="padding: 0.65rem 0.75rem; color: var(--text-muted);">
+                        {% if up.replaced_by %}
+                        Replaced by #{{ up.replaced_by }}
+                        {% else %}
+                        &mdash;
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div style="padding: 2rem; text-align: center; color: var(--text-muted); background: var(--bg-surface); border-radius: 6px;">
+        <p style="margin: 0; font-size: 0.95rem;">No file uploads recorded for {{ department }}-{{ year }}-{{ section }} yet.</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

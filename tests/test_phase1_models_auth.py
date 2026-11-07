@@ -235,3 +235,4 @@ def test_demo_accounts_login_flow(client):
 
         # Logout cleanly before next test
         client.get("/logout")
+

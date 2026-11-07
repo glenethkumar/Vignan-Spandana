@@ -195,6 +195,12 @@
                 </div>
 
                 <div class="topbar-meta-right">
+                    {% if demo_mode %}
+                    <span style="display: inline-flex; align-items: center; gap: 5px; padding: 2px 8px; font-size: 0.72rem; font-weight: 700; color: var(--viit-blue); background-color: #e2e8f0; border: 1px solid #cbd5e1; border-radius: 4px; text-transform: uppercase; letter-spacing: 0.05em;">
+                        <span style="width: 6px; height: 6px; border-radius: 50%; background-color: var(--viit-cyan); display: inline-block;"></span>
+                        Demo Mode
+                    </span>
+                    {% endif %}
                     <span class="topbar-date-pill">Academic Year 2026-27 &bull; Sem I</span>
                     <span class="topbar-role-badge">{{ session.get('role') }} Scope</span>
                 </div>

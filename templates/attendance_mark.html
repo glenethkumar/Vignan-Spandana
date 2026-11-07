@@ -188,7 +188,7 @@
                     <td>{{ abs.parent_name }}</td>
                     <td>
                         {% if abs.parent_phone %}
-                            <span style="font-family: var(--font-mono); font-size: 0.88rem;">{{ abs.parent_phone }}</span>
+                            <span style="font-family: var(--font-mono); font-size: 0.88rem;">{{ abs.parent_phone|mask_phone }}</span>
                         {% else %}
                             <span style="color: var(--secondary-red); font-size: 0.82rem; font-style: italic;">No Phone Registered</span>
                         {% endif %}
@@ -222,7 +222,7 @@
                         <button 
                             type="button" 
                             class="btn btn-call btn-sm"
-                            onclick="triggerCallParent({{ abs.id }}, '{{ abs.name|escape }}', '{{ abs.roll_number|escape }}', '{{ abs.department|escape }}', '{{ abs.parent_phone|escape }}', '{{ abs.attendance_percentage }}', '{{ abs.preferred_language|escape }}', '{{ selected_date }}')"
+                            onclick="triggerCallParent({{ abs.id }}, '{{ abs.name|escape }}', '{{ abs.roll_number|escape }}', '{{ abs.department|escape }}', '{{ abs.parent_phone|mask_phone|escape }}', '{{ abs.attendance_percentage }}', '{{ abs.preferred_language|escape }}', '{{ selected_date }}')"
                             title="Launch simulated AI parent communication"
                         >
                             📞 Call Parent
@@ -361,7 +361,7 @@
                                 <span class="badge badge-dept" style="font-size: 0.72rem; padding: 1px 5px;">{{ s.parent_relationship }}</span>
                             {% endif %}
                             {% if s.parent_phone %}
-                                &bull; <span style="font-family: var(--font-mono);">{{ s.parent_phone }}</span>
+                                &bull; <span style="font-family: var(--font-mono);">{{ s.parent_phone|mask_phone }}</span>
                             {% endif %}
                         </td>
                     </tr>

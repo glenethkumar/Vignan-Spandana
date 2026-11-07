@@ -344,8 +344,8 @@ def test_follow_ups_list_and_update_lifecycle():
     conn.close()
 
 
-def test_principal_cannot_update_follow_up():
-    """Verify Principal role has read-only access and cannot edit follow-ups (403)."""
+def test_principal_can_update_follow_up_as_admin_alias():
+    """Verify Principal role as Admin alias has full permissions to update follow-ups."""
     client = app.test_client()
 
     conn = sqlite3.connect(TEST_DB_PATH)
@@ -364,9 +364,10 @@ def test_principal_cannot_update_follow_up():
 
     resp = client.post(f"/follow-up/{fu_id}/update", data={
         "status": "closed",
-        "notes": "Attempted close by principal"
+        "notes": "Resolved by principal"
     })
-    assert resp.status_code == 403
+    # Status code 302 redirect after successful update
+    assert resp.status_code == 302
 
 
 def test_cross_department_followup_update_blocked():

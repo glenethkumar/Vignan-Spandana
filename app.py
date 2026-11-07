@@ -27,7 +27,11 @@ try:
 except ImportError:
     pass
 
-from database import init_db, get_db_connection, close_db, DB_PATH, recalculate_student_attendance
+from database import (
+    init_db, get_db_connection, close_db, DB_PATH,
+    recalculate_student_attendance, archive_student,
+    reopen_issue, record_class_upload
+)
 from security import (
     hash_password, verify_password,
     generate_csrf_token, validate_csrf_token,
@@ -35,7 +39,11 @@ from security import (
     can_access_student, can_modify_students, can_manage_users,
     can_mark_attendance,
     record_audit,
-    validate_phone_number
+    validate_phone_number,
+    mask_phone_number, is_demo_mode,
+    can_faculty_access_class, can_start_campaign,
+    can_access_issue, can_manage_academic_units,
+    verify_webhook_signature
 )
 from adapters import (
     MockTelephonyAdapter, MockAIAdapter, VoiceAssistantEngine,
@@ -86,17 +94,25 @@ init_db(seed_data=True)
 
 
 # --------------------------------------------------------------------------
-# Context Processors & Middleware (CSRF Protection)
+# Context Processors & Middleware (CSRF Protection & Template Helpers)
 # --------------------------------------------------------------------------
 @app.context_processor
 def inject_security_context():
-    """Provides csrf_token generator and current user details to all Jinja templates."""
+    """Provides csrf_token generator, current user details, and demo flags to all Jinja templates."""
     return {
         "csrf_token": lambda: generate_csrf_token(session),
         "user_role": session.get("role"),
         "user_dept": session.get("department"),
-        "user_full_name": session.get("full_name")
+        "user_full_name": session.get("full_name"),
+        "demo_mode": is_demo_mode(),
+        "mask_phone": mask_phone_number
     }
+
+
+@app.template_filter("mask_phone")
+def mask_phone_filter(phone):
+    """Jinja filter ensuring phone numbers are never displayed unmasked by default."""
+    return mask_phone_number(phone)
 
 
 @app.before_request
@@ -133,7 +149,7 @@ def csrf_protect():
 # Auth & Role Enforcement Decorators
 # --------------------------------------------------------------------------
 def login_required(allowed_roles=None):
-    """Decorator to enforce authentication and optional role-level authorization."""
+    """Decorator to enforce authentication and optional role-level authorization. Principal is an exact alias of Admin."""
     def decorator(f):
         @wraps(f)
         def decorated_function(*args, **kwargs):
@@ -141,7 +157,10 @@ def login_required(allowed_roles=None):
                 flash("Please log in with institutional credentials to access this portal.", "warning")
                 return redirect(url_for("login"))
 
-            if allowed_roles and session.get("role") not in allowed_roles:
+            user_role = session.get("role")
+            effective_role = "Admin" if user_role == "Principal" else user_role
+
+            if allowed_roles and (user_role not in allowed_roles and effective_role not in allowed_roles):
                 conn = get_db_connection()
                 record_audit(
                     conn,
@@ -149,7 +168,7 @@ def login_required(allowed_roles=None):
                     session.get("username", "Unknown"),
                     "unauthorized_access_attempt",
                     request.path,
-                    f"Role '{session.get('role')}' unauthorized for endpoint",
+                    f"Role '{user_role}' unauthorized for endpoint",
                     request.remote_addr
                 )
                 abort(403, description="Access Denied: You do not have permission to access this resource.")
@@ -379,14 +398,14 @@ def student_detail(student_id):
         flash("Student record not found.", "danger")
         return redirect(url_for("dashboard"))
 
-    if not can_access_student(user_role, user_dept, student["department"]):
+    if not can_access_student(user_role, user_dept, student, conn=conn, user_id=session.get("user_id")):
         record_audit(
             conn, session.get("user_id"), session.get("username"),
             "unauthorized_access_attempt", f"student_{student_id}",
             f"Blocked cross-department view attempt ({user_dept} tried to view {student['department']})",
             request.remote_addr
         )
-        abort(403, description=f"Access Denied: You can only view students in your assigned department ({user_dept}).")
+        abort(403, description=f"Access Denied: You can only view students in your assigned department or class ({user_dept}).")
 
     record_audit(
         conn, session.get("user_id"), session.get("username"),
@@ -434,12 +453,7 @@ def simulate_call_demo(student_id):
     - Records security audit log
     - Returns JSON payload with timeline events and dialogue lines
     """
-    if session.get("role") == "Principal":
-        return jsonify({
-            "success": False,
-            "error": "Principal role is read-only and cannot trigger communication actions."
-        }), 403
-
+    # Principal is treated as an alias of Admin with full permissions
     user_role = session.get("role")
     user_dept = session.get("department", "All")
 
@@ -740,12 +754,7 @@ def attendance_queue_process():
     - Creates FollowUp ticket for human faculty callback
     - Updates attendance_records.call_record_id
     """
-    if session.get("role") == "Principal":
-        return jsonify({
-            "success": False,
-            "error": "Principal role is read-only and cannot process call queue."
-        }), 403
-
+    # Principal is treated as an alias of Admin with full permissions
     user_role = session.get("role")
     user_dept = session.get("department", "All")
     data = request.get_json(silent=True) or request.form.to_dict()
@@ -1002,10 +1011,6 @@ def attendance_mark():
     selected_year = request.values.get("year") or request.values.get("year_semester") or "All"
 
     if request.method == "POST":
-        # Principal has read-only oversight
-        if user_role == "Principal":
-            abort(403, description="Principal role has read-only oversight and cannot modify attendance.")
-
         # Query all students in this scope to validate submitted IDs
         query = "SELECT * FROM students WHERE department = ?"
         params = [selected_dept]
@@ -1387,9 +1392,6 @@ def follow_ups_list():
 @app.route("/follow-up/<int:followup_id>/update", methods=["POST"])
 @login_required()
 def update_followup(followup_id):
-    if session.get("role") == "Principal":
-        abort(403, description="Principal account is read-only and cannot modify follow-ups.")
-
     user_role = session.get("role")
     user_dept = session.get("department", "All")
 
@@ -1443,9 +1445,6 @@ def update_followup(followup_id):
 @app.route("/student/<int:student_id>/simulate-call", methods=["POST"])
 @login_required()
 def simulate_call(student_id):
-    if session.get("role") == "Principal":
-        abort(403, description="Principal account is read-only and cannot trigger communication actions.")
-
     user_role = session.get("role")
     user_dept = session.get("department", "All")
 
@@ -1525,9 +1524,6 @@ def simulate_call(student_id):
 @app.route("/student/<int:student_id>/followup", methods=["POST"])
 @login_required()
 def add_followup(student_id):
-    if session.get("role") == "Principal":
-        abort(403, description="Principal role has read-only access and cannot record follow-up notes.")
-
     user_role = session.get("role")
     user_dept = session.get("department", "All")
 
@@ -2003,8 +1999,8 @@ def edit_student(student_id):
     if not student:
         abort(404, description="Student record not found.")
 
-    if not can_access_student(user_role, user_dept, student["department"]):
-        abort(403, description=f"Access Denied: You cannot edit students outside your department ({user_dept}).")
+    if not can_access_student(user_role, user_dept, student, conn=conn, user_id=session.get("user_id")):
+        abort(403, description=f"Access Denied: You cannot edit students outside your assigned class or department ({user_dept}).")
 
     if user_dept and user_dept != "All":
         departments = [user_dept]
@@ -2040,10 +2036,14 @@ def edit_student(student_id):
             flash("Roll Number, Student Name, and Parent Mobile Phone are required.", "danger")
             return render_template("edit_student.html", student=student, departments=departments, user_dept=user_dept, user_role=user_role)
 
-        clean_phone, is_p_valid = validate_phone_number(parent_phone)
-        if not is_p_valid:
-            flash(f"Invalid parent phone: '{parent_phone}'. Please enter a valid 10-digit number.", "danger")
-            return render_template("edit_student.html", student=student, departments=departments, user_dept=user_dept, user_role=user_role)
+        if "***" in parent_phone:
+            clean_phone = student["parent_phone"]
+        else:
+            is_p_valid, clean_phone = validate_phone_number(parent_phone)
+            if not is_p_valid:
+                flash(f"Invalid parent phone: '{parent_phone}'. Please enter a valid 10-digit number.", "danger")
+                return render_template("edit_student.html", student=student, departments=departments, user_dept=user_dept, user_role=user_role)
+            clean_phone = f"+91{clean_phone[-10:]}"
 
         if student_phone:
             clean_s_phone, is_s_valid = validate_phone_number(student_phone)
@@ -2103,7 +2103,7 @@ def edit_student(student_id):
 
 
 @app.route("/student/<int:student_id>/delete", methods=["POST"])
-@login_required(allowed_roles=["Admin", "Department Coordinator", "Faculty"])
+@login_required(allowed_roles=["Admin", "Principal", "Department Coordinator", "Faculty"])
 def delete_student(student_id):
     user_role = session.get("role")
     user_dept = session.get("department", "All")
@@ -2113,24 +2113,24 @@ def delete_student(student_id):
     if not student:
         abort(404, description="Student record not found.")
 
-    if not can_access_student(user_role, user_dept, student["department"]):
-        abort(403, description=f"Access Denied: You cannot delete students outside your department ({user_dept}).")
+    if not can_access_student(user_role, user_dept, student, conn=conn, user_id=session.get("user_id")):
+        abort(403, description=f"Access Denied: You cannot archive students outside your department ({user_dept}).")
 
     name = student["name"]
     roll_number = student["roll_number"]
     dept = student["department"]
 
-    conn.execute("DELETE FROM students WHERE id = ?", (student_id,))
-    conn.commit()
+    # Safe Archive: Sets is_active=0, archived_at=CURRENT_TIMESTAMP instead of hard deletion
+    archive_student(conn, student_id, session.get("username", "Admin"))
 
     record_audit(
         conn, session.get("user_id"), session.get("username"),
-        "student_deleted", f"student_{roll_number}",
-        f"Deleted student {name} ({roll_number}) from department {dept}",
+        "student_archived", f"student_{roll_number}",
+        f"Archived student {name} ({roll_number}) from department {dept}",
         request.remote_addr
     )
 
-    flash(f"Student {name} ({roll_number}) has been removed from the directory.", "info")
+    flash(f"Student {name} ({roll_number}) has been safely archived from the active directory.", "info")
     return redirect(url_for("dashboard"))
 
 
@@ -2333,16 +2333,18 @@ def api_telephony_status():
 def api_outpero_webhook():
     """
     Inbound webhook endpoint receiving post-call event data from Outpero.
-    Updates call records and faculty follow-up statuses with actual duration,
-    conversation summary, and full dialog transcript upon call conclusion.
+    Enforces HMAC-SHA256 signature verification via verify_webhook_signature().
+    Missing or invalid signature returns 401 and saves nothing to the database.
     """
-    # 1. Optional Webhook Authentication
-    incoming_secret = (
-        request.headers.get("X-Outpero-Webhook-Secret")
-        or request.args.get("secret")
+    secret = os.environ.get("OUTPERO_WEBHOOK_SECRET") or outpero_adapter.webhook_secret
+    sig = (
+        request.headers.get("X-Outpero-Signature")
+        or request.headers.get("X-Outpero-Webhook-Secret")
     )
-    if not outpero_adapter.verify_webhook_secret(incoming_secret):
-        return jsonify({"success": False, "error": "Unauthorized: Invalid webhook secret"}), 401
+    raw_body = request.get_data()
+
+    if not verify_webhook_signature(raw_body, sig, secret):
+        return jsonify({"success": False, "error": "Unauthorized: Invalid or missing webhook signature"}), 401
 
     payload = request.get_json(silent=True) or {}
     parsed = outpero_adapter.parse_post_call_webhook(payload)
@@ -2393,8 +2395,8 @@ def api_outpero_webhook():
 @app.route("/api/telephony/outpero/dispatch", methods=["POST"])
 def api_outpero_dispatch_call():
     """
-    Explicitly queues an outbound telephone call via Outpero AI calling if configured.
-    Falls back gracefully with an informative error if Outpero credentials are not present.
+    Explicitly queues an outbound telephone call via Outpero AI calling.
+    In DEMO_MODE=1, strictly simulates the call and NEVER places real outbound network calls.
     """
     if "user_id" not in session:
         return jsonify({"success": False, "error": "Authentication required"}), 401
@@ -2410,6 +2412,18 @@ def api_outpero_dispatch_call():
         return jsonify({"success": False, "error": "Student record not found"}), 404
 
     call_id = f"outpero_{student_id}_{int(datetime.now().timestamp())}"
+
+    # Critical Safety: In Demo Mode, NEVER dispatch real outbound network request to Outpero API!
+    if is_demo_mode():
+        return jsonify({
+            "success": True,
+            "demo": True,
+            "mode": "demo",
+            "message": "[Demo Mode] Call simulated successfully. No outbound phone call placed.",
+            "call_id": call_id,
+            "status": "Queued"
+        }), 200
+
     metadata = {
         "student_id": student["id"],
         "student_name": student["name"],
@@ -2431,6 +2445,236 @@ def api_outpero_dispatch_call():
         status_code = 503
 
     return jsonify(result), status_code
+
+
+# --------------------------------------------------------------------------
+# Routes: Campaign Management & Lifecycle Controls (Admin Only Execution)
+# --------------------------------------------------------------------------
+@app.route("/campaigns/<int:campaign_id>/confirm", methods=["POST"])
+@login_required()
+def campaign_confirm(campaign_id):
+    user_role = session.get("role")
+    if not can_start_campaign(user_role):
+        record_audit(
+            get_db_connection(), session.get("user_id"), session.get("username"),
+            "unauthorized_campaign_action", f"campaign_{campaign_id}",
+            f"Blocked unauthorized campaign confirm attempt by {user_role}",
+            request.remote_addr
+        )
+        abort(403, description="Access Denied: Only Administrator can confirm and authorize campaigns.")
+
+    conn = get_db_connection()
+    campaign = conn.execute("SELECT * FROM campaigns WHERE id = ?", (campaign_id,)).fetchone()
+    if not campaign:
+        abort(404, description="Campaign not found.")
+
+    conn.execute("UPDATE campaigns SET status = 'pending_approval', confirmed_by = ? WHERE id = ?",
+                 (session.get("username"), campaign_id))
+    conn.commit()
+    return jsonify({"success": True, "message": "Campaign confirmed and ready for dispatch.", "campaign_id": campaign_id}), 200
+
+
+@app.route("/campaigns/<int:campaign_id>/start", methods=["POST"])
+@login_required()
+def campaign_start(campaign_id):
+    user_role = session.get("role")
+    if not can_start_campaign(user_role):
+        record_audit(
+            get_db_connection(), session.get("user_id"), session.get("username"),
+            "unauthorized_campaign_action", f"campaign_{campaign_id}",
+            f"Blocked unauthorized campaign start attempt by {user_role}",
+            request.remote_addr
+        )
+        abort(403, description="Access Denied: Only Administrator can start calling campaigns. Faculty cannot initiate calls.")
+
+    conn = get_db_connection()
+    campaign = conn.execute("SELECT * FROM campaigns WHERE id = ?", (campaign_id,)).fetchone()
+    if not campaign:
+        abort(404, description="Campaign not found.")
+
+    conn.execute("UPDATE campaigns SET status = 'active', confirmed_by = ? WHERE id = ?",
+                 (session.get("username"), campaign_id))
+    conn.commit()
+    return jsonify({"success": True, "message": "Calling campaign dispatched successfully in Demo Mode.", "campaign_id": campaign_id}), 200
+
+
+@app.route("/campaigns/<int:campaign_id>/pause", methods=["POST"])
+@login_required()
+def campaign_pause(campaign_id):
+    user_role = session.get("role")
+    if not can_start_campaign(user_role):
+        abort(403, description="Access Denied: Only Administrator can pause campaigns.")
+
+    conn = get_db_connection()
+    conn.execute("UPDATE campaigns SET status = 'paused' WHERE id = ?", (campaign_id,))
+    conn.commit()
+    return jsonify({"success": True, "message": "Campaign paused successfully.", "campaign_id": campaign_id}), 200
+
+
+@app.route("/campaigns/<int:campaign_id>/resume", methods=["POST"])
+@login_required()
+def campaign_resume(campaign_id):
+    user_role = session.get("role")
+    if not can_start_campaign(user_role):
+        abort(403, description="Access Denied: Only Administrator can resume campaigns.")
+
+    conn = get_db_connection()
+    conn.execute("UPDATE campaigns SET status = 'active' WHERE id = ?", (campaign_id,))
+    conn.commit()
+    return jsonify({"success": True, "message": "Campaign resumed successfully.", "campaign_id": campaign_id}), 200
+
+
+@app.route("/campaigns/<int:campaign_id>/stop", methods=["POST"])
+@login_required()
+def campaign_stop(campaign_id):
+    user_role = session.get("role")
+    if not can_start_campaign(user_role):
+        abort(403, description="Access Denied: Only Administrator can stop campaigns.")
+
+    conn = get_db_connection()
+    conn.execute("UPDATE campaigns SET status = 'stopped' WHERE id = ?", (campaign_id,))
+    conn.commit()
+    return jsonify({"success": True, "message": "Campaign stopped successfully.", "campaign_id": campaign_id}), 200
+
+
+# --------------------------------------------------------------------------
+# Routes: Issues & Orange Resolution Loop (Category Isolation)
+# --------------------------------------------------------------------------
+@app.route("/issues", methods=["GET"])
+@login_required()
+def issues_list():
+    user_role = session.get("role")
+    conn = get_db_connection()
+
+    if user_role == "College Coordinator":
+        issues = conn.execute("SELECT * FROM issues WHERE category = 'college' ORDER BY created_at DESC").fetchall()
+    elif user_role == "Hostel Dean":
+        issues = conn.execute("SELECT * FROM issues WHERE category = 'hostel' ORDER BY created_at DESC").fetchall()
+    elif user_role == "Bus Correspondent":
+        issues = conn.execute("SELECT * FROM issues WHERE category = 'bus' ORDER BY created_at DESC").fetchall()
+    elif user_role in ["Admin", "Principal"]:
+        issues = conn.execute("SELECT * FROM issues ORDER BY created_at DESC").fetchall()
+    else:
+        abort(403, description="Access Denied: You do not have permission to access the Issues management board.")
+
+    return render_template("follow_ups.html", follow_ups=[], issues=issues, user_role=user_role)
+
+
+@app.route("/issues/<int:issue_id>", methods=["GET"])
+@login_required()
+def issue_detail(issue_id):
+    user_role = session.get("role")
+    conn = get_db_connection()
+    issue = conn.execute("SELECT * FROM issues WHERE id = ?", (issue_id,)).fetchone()
+    if not issue:
+        abort(404, description="Issue record not found.")
+
+    if not can_access_issue(user_role, issue["category"]):
+        record_audit(
+            conn, session.get("user_id"), session.get("username"),
+            "unauthorized_issue_access", f"issue_{issue_id}",
+            f"Blocked {user_role} from opening {issue['category']} issue",
+            request.remote_addr
+        )
+        abort(403, description=f"Access Denied: As {user_role}, you can only access {issue['category']} issues.")
+
+    timeline = conn.execute("SELECT * FROM issue_timeline WHERE issue_id = ? ORDER BY created_at ASC", (issue_id,)).fetchall()
+    student = None
+    if issue["student_id"]:
+        student = conn.execute("SELECT * FROM students WHERE id = ?", (issue["student_id"],)).fetchone()
+
+    return render_template("follow_ups.html", follow_ups=[], active_issue=issue, timeline=timeline, student=student)
+
+
+@app.route("/issues/<int:issue_id>/resolve", methods=["POST"])
+@login_required()
+def issue_resolve(issue_id):
+    user_role = session.get("role")
+    conn = get_db_connection()
+    issue = conn.execute("SELECT * FROM issues WHERE id = ?", (issue_id,)).fetchone()
+    if not issue:
+        abort(404, description="Issue record not found.")
+
+    if not can_access_issue(user_role, issue["category"]):
+        abort(403, description=f"Access Denied: As {user_role}, you cannot resolve {issue['category']} issues.")
+
+    resolution_notes = request.form.get("resolution_notes", "").strip() or "Issue resolved by department head."
+    conn.execute("""
+        UPDATE issues
+        SET status = 'Resolved by Owner',
+            resolution_notes = ?,
+            resolved_at = CURRENT_TIMESTAMP,
+            updated_at = CURRENT_TIMESTAMP
+        WHERE id = ?
+    """, (resolution_notes, issue_id))
+
+    conn.execute("""
+        INSERT INTO issue_timeline (issue_id, from_status, to_status, changed_by, notes)
+        VALUES (?, ?, 'Resolved by Owner', ?, ?)
+    """, (issue_id, issue["status"], session.get("full_name") or session.get("username"), resolution_notes))
+    conn.commit()
+
+    flash("Issue marked as Resolved. Automated verification call queued for parent confirmation.", "success")
+    return redirect(url_for("issues_list"))
+
+
+@app.route("/issues/<int:issue_id>/reopen", methods=["POST"])
+@login_required()
+def issue_reopen_endpoint(issue_id):
+    conn = get_db_connection()
+    feedback = request.form.get("parent_feedback") or "Parent indicated issue remains unresolved."
+    result = reopen_issue(conn, issue_id, changed_by=session.get("username", "AI Confirmation Call"), parent_feedback=feedback)
+    if not result.get("success"):
+        abort(404, description=result.get("error", "Issue not found."))
+    return jsonify(result), 200
+
+
+# --------------------------------------------------------------------------
+# Routes: Class Scoping & Upload History Access
+# --------------------------------------------------------------------------
+@app.route("/classes/<department>/<year>/<section>", methods=["GET"])
+@login_required()
+def class_view(department, year, section):
+    user_role = session.get("role")
+    user_dept = session.get("department", "All")
+    conn = get_db_connection()
+
+    if not can_faculty_access_class(conn, session.get("user_id"), user_role, user_dept, department, year, section):
+        record_audit(
+            conn, session.get("user_id"), session.get("username"),
+            "unauthorized_class_view", f"class_{department}_{year}_{section}",
+            f"Blocked {user_role} from accessing class {department}-{year}-{section}",
+            request.remote_addr
+        )
+        abort(403, description=f"Access Denied: You are not assigned to class {department}-{year}-{section}.")
+
+    students = conn.execute("""
+        SELECT * FROM students
+        WHERE UPPER(department) = UPPER(?) AND (UPPER(year_semester) = UPPER(?) OR UPPER(year_semester) LIKE ?)
+          AND UPPER(section) = UPPER(?) AND (is_active = 1 OR is_active IS NULL)
+        ORDER BY roll_number ASC
+    """, (department, year, f"%{year}%", section)).fetchall()
+
+    return render_template("dashboard.html", students=students, current_class=f"{department}-{year}-{section}")
+
+
+@app.route("/classes/<department>/<year>/<section>/uploads", methods=["GET"])
+@login_required()
+def class_upload_history(department, year, section):
+    user_role = session.get("role")
+    user_dept = session.get("department", "All")
+    conn = get_db_connection()
+
+    if not can_faculty_access_class(conn, session.get("user_id"), user_role, user_dept, department, year, section):
+        abort(403, description=f"Access Denied: You are not authorized to view upload history for {department}-{year}-{section}.")
+
+    uploads = conn.execute("""
+        SELECT * FROM uploads
+        WHERE UPPER(department) = UPPER(?) AND UPPER(year) = UPPER(?) AND UPPER(section) = UPPER(?)
+        ORDER BY created_at DESC
+    """, (department, year, section)).fetchall()
+
+    return render_template("upload_history.html", uploads=uploads, department=department, year=year, section=section)
 
 
 # --------------------------------------------------------------------------

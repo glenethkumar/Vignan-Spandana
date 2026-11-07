@@ -257,8 +257,8 @@ def test_faculty_cross_department_call_and_followup_blocked():
     assert resp_note.status_code == 403
 
 
-def test_principal_has_read_focused_campus_wide_access():
-    """Principal sees all departments on dashboard, but cannot add students or trigger calls."""
+def test_principal_has_admin_alias_full_access():
+    """Principal is an alias of Admin with campus-wide full administrative access."""
     client = app.test_client()
     login_as(client, "principal", "principal123")
 
@@ -270,18 +270,18 @@ def test_principal_has_read_focused_campus_wide_access():
     assert "K. Sai Praneeth" in html
     assert "P. Ananya Sharma" in html
 
-    # Principal cannot access /add-student (HTTP 403)
+    # Principal as Admin alias can access /add-student
     resp_add = client.get("/add-student")
-    assert resp_add.status_code == 403
+    assert resp_add.status_code == 200
 
-    # Principal cannot access /import (HTTP 403)
+    # Principal as Admin alias can access /import
     resp_import = client.get("/import")
-    assert resp_import.status_code == 403
+    assert resp_import.status_code == 200
 
-    # Principal cannot simulate call (HTTP 403 read-only)
+    # Principal as Admin alias can simulate calls
     token = get_csrf_token(client)
     resp_call = client.post("/student/1/simulate-call", data={"csrf_token": token})
-    assert resp_call.status_code == 403
+    assert resp_call.status_code in [200, 302]
 
 
 # --------------------------------------------------------------------------
@@ -291,7 +291,7 @@ def test_non_admin_cannot_access_admin_pages():
     """Non-admin roles accessing /admin/users or /admin/audit-logs are rejected with HTTP 403."""
     client = app.test_client()
 
-    for non_admin in [("principal", "principal123"), ("coord_cse", "coord123"), ("faculty_cse", "faculty123")]:
+    for non_admin in [("coord_cse", "coord123"), ("faculty_cse", "faculty123")]:
         login_as(client, non_admin[0], non_admin[1])
 
         resp_users = client.get("/admin/users")

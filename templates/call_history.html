@@ -157,7 +157,7 @@
                         <td>
                             <div>{{ call['parent_name'] }}</div>
                             <div style="font-family: var(--font-mono); font-size: 0.8rem; color: var(--text-muted);">
-                                {{ call['parent_phone'] or 'Not Registered' }}
+                                {{ call['parent_phone']|mask_phone }}
                             </div>
                         </td>
                         <td>

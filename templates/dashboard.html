@@ -241,7 +241,7 @@
                                 {% endif %}
                             </div>
                             <div style="font-size: 0.78rem; color: var(--text-secondary); font-family: var(--font-mono); margin-top: 2px;">
-                                {{ s['parent_phone'] or 'No phone listed' }}
+                                {{ s['parent_phone']|mask_phone }}
                             </div>
                         </td>
                         <td>
@@ -275,7 +275,7 @@
                             <button 
                                 type="button" 
                                 class="btn btn-call btn-sm" 
-                                onclick="triggerCallParent({{ s['id'] }}, '{{ s['name']|escape }}', '{{ s['roll_number']|escape }}', '{{ s['department']|escape }}', '{{ s['parent_phone']|escape }}', '{{ s['attendance_percentage'] }}', '{{ s['preferred_language']|escape }}')"
+                                onclick="triggerCallParent({{ s['id'] }}, '{{ s['name']|escape }}', '{{ s['roll_number']|escape }}', '{{ s['department']|escape }}', '{{ s['parent_phone']|mask_phone|escape }}', '{{ s['attendance_percentage'] }}', '{{ s['preferred_language']|escape }}')"
                                 title="Launch AI Voice Simulation Demo for Parent"
                             >
                                 Call

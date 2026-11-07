@@ -324,7 +324,7 @@ class OutperoTelephonyAdapter(TelephonyAdapter):
         """
         custom_fields = data.get("custom_fields") or data.get("custom_variables") or {}
         internal_call_id = custom_fields.get("call_id") or data.get("call_id") or ""
-        student_id_str = custom_fields.get("student_id") or ""
+        student_id_str = custom_fields.get("student_id") or data.get("student_id") or ""
         student_id = int(student_id_str) if (student_id_str and str(student_id_str).isdigit()) else None
 
         duration = data.get("duration") or data.get("duration_seconds") or 0

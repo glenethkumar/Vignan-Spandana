@@ -114,7 +114,7 @@
                     <td><strong>{{ row['name'] or '<empty>' }}</strong></td>
                     <td><span class="badge badge-dept">{{ row['department'] }} - {{ row['section'] }}</span></td>
                     <td>
-                        {{ row['parent_phone'] or '<empty>' }}
+                        {{ row['parent_phone']|mask_phone }}
                     </td>
                     <td><span class="badge badge-lang">{{ row['preferred_language'] or 'Telugu' }}</span></td>
                     <td>

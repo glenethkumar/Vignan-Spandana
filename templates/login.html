@@ -85,7 +85,8 @@
             </button>
         </form>
 
-        <!-- Compact Demo Accounts Dropdown -->
+        {% if demo_mode %}
+        <!-- Demo accounts dropdown (only rendered in demo mode) -->
         <div style="margin-top: 1.5rem; padding-top: 1.25rem; border-top: 1px solid var(--border-color);">
             <label for="demoAccounts" style="display: block; font-size: 0.75rem; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 0.375rem;">
                 Demo accounts
@@ -104,6 +105,7 @@
                 <option value="correspondent_bus|bus123">Bus Correspondent — Transportation Issues</option>
             </select>
         </div>
+        {% endif %}
 
         <div style="margin-top: 1.25rem; text-align: center;">
             <span style="font-size: 0.75rem; color: var(--text-secondary);">

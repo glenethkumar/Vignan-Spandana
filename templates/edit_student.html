@@ -191,11 +191,12 @@
                     <div class="form-group">
                         <label for="parent_phone" class="form-label">Parent Mobile Phone <span style="color: var(--secondary-red);">*</span></label>
                         <input 
-                            type="tel" 
+                            type="text" 
                             id="parent_phone" 
                             name="parent_phone" 
                             class="form-control" 
-                            value="{{ student['parent_phone'] }}" 
+                            value="{{ student['parent_phone']|mask_phone }}" 
+                            placeholder="Enter new 10-digit mobile number to update"
                             style="font-family: var(--font-mono); font-weight: 600;"
                             required
                         >

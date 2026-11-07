@@ -118,7 +118,7 @@
                                 {{ fu['roll_number'] }}
                             </div>
                             <div style="font-size: 0.76rem; color: var(--text-muted);">
-                                {{ fu['parent_phone'] or 'No phone' }}
+                                {{ fu['parent_phone']|mask_phone }}
                             </div>
                         </td>
                         <td>
