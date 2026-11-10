@@ -66,3 +66,4 @@ export const MountainRidge: React.FC<MountainRidgeProps> = ({
     </div>
   );
 };
+

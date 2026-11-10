@@ -306,3 +306,4 @@
 
 ## 4. Verification Checkpoint
 - This specification documents every screen visible in `sohel-frontend_.mp4` and maps each feature to our non-UI logic layers while strictly maintaining the backend freeze and security model.
+

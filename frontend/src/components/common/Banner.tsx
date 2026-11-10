@@ -59,3 +59,4 @@ export const Banner: React.FC<BannerProps> = ({
     </div>
   );
 };
+

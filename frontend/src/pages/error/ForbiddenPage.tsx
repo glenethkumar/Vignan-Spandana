@@ -28,3 +28,4 @@ export const ForbiddenPage: React.FC = () => {
     </div>
   );
 };
+
