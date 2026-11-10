@@ -8,6 +8,11 @@ export function maskPhoneNumber(phone: string | number | null | undefined): stri
   if (!phone) return '+91 98*** **000';
   const str = String(phone).trim();
   
+  // If already masked, return as-is
+  if (str.includes('***')) {
+    return str;
+  }
+  
   // Extract only digits
   const digits = str.replace(/\D/g, '');
   
