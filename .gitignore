@@ -40,3 +40,9 @@ Thumbs.db
 # Raw image drops
 WhatsApp Image*.jpeg
 VS_Images/
+
+# Node & Frontend
+node_modules/
+frontend/node_modules/
+dist/
+frontend/dist/

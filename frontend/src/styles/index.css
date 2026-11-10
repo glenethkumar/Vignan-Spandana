@@ -1,0 +1,54 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --brand: #014A97;
+  --brand-dark: #0B2038;
+  --brand-accent: #0498ED;
+  --brand-50: #EFF6FF;
+  --neutral-page: #F7F8FA;
+  --neutral-surface: #FFFFFF;
+  --neutral-border: #E5E7EB;
+  --text-primary: #111827;
+  --text-secondary: #6B7280;
+  --orange-text: #C2410C;
+  --orange-icon: #EA580C;
+  --orange-tint: #FFF1E6;
+}
+
+body {
+  margin: 0;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background-color: var(--neutral-page);
+  color: var(--text-primary);
+  -webkit-font-smoothing: antialiased;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: 'Plus Jakarta Sans', 'Manrope', -apple-system, sans-serif;
+  letter-spacing: -0.02em;
+}
+
+/* Transitions: 150ms-200ms only as required by design spec */
+* {
+  transition-property: color, background-color, border-color, text-decoration-color, fill, stroke, opacity, box-shadow, transform;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 150ms;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #CBD5E1;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #94A3B8;
+}

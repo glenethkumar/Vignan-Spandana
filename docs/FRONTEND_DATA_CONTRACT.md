@@ -1,250 +1,82 @@
-# Frontend Data Contract
+# Frontend Data Contract & API Specifications
 
-This document formalizes the data contract between UI presentation templates and the data layer for **VIIT AI Feedback** (Department of CSE, Vignan's Institute of Information Technology). During Phase 2, all views consume mock/sample data exclusively through the `frontend_demo.demo_data` module. In subsequent phases, the production backend service layer will implement these identical signatures without modifying template templates or frontend view logic.
-
----
-
-## 1. Core Principles
-
-1. **Role Scoping at Data Boundary**: Every data access function requires caller identity and role context (`role`, optional `user_dept`, `user_id`). Out-of-scope access raises `PermissionError` (which maps to HTTP 403 at the route layer).
-2. **Privacy by Default**: Phone numbers returned to presentation templates are strictly pre-masked (`+91 98*** **345`). Raw 10-digit numbers or unmasked telephone identifiers are never passed to the presentation layer. The real backend must return phone numbers masked by default. Full numbers are returned only to permitted roles after an explicit reveal action, and each reveal is logged.
-3. **No Database Dependencies in UI**: Templates consume dictionaries and standard Python collections returned by these helper functions.
+## 1. Core Security & Privacy Rule
+> **MANDATORY POLICY**: The real backend must return phone numbers masked by default. Full numbers are returned only to permitted roles after an explicit reveal action, and each reveal is logged.
+>
+> On the frontend, parent phone numbers are formatted strictly as `+91 98*** **345`. Raw 10-digit mobile numbers are never rendered into HTML elements, attributes, JavaScript state strings, exported files, or URL queries.
 
 ---
 
-## 2. API Contract Specification
+## 2. Phase 1 Database Mapping to TypeScript Entities
 
-### 2.1 Academic Hierarchy
-
-#### `list_departments()`
-- **Purpose**: Retrieves all available academic departments.
-- **Parameters**: None
-- **Returns**: `List[Dict[str, str]]`
-  ```json
-  [
-    {"code": "CSE", "name": "Computer Science & Engineering"},
-    {"code": "ECE", "name": "Electronics & Communication Engineering"}
-  ]
-  ```
-
-#### `list_years()`
-- **Purpose**: Retrieves academic year levels.
-- **Parameters**: None
-- **Returns**: `List[str]` (e.g., `["I", "II", "III", "IV"]`)
-
-#### `list_sections()`
-- **Purpose**: Retrieves section identifiers.
-- **Parameters**: None
-- **Returns**: `List[str]` (e.g., `["A", "B", "C"]`)
+| Phase 1 Backend Table | Frontend TypeScript Interface | File Location | Key Attributes & Guarantees |
+|-----------------------|------------------------------|---------------|-----------------------------|
+| `academic_units` | `Department`, `AcademicYear`, `Section` | `src/data/types.ts` | Department code, year (1-4), section name, active flags. Soft deactivation only. |
+| `students` | `Student` | `src/data/types.ts` | Roll number, student name, parent name, `parentPhone` (masked), residence, bus route. Soft archive (`archivedAt`). |
+| `uploads` | `UploadRecord` | `src/data/types.ts` | Upload ID, class name, date, filename, version (1..N), counts (total, present, absent), `replacedBy`. |
+| `campaigns` | `Campaign` | `src/data/types.ts` | Module (`mentoring` / `feedback`), target counts, status (`draft`, `pending_approval`, `confirmed`, `in_progress`, etc.), upload version linked. |
+| `campaign_students` / `call_records` | `CallRecord` | `src/data/types.ts` | Student ID, masked phone, status (`queued`, `calling`, `completed`, `no_answer`, `failed`), Telugu/English transcript, AI summary, outcome, linked issue ID. |
+| `issues` | `Issue` | `src/data/types.ts` | Category (`College`, `Hostel`, `Bus`), feedback, status, `reopenCount`, `isCritical` (true if $\ge 3$ reopens), owner. |
+| `issue_timeline` | `IssueTimelineEvent` | `src/data/types.ts` | Issue ID, status transitions, performer, comments, ISO timestamps. |
+| `faculty_class_assignments` | `User.assignedClasses` | `src/data/types.ts` | Scoped matrix mapping faculty to permitted department/year/section tuples. |
+| `system_settings` | `SystemSettings` | `src/data/types.ts` | Institutional details, default language, calling hours, max duration, retries, demo mode. |
+| `audit_logs` | `ActivityLogEntry` | `src/data/types.ts` | Action type, user role, entity, ISO timestamp, zero secrets logged. |
 
 ---
 
-### 2.2 Dashboard Overview
+## 3. Data Layer API Functions (`src/data/api.ts`)
 
-#### `get_dashboard_summary(role: str, user_dept: Optional[str] = None, user_id: Optional[int] = None)`
-- **Purpose**: Supplies the 4 top-level KPI metrics displayed on the dashboard header.
-- **Parameters**:
-  - `role`: User role (`Admin`, `Principal`, `Faculty`, `Hostel Dean`, `College Coordinator`, `Bus Correspondent`)
-  - `user_dept`: Assigned department code for Faculty (e.g., `"CSE"`, `"ECE"`)
-  - `user_id`: Unique user identifier
-- **Returns**: `Dict[str, Any]`
-  ```json
-  {
-    "absent_today": 7,
-    "calls_completed": 34,
-    "open_issues": 3,
-    "resolved_this_week": 14,
-    "scope_label": "Campus-Wide Oversight"
-  }
-  ```
-- **Scoping Rules**:
-  - `Admin` / `Principal`: Campus-wide totals across all departments.
-  - `Faculty`: Scoped strictly to assigned department and sections.
-  - `Hostel Dean`: Open/resolved metrics scoped to hostel issues; absent_today = 0.
-  - `College Coordinator`: Scoped to academic/college issues; absent_today = 0.
-  - `Bus Correspondent`: Scoped to transportation/bus issues; absent_today = 0.
+All screens interact exclusively through these asynchronous functions. In this milestone stage, data is persisted in browser `localStorage` ("Saved on this device") and will be hot-swapped for HTTP endpoints when the backend freeze is lifted.
 
-#### `list_recent_campaigns(role: str, user_dept: Optional[str] = None, user_id: Optional[int] = None, limit: int = 5)`
-- **Purpose**: Lists recent attendance or feedback campaigns for the dashboard summary table.
-- **Parameters**:
-  - `role`: Caller's role
-  - `user_dept`: Department code
-  - `user_id`: User identifier
-  - `limit`: Maximum records to return (default: 5)
-- **Returns**: `List[Dict[str, Any]]`
-  ```json
-  [
-    {
-      "id": 1,
-      "name": "CSE III-A Daily Absence Notification",
-      "module": "Mentoring/Attendance",
-      "module_code": "attendance",
-      "department": "CSE",
-      "year": "III",
-      "section": "A",
-      "target_class": "CSE-III-A",
-      "date": "2026-11-07",
-      "created_by": "Dr. A. Srinivas",
-      "status": "Completed",
-      "student_count": 4,
-      "completion_rate": "100%",
-      "calls_placed": 4,
-      "calls_answered": 4,
-      "issues_raised": 1
-    }
-  ]
-  ```
-- **Scoping Rules**:
-  - `Admin` / `Principal`: All recent campaigns.
-  - `Faculty`: Only campaigns from their assigned department.
-  - Issue Owners: Only feedback survey campaigns relevant to student welfare.
+### Authentication & Context
+- `getActiveUser(): Promise<User>`: Returns active authenticated session.
+- `setActiveUser(user: User): Promise<void>`: Switches active user role for demo testing.
+- `setDemoDataMode(mode: 'demo' | 'empty'): void`: Toggles between populated demo dataset and fresh empty initial state.
+- `getDemoDataMode(): 'demo' | 'empty'`: Inspects current demo mode.
 
-#### `list_open_issues(role: str, user_dept: Optional[str] = None, user_id: Optional[int] = None, limit: int = 5)`
-- **Purpose**: Supplies active/unresolved issues for the dashboard alert table.
-- **Parameters**:
-  - `role`: Caller's role
-  - `user_dept`: Department code
-  - `user_id`: User identifier
-  - `limit`: Maximum records (default: 5)
-- **Returns**: `List[Dict[str, Any]]`
-  ```json
-  [
-    {
-      "id": 1,
-      "title": "Block B Room 304 Ceiling Fan Vibration & Noise",
-      "category": "hostel",
-      "category_label": "Hostel Facilities",
-      "owner_role": "Hostel Dean",
-      "student_id": 2,
-      "student_name": "V. Harshavardhan",
-      "roll_number": "211FA04002",
-      "class_name": "CSE-III-A",
-      "department": "CSE",
-      "status": "Open",
-      "reopen_count": 1,
-      "is_critical": 0,
-      "created_date": "2026-11-06",
-      "description": "Parent reported that the ceiling fan in room 304 is making an unbearable squeaking noise."
-    }
-  ]
-  ```
-- **Scoping Rules**:
-  - `Admin` / `Principal`: All non-closed issues across all categories.
-  - `Hostel Dean`: Strictly `category == 'hostel'`.
-  - `College Coordinator`: Strictly `category == 'college'`.
-  - `Bus Correspondent`: Strictly `category == 'bus'`.
-  - `Faculty`: Issues originating from students in their assigned department.
+### Dashboard & Analytics
+- `getDashboardSummary(role: UserRole, department?: string): Promise<DashboardSummary>`:
+  Returns KPI metric cards (Absent today, Completed calls, Open issues, Resolved this week) plus scoped recent campaigns, open issues, and pending approvals.
 
----
+### Student Directory & Profiles
+- `listStudents(filters?: StudentFilters): Promise<Student[]>`: Returns student roster with masked contact details.
+- `getStudent(id: number): Promise<Student | null>`: Fetches single profile.
+- `archiveStudent(id: number): Promise<void>`: Deactivates student record without deleting underlying references.
+- `restoreStudent(id: number): Promise<void>`: Restores deactivated student.
 
-### 2.3 Student Directory & Profiles
+### Uploads & Excel Processing
+- `listUploads(filters?: UploadFilters): Promise<UploadRecord[]>`: Retrieves history of uploads for class.
+- `checkDuplicateUpload(department, year, section, uploadDate): Promise<UploadRecord | null>`: Checks if an active upload exists for class and date to prompt Version N replacement.
+- `saveUpload(upload, parsedStudents): Promise<UploadRecord>`: Registers upload record and merges students into database.
 
-#### `list_students(role: str, user_dept: Optional[str] = None, user_id: Optional[int] = None, filters: Optional[Dict[str, Any]] = None, page: int = 1, per_page: int = 10)`
-- **Purpose**: Returns paginated, searchable, and filtered student roster records.
-- **Parameters**:
-  - `role`: Caller's role
-  - `user_dept`: Caller's assigned department
-  - `user_id`: Caller's user ID
-  - `filters`: Dictionary with optional keys:
-    - `department`: Department code or `"All"`
-    - `year`: Academic year (`"I"`, `"II"`, `"III"`, `"IV"`) or `"All"`
-    - `section`: Section (`"A"`, `"B"`, `"C"`) or `"All"`
-    - `query`: Free-text search string matched against name or roll number
-    - `show_archived`: Boolean (Admin only) to include inactive records
-  - `page`: Page index (1-based)
-  - `per_page`: Records per page (default: 10)
-- **Returns**: `Dict[str, Any]`
-  ```json
-  {
-    "students": [
-      {
-        "id": 1,
-        "roll_number": "211FA04001",
-        "name": "K. Sai Praneeth",
-        "department": "CSE",
-        "year": "III",
-        "section": "A",
-        "class_name": "CSE-III-A",
-        "parent_name": "K. Venkata Rao",
-        "parent_phone_masked": "+91 98*** **345",
-        "category": "Day Scholar",
-        "status": "Active",
-        "is_active": 1,
-        "attendance_percentage": 74.5,
-        "mentor_name": "Dr. A. Srinivas"
-      }
-    ],
-    "total": 32,
-    "page": 1,
-    "per_page": 10,
-    "total_pages": 4
-  }
-  ```
-- **Scoping Rules**:
-  - Issue Owners (`Hostel Dean`, `College Coordinator`, `Bus Correspondent`): **Permission Denied** (`PermissionError`).
-  - `Faculty`: Restricted strictly to their assigned department. Inactive/archived students are excluded.
-  - `Admin` / `Principal`: Full access; can toggle active/archived view.
+### Campaign Management & Approval Lifecycle
+- `listCampaigns(filters?: CampaignFilters): Promise<Campaign[]>`: Retrieves scoped campaign list.
+- `getCampaign(id: number): Promise<Campaign | null>`: Single campaign details.
+- `saveDraftCampaign(draft: Partial<Campaign>): Promise<Campaign>`: Autosaves draft to storage.
+- `submitToAdmin(campaignId: number): Promise<Campaign>`: Faculty transitions draft to `pending_approval`.
+- `approveCampaign(campaignId: number): Promise<Campaign>`: Admin approves campaign (`confirmed`).
+- `returnCampaignWithNote(campaignId: number, note: string): Promise<Campaign>`: Admin returns submission to draft.
+- `confirmCampaign(campaignId: number): Promise<Campaign>`: Admin launches outbound campaign (`in_progress`).
+- `controlCampaign(campaignId: number, action: 'pause' | 'resume' | 'stop'): Promise<Campaign>`: Admin runtime controls.
 
-#### `get_student_detail(student_id: int, role: str, user_dept: Optional[str] = None, user_id: Optional[int] = None)`
-- **Purpose**: Supplies full student profile, academic standing, call records, and logged issues.
-- **Parameters**:
-  - `student_id`: Unique identifier
-  - `role`: Caller's role
-  - `user_dept`: Faculty's assigned department
-- **Returns**: `Optional[Dict[str, Any]]` including attached `call_history` and `issues` lists.
-- **Scoping Rules**:
-  - Issue Owners: Raises `PermissionError`.
-  - `Faculty`: If student is outside their department, raises `PermissionError`.
-  - `Admin` / `Principal`: Full access.
+### Call History & Transcripts
+- `listCallHistory(filters?: CallFilters): Promise<CallRecord[]>`: Retrieves call records with masked phones.
+- `getCallRecord(id: number): Promise<CallRecord | null>`: Retrieves call detail with bilingual transcripts.
 
-#### `archive_student_demo(student_id: int, role: str)`
-- **Purpose**: Soft-archives a student record (`is_active = 0`, `status = "Archived"`).
-- **Parameters**:
-  - `student_id`: Student ID
-  - `role`: Caller's role
-- **Returns**: `bool` (True on success)
-- **Scoping Rules**: Restricted to `Admin` / `Principal`. Faculty or Issue Owners raise `PermissionError`.
+### Issue Resolution Loop (Orange Loop)
+- `listIssues(filters?: IssueFilters): Promise<Issue[]>`: Scoped by role (`College`, `Hostel`, `Bus`).
+- `getIssue(id: number): Promise<Issue | null>`: Issue detail and chronological audit timeline.
+- `updateIssueStatus(issueId, newStatus, comment, performedBy, resolutionNotes?): Promise<Issue>`: Records status change.
+- `runConfirmationCall(issueId, simulatedResponse: 'Yes' | 'No'): Promise<Issue>`:
+  Simulates verification call. Parent "Yes" closes issue; parent "No" reopens and increments `reopenCount`. At $\ge 3$ reopens, `isCritical` is set to true.
 
----
-
-### 2.4 Issues & Escalation Management
-
-#### `list_issues_board(role: str, category_filter: Optional[str] = None, status_filter: Optional[str] = None)`
-- **Purpose**: Provides issues list for the resolution workflow board.
-- **Parameters**:
-  - `role`: Caller's role
-  - `category_filter`: Category filter (`"all"`, `"hostel"`, `"college"`, `"bus"`)
-  - `status_filter`: Status filter (`"all"`, `"open"`, `"in progress"`, `"resolved by owner"`, `"reopened"`, `"closed"`)
-- **Returns**: `List[Dict[str, Any]]`
-- **Scoping Rules**:
-  - `Hostel Dean`: Hard-isolated to `category == 'hostel'`.
-  - `College Coordinator`: Hard-isolated to `category == 'college'`.
-  - `Bus Correspondent`: Hard-isolated to `category == 'bus'`.
-  - `Admin`: Full access. Critical issues (`reopen_count >= 3`, `is_critical == 1`) flagged for priority oversight.
-
-#### `get_issue_detail(issue_id: int, role: str)`
-- **Purpose**: Supplies issue metadata, full timeline history, and escalation state.
-- **Parameters**:
-  - `issue_id`: Unique issue identifier
-  - `role`: Caller's role
-- **Returns**: `Optional[Dict[str, Any]]`
-- **Scoping Rules**: Returns 403 / `PermissionError` if an issue owner requests an issue outside their category.
-
----
-
-### 2.5 Administration & System Settings
-
-#### `get_system_settings_demo(role: str)`
-- **Purpose**: Returns system configuration parameters.
-- **Parameters**: `role` (`Admin` / `Principal` only)
-- **Returns**: `Dict[str, Any]`
-
-#### `get_users_and_classes_demo(role: str)`
-- **Purpose**: Returns institutional user roster and department/class allocation.
-- **Parameters**: `role` (`Admin` / `Principal` only)
-- **Returns**: `Dict[str, Any]` with `users`, `departments`, `years`, and `sections`.
-
-#### `get_activity_log_demo(role: str)`
-- **Purpose**: Returns audited administrative activity history.
-- **Parameters**: `role` (`Admin` / `Principal` only)
-- **Returns**: `List[Dict[str, str]]`
+### Administration & Settings
+- `getClassStructure(): Promise<{ departments, years, sections }>`
+- `saveClassStructure(departments, years, sections): Promise<void>`
+- `listUsers(): Promise<User[]>`
+- `createUser(user): Promise<User>`
+- `updateUser(id, data): Promise<User>`
+- `getSettings(): Promise<SystemSettings>`
+- `saveSettings(settings): Promise<SystemSettings>`
+- `listActivityLog(filters?): Promise<ActivityLogEntry[]>`
+- `exportReport(type, role): Promise<string>`
