@@ -1,0 +1,119 @@
+<USER_REQUEST>
+FRESH UI BUILD: PIXEL-CLONE OF THE REFERENCE WEBSITE. Frontend only. Backend stays frozen.
+
+WHY THIS TASK EXISTS
+The owner rejected the current frontend. It does not look like the reference video. Do NOT adjust the old UI. Rebuild every screen from scratch so the website is a close visual clone of the website in "sohel-frontend_.mp4". Same layout, spacing, typography, copy, components, animations and flow. Only the accent colour comes from the VIIT logo. Never copy raster assets from the video; recreate everything with CSS and SVG.
+
+RULES
+1. Backend freeze: do not change Flask, the database, security, adapters or the backend tests.
+2. Do not delete the old UI. Create branch ui-clone. Move the old /frontend to /frontend-legacy with git mv. Create a brand-new /frontend (React + Vite + TypeScript + Tailwind + React Router + lucide-react + SheetJS + Vitest + Playwright).
+3. REUSE only logic from the old code: data layer (types, api.ts, initial demo data), excel.ts, masking.ts, role rules, utilities and their unit tests. REBUILD every component, page, layout and style from zero. Do not copy old JSX or CSS.
+4. Do not invent business rules. Put questions in the final report.
+5. Work in the stages below. After each stage: run tests, commit, push to ui-clone, update /docs/PROGRESS.md. If you stop, I will say "continue from /docs/PROGRESS.md".
+6. Production build must not contain demo logins or "password123". Demo accounts and the Demo data switch only exist when VITE_DEMO_MODE=true. Do not set up any deployment.
+
+STAGE 0: STUDY THE VIDEO PROPERLY
+- Extract frames at full resolution: ffmpeg -i sohel-frontend_.mp4 -vf fps=1 /docs/reference-frames/%03d.png (keep these folders out of git: add /docs/reference-frames/, /docs/comparison/ and *.mp4 to .gitignore).
+- Open and LOOK at every frame at full size. Write /docs/CLONE_SPEC.md from what you see: screens in order, exact text, sizes, colours, spacing, radii, shadows, fonts, animations. Use the measurements below as the starting point and correct them from the frames.
+- The video was recorded at 1918x1010 with about 125% display scaling. So use a 1536x800 CSS viewport for all comparisons. Crop the browser top bar (about 40px) from each reference frame and scale it to 1536 wide.
+- Fonts: the headings look like a tight, bold geometric grotesk. Test Inter Tight, Plus Jakarta Sans and Manrope by overlaying the hero headline on frame 001, then choose the closest. Use Inter for body text.
+
+STAGE 1: DESIGN TOKENS AND SHARED COMPONENTS
+Neutrals (from the video): page #FAFAFA, white #FFFFFF, soft card #F7F7F7, hairline border #E6E8EB, input border #D0D5DD, ink #111111, text #1F2933, muted #6B7280, light surface icon box #F5F6F8. Hero/landing background: soft greyscale gradient from #E4E4E4 (top) through #F1F1F1 to white.
+Brand accent from the logo: --brand #014A97, --brand-dark #0B2038, --accent #0498ED, --brand-50 #EAF3FC. Use the accent ONLY for: active sidebar item tint and text, stepper active/done states, selected card border + check circle + tint, links, focus ring. Primary buttons stay near-black #111111 like the video. Orange (#C2410C text, #EA580C icon, #FFF1E6 tint) ONLY for issues and alerts. Green for small success status dots/pills. No gold, no neon, no gradients except the soft grey hero.
+Radii: cards 18px, big panels 24-28px, buttons full pill (999px) or 28px, inputs 12px, icon boxes 12-14px. Shadows: very soft (0 8px 30px rgba(0,0,0,.06)). Transitions 150-200ms.
+Typography (CSS px at 1536 viewport): hero h1 72px/0.95, weight 700, letter-spacing -0.045em; section h2 56px; page h1 in the app 46px, -0.03em; eyebrow 11px, uppercase, letter-spacing .18em, weight 600; body 16px; small 13-14px.
+Brand mark: black rounded square (40px, radius 12) with a white audio-waveform glyph of 5 vertical bars (SVG), then "VIIT" bold + "AI Feedback" (lighter) and under it "DEPARTMENT OF CSE" in 9px, letter-spacing .2em. The VIIT college emblem (attached logo) appears small in the footer and the login left panel bottom with the text "Vignan's Institute of Information Technology".
+Shared components: Button (primary black pill with arrow icon, secondary grey pill, disabled #E8EAEE), Input with leading icon, SelectCard (radio circle top-right; selected = --brand-50 background, 1.5px --brand border, filled check circle), Stepper, StatCard, Tabs, EmptyState, Banner, Modal, Toast, Skeleton, Badge. A one-page /dev/styleguide (demo mode only) showing all of them.
+Entrance animation: every page section fades up (12px, 500-600ms, stagger 80ms). Hero floating cards drift slowly (6s ease-in-out loop).
+
+STAGE 2: PUBLIC HOME (/)
+- Container max-width 1222px, centred. Header 100px high: brand mark left; centre nav "Home" (ink), "How it works", "Issue resolution" (muted), 14px; right black pill "Admin portal ↗" (40px high, 20px side padding).
+- Hero (centred): eyebrow with a 6px green dot "VIIT · INTELLIGENT PARENT COMMUNICATION"; h1 on two lines "Connect with parents." / "Listen. Act. Resolve."; sub "Student updates. Parent feedback. One connected campus." (16px, #555); black pill button "Prepare your call list ↗" (about 210x52).
+- Below: a generic phone mockup (no brand logos, no word "iPhone"), 280px wide, radius 44px, dark 6px frame, dynamic-island pill, status row "9:41" with signal icons. Inside: small row (black "V" square + "VIIT AI Feedback" + outlined "PREVIEW" tag), a 64px pale-cyan circle with a headphones icon and a green status dot, bold text "A little conversation. A better connection.", then (scrolling into view) a waveform, English / తెలుగు toggle pills and a sample call script card ("Hello, I'm calling from VIIT about your child's attendance and academic progress.").
+- Four tilted floating cards (±3 to 6 degrees, soft shadow): left-top "Student data, ready." with light-blue file icon box and "Attendance · Marks · Feedback" and a check circle; right-top "Every conversation counts." with green double-check icon box, green pill "Summary saved", "Parent responses and call notes, together in one place.", hairline, "Ready for Excel ↗"; left-bottom "A familiar conversation" with translate icon, waveform and "Telugu or English. Their choice."; right-bottom orange-tinted "A concern? We follow through." with bell icon and "Assigned → Resolved → Confirmed".
+- Behind the lower part of the hero: an inline-SVG greyscale mountain ridge (3 layered silhouettes in #2A2A2A / #4A4A4A / #8A8A8A) peeking behind the phone, fading into white below.
+- Stat strip with hairline top border: four items with small icons: "1–5 simultaneous calls", "~1 minute conversations", "Telugu & English", "One retry if unanswered".
+- Section "FROM DATA TO DIALOGUE": h2 "A simple flow. A meaningful connection."; sub "Attendance updates or honest feedback. Every call starts with the right context."; three #F7F7F7 cards (radius 28px, about 354x262): white 46px icon box with 1px border top-left, number 01/02/03 top-right in grey, title 22px bold, grey 14px text. Card 1 "Start with student data" (upload icon) "Choose a class. Upload and confirm your student list."; Card 2 "Prepare the conversation" (phone icon) "Choose mentoring or feedback. Set questions and preferences." with tag pills "Attendance / mentoring", "Feedback"; Card 3 "Everything in view" (file icon) "Review campaigns, student records, and call history."
+- Hairline, then section with an ORANGE dot eyebrow "THE CONVERSATION DOESN'T END HERE": left h2 "Heard. Handled. Followed through." + paragraph "When a parent raises a concern, it reaches the right owner. A follow-up call checks the resolution, and the loop continues until the parent confirms." + three small tags with icons: College coordinator, Hostel dean, Bus correspondent. Right: a #F5F5F5 rounded panel (radius 28) with three white rows: bell icon "Alert the right owner / Routes to college, hostel, or bus."; orange-tinted icon "Address the concern / The designated owner takes action."; green phone icon "Call back. Confirm. Close." with a check circle; bottom centre small "Not resolved? Follow up again."
+- Footer: brand mark, "Better conversations. Better campus.", "Admin portal ↗", college emblem and name.
+- Honest copy only: do not claim real calling; any live-looking feature is described as a demo.
+
+STAGE 3: LOGIN (/admin)
+- Split screen, exact 50/50. LEFT: soft greyscale sky gradient (#DEDEDE top to #F8F8F8) with the SVG mountain ridge at the bottom. Top-left brand mark. Eyebrow "VIIT · ADMIN WORKSPACE". h1 "A closer campus starts with you." (72px, 3 lines, colour #1F2933). Three numbered rows with small outlined circles: "01 Choose your class", "02 Prepare your campaign", "03 Keep it all in view". Bottom-left muted text "Student updates. Meaningful connections."
+- RIGHT (white): top-left "← Back to home". Centred form column 394px wide: 58px rounded-square icon box with a lock icon (1px border, soft shadow); eyebrow "ADMIN PORTAL"; h2 "Welcome back." (44px bold); "Sign in to your workspace." muted; label "Email address" (14px semibold); input 56px high, radius 12, mail icon, placeholder "you@college.edu"; label "Password"; input with lock icon and eye toggle; focus state: --brand border with soft ring; browser-autofill background #E8F0FE; full-width black button "Sign in →" (52px, radius 28); under it a shield icon and "Authorized staff only". Footer line "VIIT AI Feedback".
+- After sign in: full-screen #FAFAFA loader with the brand mark, a spinner and "Opening your workspace..." for about 800ms.
+- Demo accounts: a small, quiet "Demo accounts" text-button under the form, visible only when VITE_DEMO_MODE=true.
+
+STAGE 4: APP SHELL AND DASHBOARD (/app/...)
+- Sidebar 256px, white, 1px right border. Brand mark at top. "WORKSPACE" label (11px, tracking). Items 48px high, radius 12, 16px icons: Dashboard (grid), New campaign (plus; when active show a small "+" chip on the right), Reports & history (bar-chart). Active item: --brand-50 background, bold --brand-dark text. Extra items for our roles in the same style: Issues (orange dot when open issues exist), Users & classes, Settings. Role rules: Admin and Principal (same permissions): all items. Faculty: Dashboard, New campaign, Reports & history. College Coordinator / Hostel Dean / Bus Correspondent: Dashboard, Issues. Bottom: grey pill "● Saved on this device", "Visit homepage ↗", "Sign out".
+- Top bar 86px, white, bottom hairline: breadcrumb "Workspace > Page" (14px muted); right: 36px grey circle avatar with initial, name (bold 14px) and email (12px muted). Content area #FAFAFA, 50px left padding, 48px right padding. Footer row: "VIIT AI Feedback" left, "Department of CSE" right.
+- Dashboard: eyebrow "YOUR WORKSPACE, AT A GLANCE"; h1 "Let's get connected."; right black pill "+ New campaign" (or "Continue campaign" if a draft exists); sub "A new conversation starts with a well-prepared campaign." Three stat cards (white, radius 18): "Prepared campaigns 00" (stack icon top-right), "Student records 00" (users icon), "Completed calls 00" (phone icon, caption "Calling not connected" when empty). Big soft-grey gradient panel (radius 24): left eyebrow "A FEW STEPS. ALL SET.", h2 "From student list to ready-to-go.", black pill "Create campaign ↗"; right three stacked white rows with icon, title, subtitle and check circle: "Select your class / Department · Year · Section", "Add your students / Upload · Validate · Confirm", "Make it yours / Questions · Settings · Review". Below: "Recent campaigns" list. Also, for Admin, a "Waiting for your approval" list, and an "Open issues" list with the orange accent. Empty-state mode shows 00 counters; demo-data mode shows real numbers.
+
+STAGE 5: NEW CAMPAIGN WIZARD (/app/new): 7 STEPS, EXACT LOOK
+- Header: eyebrow "NEW CAMPAIGN"; h1 per step ("Select a department.", "Choose the year.", "Select the section." , "Choose your module.", "Add your students.", "Make it yours.", "Review and launch."), subtitle (e.g. "Start with the right team.", "Select the student batch.", "Keep the conversation focused.", "Two paths. One connected campus.", "Upload, review, and confirm."); right side "STEP 01 / 07" (STEP small tracking, 01 in 32px bold grey, "/ 07" small).
+- Stepper: 7 items (Department, Year, Section, Module, Students, Questions, Review): 26px circle with number; active = filled dark circle + underline; done = pale-green circle with check; labels 14px; thin hairline under the row.
+- Under the stepper from step 2: breadcrumb text "CSE / 3rd year / Section F / Attendance / mentoring" in 14px muted with slashes.
+- Step 1 Department: 3-column grid of SelectCards: CSE (Computer Science), CSE-AI (Artificial Intelligence), IT (Information Technology), ECE (Electronics & Communication), EEE (Electrical & Electronics), MECH (Mechanical Engineering), CIVIL (Civil Engineering). Card: 1px border, radius 18, padding 26px, min-height 186px, building icon in a 44px #F5F6F8 box top-left, radio circle 22px top-right, title 22px bold, subtitle 16px muted.
+- Step 2 Year: 4 cards in one row: big number 01-04 (52px bold, grey #4B5563), graduation-cap icon, "1st year" to "4th year".
+- Step 3 Section: 3x2 grid of cards A-F: small people icon with "SECTION" label, big letter 40px bold. (Counts of sections come from the class structure.)
+- Step 4 Module: 2 cards: "Mentoring & attendance" ("Attendance, academics, and student support.") and "Feedback" ("Class, hostel, and transport experiences."), each with an icon box. Also an attendance date picker.
+- Bottom row on every step: hairline, then grey pill "← Back" (48px), centre muted "Next: Section" (changes per step), right black pill "Continue →" (disabled = #E8EAEE with grey text until a choice is made).
+- Step 5 Students: large dashed dropzone (1px dashed #D5D8DD, radius 18, about 265px high): 58px white icon box with upload icon and soft shadow, "Drop your student list here." (24px bold), "CSV or Excel · Up to 5 MB · 5,000 students", black pill "Browse files →". Below: left "First worksheet only" with small file icon, right "Download template" with download icon. Errors: a peach banner (#FDF1EE, border #F5C9C0, radius 12, alert icon, dark red-brown text) directly under the dropzone. The helper text "Confirm your student list to continue." sits beside the disabled Continue.
+  Functionality (reuse existing logic): .xlsx, .xls, .csv; column mapping; blocking vs non-blocking rules; counts (total, present, absent, invalid, no usable phone); duplicate roll numbers; replace-earlier-upload confirmation with a "Version N" badge; the error banner lists OUR required columns (roll_number, student_name, parent_name, parent_phone, attendance_status for Mentoring) and offers "Download template" and "Map columns"; roster preview table in the same card style with masked phones; Module A calls all absent students automatically.
+- Step 6 Questions: language, voice, purpose, script, Feedback topics, calling hours, retries, in the same card style (Admin edits; Faculty read-only).
+- Step 7 Review: summary card, checklist, Faculty = "Send to Admin", Admin = "Confirm and start" (confirmation modal). Draft autosave with the "Saved on this device" note; Faculty can discard their own unsent drafts (confirmation).
+- Rules unchanged: only Admin/Principal confirm, start, pause, resume, stop; Faculty do steps 1-5 + "Send to Admin".
+
+STAGE 6: THE REST, IN THE SAME LOOK
+- Live monitor (Demo Mode label), Reports & history, Issues (orange loop), Users & classes, Settings: rebuild all in the same visual language (eyebrow, big title, soft cards, pill buttons, hairlines, same empty states).
+- Reports & history exactly like the video: h1 "Reports & history.", sub "Campaigns, conversations, and their outcomes.", top-right black "+ New campaign"; three stat cards ("Campaigns prepared", "Calls completed", "Responses collected"); tabs "Campaigns [count chip]" and "Call history" with underline; search "Search campaigns..." and a select "All modules"; empty state card with a document icon, "No campaigns yet." and "Confirmed campaigns will appear here." Keep call detail (masked phone, transcript, summary), export, and filters.
+- Remove vendor/technical words from all UI text (no "Outpero", "mock", "adapter", "API", "SQLite"). Phones masked in every format everywhere. Principal = Admin permissions.
+
+STAGE 7: CLONE QA LOOP (the important part)
+For EACH screen below, repeat until it is a close visual match, at least 3 rounds per screen:
+1. Screenshot your screen with Playwright at 1536x800 (and the same scroll position as the reference frame).
+2. Make a side-by-side image: reference frame (left, cropped and scaled as in Stage 0) vs yours (right). Save in /docs/comparison/ (not committed).
+3. Compute a similarity score (for example SSIM on blurred greyscale versions to compare layout) and write it in /docs/comparison/SCORES.md.
+4. List every visible difference (position, size, spacing, font weight, colour, copy, icon, radius, shadow, animation) and fix them.
+Screens: home hero, home phone + cards, home flow section, home follow-through section, login (empty), login (filled), loading screen, dashboard (empty), wizard step 1, step 2 (selected), step 3, step 4 (selected), step 5 (empty), step 5 (error banner), reports (empty).
+Target: layout and text positions within about 8px of the reference and every copy line identical, apart from the intentional differences (logo accent colour, extra sidebar items, our own error column names). If a screen cannot reach this, say why in the report.
+Then check responsive layouts (tablet 768 and mobile 375): sidebar becomes a menu, cards stack, headings scale down, no horizontal scroll.
+
+STAGE 8: TESTS
+- All old unit tests still pass (update selectors only; never weaken an assertion; list every changed assertion).
+- Vitest: masking in all formats; role guards; sidebar items per role; Excel validation for each sample file (valid_attendance.xlsx, with_errors.xlsx, missing_columns.xlsx, csv) with exact messages; production build contains no "password123" or demo account names.
+- Playwright end-to-end, one clean run on fresh storage, full output shown: Faculty uploads with_errors.xlsx (blocked), missing_columns.xlsx (blocked), valid_attendance.xlsx, sends to Admin; Admin confirms and starts; monitor completes; call history has records; Feedback campaign creates a Hostel issue; Hostel Dean resolves it; confirmation call "No" (reopened), "Yes" (closed); export works with masked phones; activity log shows every step; Faculty CSE cannot open ECE data by URL; Hostel Dean cannot open Bus or College issues; Faculty cannot confirm, start, pause or stop; Principal can do everything Admin can.
+- Contrast script (WCAG AA) and the 49+ backend tests (show the summary line and explain any difference in the count).
+- Keep the project public-safe: no personal absolute paths in docs, no keys, no .env tracked.
+
+FINAL REPORT (short, plain English)
+1. Table: Stage 0-8 | Result (Pass / Fixed / Fail) | Notes
+2. Similarity scores table per screen, plus the remaining differences per screen
+3. The 15 biggest visual changes compared with the rejected UI
+4. Fonts chosen and why; final palette (hex values)
+5. Test totals: backend, frontend unit, end-to-end, contrast
+6. Confirmation that the backend was not touched; git remote in use and branch name
+7. How to run the frontend and the demo accounts
+8. Questions for project owner (if any)
+Then STOP and wait for my review.
+</USER_REQUEST>
+<ADDITIONAL_METADATA>
+The current local time is: 2026-11-10T13:27:11+05:30.
+
+The user's current state is as follows:
+Active Document: c:\Users\golag\OneDrive\Apps\Vignan Spandana\tests\test_phase1_hardening.py (LANGUAGE_UNSPECIFIED)
+Cursor is on line: 23
+Other open documents:
+- c:\Users\golag\OneDrive\Apps\Vignan Spandana\frontend\src\pages\dashboard\DashboardPage.tsx (LANGUAGE_UNSPECIFIED)
+- c:\Users\golag\OneDrive\Apps\Vignan Spandana\frontend\src\pages\public\HomePage.tsx (LANGUAGE_UNSPECIFIED)
+- c:\Users\golag\OneDrive\Apps\Vignan Spandana\frontend\src\pages\public\LoginPage.tsx (LANGUAGE_UNSPECIFIED)
+- c:\Users\golag\OneDrive\Apps\Vignan Spandana\frontend\src\data\initialData.ts (LANGUAGE_UNSPECIFIED)
+- c:\Users\golag\OneDrive\Apps\Vignan Spandana\frontend\src\layouts\AppLayout.tsx (LANGUAGE_UNSPECIFIED)
+
+The user has uploaded 1 image(s):
+- C:/Users/golag/.gemini/antigravity/brain/c107ebf7-dcb7-4c8d-88d1-b72e8f9a99f6/.user_uploaded/media_1794297429445_09ffafbd.jpg
+You can embed this image in an artifact if you need the USER to review it.
+</ADDITIONAL_METADATA>
+
+[file "C:/Users/golag/.gemini/antigravity/brain/c107ebf7-dcb7-4c8d-88d1-b72e8f9a99f6/.user_uploaded/media_1794297428437_41c157fb.mp4" (uploaded as "sohel-frontend_(1).mp4") was omitted because its type "application/octet-stream" is unsupported by the model; read it from that path if needed]

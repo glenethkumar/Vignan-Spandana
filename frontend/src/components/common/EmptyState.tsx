@@ -1,13 +1,10 @@
 import React from 'react';
-import { cn } from '../../lib/utils';
-import { Button } from './Button';
 
-export interface EmptyStateProps {
+interface EmptyStateProps {
   icon?: React.ReactNode;
   title: string;
-  description: string;
-  actionLabel?: string;
-  onAction?: () => void;
+  description?: string;
+  action?: React.ReactNode;
   className?: string;
 }
 
@@ -15,21 +12,27 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
   icon,
   title,
   description,
-  actionLabel,
-  onAction,
-  className,
+  action,
+  className = '',
 }) => {
   return (
-    <div className={cn('flex flex-col items-center justify-center p-8 text-center bg-surface border border-dashed border-border rounded-card', className)}>
-      {icon && <div className="mb-3 text-ink-400 p-3 bg-page rounded-full">{icon}</div>}
-      <h4 className="text-base font-semibold text-ink-900">{title}</h4>
-      <p className="text-sm text-ink-500 max-w-sm mt-1 mb-4">{description}</p>
-      {actionLabel && onAction && (
-        <Button variant="secondary" size="sm" onClick={onAction}>
-          {actionLabel}
-        </Button>
+    <div
+      className={`p-10 sm:p-14 bg-white rounded-card border border-hairline shadow-soft flex flex-col items-center justify-center text-center ${className}`}
+    >
+      {icon && (
+        <div className="w-14 h-14 rounded-2xl bg-icon-box flex items-center justify-center text-muted mb-4 shadow-xs">
+          {icon}
+        </div>
       )}
+      <h3 className="font-display text-xl font-bold text-ink tracking-tight">
+        {title}
+      </h3>
+      {description && (
+        <p className="mt-1.5 text-sm text-muted max-w-sm font-normal">
+          {description}
+        </p>
+      )}
+      {action && <div className="mt-6">{action}</div>}
     </div>
   );
 };
-

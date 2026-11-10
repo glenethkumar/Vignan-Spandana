@@ -7,63 +7,65 @@ export default {
   theme: {
     extend: {
       colors: {
+        page: '#FAFAFA',
+        card: '#FFFFFF',
+        'soft-card': '#F7F7F7',
+        'hairline': '#E6E8EB',
+        'input-border': '#D0D5DD',
+        ink: '#111111',
+        'text-main': '#1F2933',
+        muted: '#6B7280',
+        'icon-box': '#F5F6F8',
         brand: {
           DEFAULT: '#014A97',
           dark: '#0B2038',
           accent: '#0498ED',
-          50: '#EFF6FF',
-          100: '#DBEAFE',
-          600: '#014A97',
-          700: '#0B3A75',
-          800: '#0A2D5C',
-          900: '#0B2038',
-        },
-        page: '#F7F8FA',
-        surface: '#FFFFFF',
-        subtle: '#F1F3F6',
-        border: '#E5E7EB',
-        ink: {
-          900: '#111827',
-          700: '#374151',
-          600: '#4B5563',
-          500: '#6B7280',
-          400: '#9CA3AF',
+          50: '#EAF3FC',
+          100: '#D0E4FA',
         },
         issue: {
-          text: '#C2410C',
+          DEFAULT: '#C2410C',
           icon: '#EA580C',
           tint: '#FFF1E6',
           border: '#FDBA74',
         },
-        success: {
-          text: '#1E7B4F',
-          tint: '#E7F5EE',
-          border: '#A3E0C1',
+        banner: {
+          error: '#FDF1EE',
+          'error-border': '#F5C9C0',
+          'error-text': '#7F1D1D',
         },
-        warning: {
-          text: '#8A5A00',
-          tint: '#FFF6E0',
-          border: '#F9DE8B',
-        },
-        danger: {
-          text: '#B42318',
-          tint: '#FDECEA',
-          border: '#FDA29B',
+        status: {
+          green: '#10B981',
+          'green-bg': '#ECFDF5',
+          'green-text': '#047857',
         }
       },
       fontFamily: {
-        sans: ['Inter', 'system-ui', 'sans-serif'],
-        heading: ['Plus Jakarta Sans', 'Manrope', 'system-ui', 'sans-serif'],
+        display: ['"Plus Jakarta Sans"', 'Inter', 'sans-serif'],
+        sans: ['Inter', 'sans-serif'],
       },
       borderRadius: {
-        'card': '14px',
+        card: '18px',
+        panel: '24px',
+        'panel-lg': '28px',
+        pill: '9999px',
+        btn: '9999px',
+        input: '12px',
+        'icon-box': '12px',
+        phone: '44px',
       },
       boxShadow: {
-        'card': '0 1px 3px 0 rgba(0, 0, 0, 0.05), 0 1px 2px 0 rgba(0, 0, 0, 0.03)',
-        'float': '0 10px 25px -5px rgba(0, 0, 0, 0.08), 0 8px 10px -6px rgba(0, 0, 0, 0.04)',
+        soft: '0 8px 30px rgba(0, 0, 0, 0.06)',
+        'soft-hover': '0 12px 36px rgba(0, 0, 0, 0.09)',
+        modal: '0 20px 40px rgba(0, 0, 0, 0.12)',
+      },
+      letterSpacing: {
+        eyebrow: '0.18em',
+        sub: '0.2em',
+        tightest: '-0.045em',
+        tighter: '-0.035em',
       }
     },
   },
   plugins: [],
-};
-
+}

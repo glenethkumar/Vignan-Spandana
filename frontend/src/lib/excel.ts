@@ -76,46 +76,46 @@ export function generateExcelTemplate(): Uint8Array {
 
   const sampleRows = [
     [
-      '21L31A0501',
+      '22L31A0501',
       'Aarav Sharma',
-      'Suresh Sharma',
-      '9848011001',
-      'Absent',
-      'Telugu',
-      84,
-      'Day Scholar',
-      'Route 12 (Gajuwaka)',
-      'CSE',
-      3,
-      'Section A',
-    ],
-    [
-      '21L31A0502',
-      'Bhavya Reddy',
-      'Venkat Reddy',
-      '9848011002',
+      'Rajesh Sharma',
+      '+91 98765 43210',
       'Present',
       'Telugu',
-      91,
-      'Hostel',
-      '',
+      88,
+      'Day Scholar',
+      'Route 12 - Gajuwaka',
       'CSE',
       3,
-      'Section A',
+      'A',
     ],
     [
-      '21L31A0503',
-      'Chaitanya Varma',
-      'Raju Varma',
-      '9848011003',
+      '22L31A0502',
+      'Bhavya Reddy',
+      'Srinivas Reddy',
+      '+91 98123 45678',
       'Absent',
       'Telugu',
-      72,
-      'Day Scholar',
-      'Route 04 (NAD)',
+      74,
+      'Hostel',
+      '—',
       'CSE',
       3,
-      'Section A',
+      'A',
+    ],
+    [
+      '22L31A0503',
+      'Chetan Varma',
+      'Venkat Varma',
+      '+91 94401 23456',
+      'Absent',
+      'English',
+      62,
+      'Day Scholar',
+      'Route 4 - NAD',
+      'CSE',
+      3,
+      'A',
     ],
   ];
 
@@ -376,6 +376,61 @@ export function validateStudentRows(
     validRows,
     excludedRows,
   };
+}
+
+/**
+ * High-level helper: parses an uploaded file and runs validation against class and module.
+ */
+export async function parseAndValidateStudentFile(
+  file: File,
+  expectedClass: { department: string; year: number; section: string },
+  module: 'mentoring' | 'feedback'
+): Promise<ExcelValidationResult & { missingColumns: string[] }> {
+  const { headers, rawRows } = await readUploadedSpreadsheet(file);
+
+  const columnMap: Record<string, string> = {};
+  const lowerHeaders = headers.map(h => ({
+    raw: h,
+    norm: h.toLowerCase().replace(/[\s_-]+/g, ''),
+  }));
+
+  REQUIRED_COLUMNS.forEach(col => {
+    const normCol = col.replace(/[\s_-]+/g, '');
+    const match = lowerHeaders.find(
+      h => h.norm.includes(normCol) || normCol.includes(h.norm)
+    );
+    if (match) columnMap[col] = match.raw;
+  });
+
+  const missingColumns = REQUIRED_COLUMNS.filter(col => {
+    if (module === 'feedback' && col === 'attendance_status') return false;
+    return !columnMap[col];
+  });
+
+  if (missingColumns.length > 0) {
+    return {
+      isValid: false,
+      totalRows: rawRows.length,
+      presentCount: 0,
+      absentCount: 0,
+      usablePhoneCount: 0,
+      excludedCount: 0,
+      missingColumns,
+      errors: [
+        {
+          rowNumber: 1,
+          field: 'headers',
+          message: `Missing required column(s): ${missingColumns.join(', ')}`,
+          isBlocking: true,
+        },
+      ],
+      validRows: [],
+      excludedRows: [],
+    };
+  }
+
+  const result = validateStudentRows(rawRows, columnMap, expectedClass, module);
+  return { ...result, missingColumns: [] };
 }
 
 /**

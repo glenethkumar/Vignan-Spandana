@@ -1,84 +1,86 @@
 import React, { useEffect } from 'react';
 import { X } from 'lucide-react';
-import { cn } from '../../lib/utils';
-import { Button } from './Button';
 
-export interface ModalProps {
+interface ModalProps {
   isOpen: boolean;
   onClose: () => void;
-  title: string;
-  description?: string;
+  title?: React.ReactNode;
+  subtitle?: React.ReactNode;
   children: React.ReactNode;
   footer?: React.ReactNode;
-  size?: 'sm' | 'md' | 'lg' | 'xl';
+  maxWidth?: 'sm' | 'md' | 'lg' | 'xl';
 }
 
 export const Modal: React.FC<ModalProps> = ({
   isOpen,
   onClose,
   title,
-  description,
+  subtitle,
   children,
   footer,
-  size = 'md',
+  maxWidth = 'md',
 }) => {
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && isOpen) {
-        onClose();
-      }
+      if (e.key === 'Escape' && isOpen) onClose();
     };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
+    if (isOpen) {
+      document.body.style.overflow = 'hidden';
+      window.addEventListener('keydown', handleKeyDown);
+    }
+    return () => {
+      document.body.style.overflow = 'unset';
+      window.removeEventListener('keydown', handleKeyDown);
+    };
   }, [isOpen, onClose]);
 
   if (!isOpen) return null;
 
-  const sizeStyles = {
+  const maxWidthClass = {
     sm: 'max-w-md',
     md: 'max-w-lg',
     lg: 'max-w-2xl',
-    xl: 'max-w-4xl',
-  };
+    xl: 'max-w-3xl',
+  }[maxWidth];
 
   return (
-    <div
-      role="dialog"
-      aria-modal="true"
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-ink-900/40 backdrop-blur-sm animate-in fade-in duration-150"
-    >
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      {/* Backdrop */}
       <div
-        className="fixed inset-0"
+        className="fixed inset-0 bg-neutral-900/40 backdrop-blur-xs transition-opacity duration-200"
         onClick={onClose}
-        aria-hidden="true"
       />
+
+      {/* Dialog Card */}
       <div
-        className={cn(
-          'relative w-full bg-surface rounded-card border border-border shadow-float z-10 overflow-hidden flex flex-col max-h-[90vh]',
-          sizeStyles[size]
-        )}
+        className={`relative w-full ${maxWidthClass} bg-white rounded-panel p-7 sm:p-8 shadow-modal border border-hairline z-10 transition-all duration-200 animate-fade-up text-left`}
+        role="dialog"
+        aria-modal="true"
       >
-        {/* Header */}
-        <div className="px-6 py-4 border-b border-border flex items-center justify-between">
+        <div className="flex items-start justify-between pb-4 border-b border-hairline">
           <div>
-            <h3 className="text-lg font-semibold text-ink-900">{title}</h3>
-            {description && <p className="text-sm text-ink-500 mt-0.5">{description}</p>}
+            {title && (
+              <h3 className="font-display text-2xl font-bold text-ink tracking-tight">
+                {title}
+              </h3>
+            )}
+            {subtitle && (
+              <p className="mt-1 text-sm text-muted font-normal">{subtitle}</p>
+            )}
           </div>
           <button
             onClick={onClose}
-            aria-label="Close modal"
-            className="text-ink-400 hover:text-ink-700 p-1 rounded-md hover:bg-page transition-colors"
+            className="w-9 h-9 rounded-full bg-icon-box hover:bg-neutral-200 flex items-center justify-center text-muted hover:text-ink transition-colors cursor-pointer"
+            aria-label="Close dialog"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
-        {/* Body */}
-        <div className="px-6 py-5 overflow-y-auto flex-1">{children}</div>
+        <div className="py-5">{children}</div>
 
-        {/* Footer */}
         {footer && (
-          <div className="px-6 py-3.5 bg-page border-t border-border flex items-center justify-end gap-3">
+          <div className="pt-4 border-t border-hairline flex items-center justify-end gap-3">
             {footer}
           </div>
         )}
@@ -86,4 +88,3 @@ export const Modal: React.FC<ModalProps> = ({
     </div>
   );
 };
-

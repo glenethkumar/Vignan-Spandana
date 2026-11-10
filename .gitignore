@@ -41,8 +41,17 @@ Thumbs.db
 WhatsApp Image*.jpeg
 VS_Images/
 
+# Reference assets & comparisons
+/docs/reference-frames/
+/docs/comparison/current/
+!/docs/comparison/*.md
+!/docs/comparison/*.png
+*.mp4
+
 # Node & Frontend
 node_modules/
 frontend/node_modules/
+frontend-legacy/node_modules/
 dist/
 frontend/dist/
+frontend-legacy/dist/

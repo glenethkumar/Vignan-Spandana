@@ -33,6 +33,8 @@ export function maskPhoneNumber(phone: string | number | null | undefined): stri
   return '+91 98*** **345';
 }
 
+export const maskPhone = maskPhoneNumber;
+
 /**
  * Checks if a string contains any unmasked 10-digit phone number.
  */

@@ -1,55 +1,94 @@
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&family=Inter:wght@400;500;600;700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  --brand: #014A97;
-  --brand-dark: #0B2038;
-  --brand-accent: #0498ED;
-  --brand-50: #EFF6FF;
-  --neutral-page: #F7F8FA;
-  --neutral-surface: #FFFFFF;
-  --neutral-border: #E5E7EB;
-  --text-primary: #111827;
-  --text-secondary: #6B7280;
-  --orange-text: #C2410C;
-  --orange-icon: #EA580C;
-  --orange-tint: #FFF1E6;
+@layer base {
+  body {
+    @apply bg-page text-text-main font-sans antialiased;
+    font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-display text-ink;
+  }
 }
 
-body {
-  margin: 0;
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  background-color: var(--neutral-page);
-  color: var(--text-primary);
-  -webkit-font-smoothing: antialiased;
+/* Animations */
+@keyframes fadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
-h1, h2, h3, h4, h5, h6 {
-  font-family: 'Plus Jakarta Sans', 'Manrope', -apple-system, sans-serif;
-  letter-spacing: -0.02em;
+@keyframes floatDrift {
+  0%, 100% {
+    transform: translateY(0px) rotate(var(--card-tilt, 0deg));
+  }
+  50% {
+    transform: translateY(-8px) rotate(var(--card-tilt, 0deg));
+  }
 }
 
-/* Transitions: 150ms-200ms only as required by design spec */
-* {
-  transition-property: color, background-color, border-color, text-decoration-color, fill, stroke, opacity, box-shadow, transform;
-  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
-  transition-duration: 150ms;
+@keyframes waveBar {
+  0%, 100% {
+    transform: scaleY(0.35);
+  }
+  50% {
+    transform: scaleY(1);
+  }
 }
 
-/* Custom Scrollbar */
+@keyframes pulseDot {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.4;
+    transform: scale(1.15);
+  }
+}
+
+.animate-fade-up {
+  animation: fadeUp 550ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-float {
+  animation: floatDrift 6s ease-in-out infinite;
+}
+
+.animate-pulse-dot {
+  animation: pulseDot 2s ease-in-out infinite;
+}
+
+.wave-bar-1 { animation: waveBar 1.2s ease-in-out infinite 0.1s; }
+.wave-bar-2 { animation: waveBar 1.2s ease-in-out infinite 0.3s; }
+.wave-bar-3 { animation: waveBar 1.2s ease-in-out infinite 0.5s; }
+.wave-bar-4 { animation: waveBar 1.2s ease-in-out infinite 0.2s; }
+.wave-bar-5 { animation: waveBar 1.2s ease-in-out infinite 0.4s; }
+
+/* Custom Scrollbar for Clean UI */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
 }
+
 ::-webkit-scrollbar-track {
   background: transparent;
 }
+
 ::-webkit-scrollbar-thumb {
-  background: #CBD5E1;
-  border-radius: 4px;
-}
-::-webkit-scrollbar-thumb:hover {
-  background: #94A3B8;
+  background: #D1D5DB;
+  border-radius: 9999px;
 }
 
+::-webkit-scrollbar-thumb:hover {
+  background: #9CA3AF;
+}

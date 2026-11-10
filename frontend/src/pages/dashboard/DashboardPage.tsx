@@ -1,386 +1,335 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
+  Plus,
+  Layers,
   Users,
   PhoneCall,
-  AlertCircle,
-  CheckCircle2,
-  Plus,
   ArrowRight,
-  Clock,
-  Sparkles,
+  CheckCircle,
   FileSpreadsheet,
+  AlertCircle,
+  Clock,
+  Play,
   Check,
-  ChevronRight,
-  ExternalLink,
-  Layers,
-  FileText,
-  MessageSquare,
 } from 'lucide-react';
 import { Button } from '../../components/common/Button';
+import { StatCard } from '../../components/common/StatCard';
 import { Badge } from '../../components/common/Badge';
-import { Card } from '../../components/common/Card';
-import { Skeleton } from '../../components/common/Skeleton';
-import { EmptyState } from '../../components/common/EmptyState';
-import { getActiveUser, getDashboardSummary, approveCampaign, returnCampaignWithNote } from '../../data/api';
-import { DashboardSummary, User } from '../../data/types';
-import { formatDate } from '../../lib/utils';
-import { Modal } from '../../components/common/Modal';
-import { useToast } from '../../components/common/Toast';
+import { useAuth, useCampaigns, useStudents, useIssues } from '../../data/api';
+import { Campaign, Issue } from '../../data/types';
 
 export const DashboardPage: React.FC = () => {
+  const { currentUser } = useAuth();
+  const { campaigns, draftCampaign } = useCampaigns();
+  const { students } = useStudents();
+  const { issues } = useIssues();
   const navigate = useNavigate();
-  const { showToast } = useToast();
-  const [user, setUser] = useState<User | null>(null);
-  const [summary, setSummary] = useState<DashboardSummary | null>(null);
-  const [loading, setLoading] = useState(true);
 
-  // Approval modal state (for Admin/Principal)
-  const [selectedPendingCampaignId, setSelectedPendingCampaignId] = useState<number | null>(null);
-  const [returnNote, setReturnNote] = useState('');
-  const [isReturnModalOpen, setIsReturnModalOpen] = useState(false);
+  const role = currentUser?.role || 'admin';
+  const isAdminOrPrincipal = role === 'admin' || role === 'principal';
+  const isFaculty = role === 'faculty';
 
-  useEffect(() => {
-    async function fetchData() {
-      setLoading(true);
-      const active = await getActiveUser();
-      setUser(active);
-      const data = await getDashboardSummary(active.role, active.department);
-      setSummary(data);
-      setLoading(false);
-    }
-    fetchData();
-  }, []);
+  // Derived counts
+  const totalCampaigns = campaigns.length;
+  const totalStudents = students.length;
+  const completedCalls = campaigns.reduce(
+    (acc: number, c: Campaign) => acc + (c.completedCalls || 0),
+    0
+  );
 
-  const handleApprove = async (campaignId: number) => {
-    try {
-      await approveCampaign(campaignId);
-      showToast('Campaign approved successfully and ready for launch', 'success');
-      const active = await getActiveUser();
-      const updated = await getDashboardSummary(active.role, active.department);
-      setSummary(updated);
-    } catch {
-      showToast('Failed to approve campaign', 'error');
-    }
-  };
-
-  const handleReturn = async () => {
-    if (!selectedPendingCampaignId) return;
-    try {
-      await returnCampaignWithNote(selectedPendingCampaignId, returnNote || 'Please review student phone numbers.');
-      showToast('Campaign returned to faculty with feedback note', 'info');
-      setIsReturnModalOpen(false);
-      setReturnNote('');
-      const active = await getActiveUser();
-      const updated = await getDashboardSummary(active.role, active.department);
-      setSummary(updated);
-    } catch {
-      showToast('Failed to return campaign', 'error');
-    }
-  };
-
-  const canCreateCampaign = user?.role === 'admin' || user?.role === 'principal' || user?.role === 'faculty';
-  const isAdminOrPrincipal = user?.role === 'admin' || user?.role === 'principal';
+  // Filtered lists
+  const pendingApprovalCampaigns = campaigns.filter(
+    (c: Campaign) => c.status === 'draft' || c.status === 'pending_approval'
+  );
+  const openIssues = issues.filter(
+    (i: Issue) => i.status === 'open' || i.status === 'in_progress'
+  );
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-150">
-      {/* Top Banner Header (matching frame_24s.jpg) */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-border">
+    <div className="w-full flex flex-col gap-10 max-w-6xl text-left animate-fade-up">
+      {/* Header Row */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <div className="text-[10px] font-bold text-ink-400 uppercase tracking-[0.18em] mb-1">
-            YOUR WORKSPACE, AT A GLANCE
-          </div>
-          <h1 className="text-3xl sm:text-4xl font-extrabold text-ink-900 tracking-tight">
+          <span className="text-[11px] font-bold tracking-eyebrow uppercase text-brand">
+            Your Workspace, at a Glance
+          </span>
+          <h1 className="font-display text-4xl sm:text-[46px] font-bold text-ink tracking-tight leading-tight mt-1">
             Let's get connected.
           </h1>
-          <p className="text-sm text-ink-500 mt-1">
+          <p className="mt-1.5 text-base text-muted font-normal">
             A new conversation starts with a well-prepared campaign.
           </p>
         </div>
 
-        {canCreateCampaign && (
-          <Link
-            to="/app/campaign/new"
-            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-brand-dark text-white text-xs font-semibold hover:bg-ink-900 transition-all shadow-card self-start sm:self-auto"
-          >
-            <Plus className="w-3.5 h-3.5" />
-            <span>New campaign</span>
+        {(isAdminOrPrincipal || isFaculty) && (
+          <Link to="/app/campaign/new">
+            <Button
+              size="md"
+              className="rounded-btn font-semibold shadow-soft hover:shadow-md"
+              icon={<Plus className="w-4 h-4" />}
+            >
+              {draftCampaign ? 'Continue campaign' : '+ New campaign'}
+            </Button>
           </Link>
         )}
       </div>
 
-      {/* 3 Primary Stat Cards (matching frame_24s.jpg) */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-        {loading ? (
-          <>
-            <Skeleton className="h-28" />
-            <Skeleton className="h-28" />
-            <Skeleton className="h-28" />
-          </>
-        ) : (
-          <>
-            {/* Card 1: Prepared campaigns */}
-            <div className="p-6 rounded-card border border-border bg-surface shadow-xs flex flex-col justify-between min-h-[120px]">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-medium text-ink-600">Prepared campaigns</span>
-                <div className="w-8 h-8 rounded-lg bg-page border border-border flex items-center justify-center text-ink-700">
-                  <Layers className="w-4 h-4" />
-                </div>
-              </div>
-              <div className="text-3xl font-extrabold text-ink-900 font-sans tracking-tight">
-                {String(summary?.preparedCampaignsCount ?? summary?.recentCampaigns.length ?? 0).padStart(2, '0')}
-              </div>
-            </div>
-
-            {/* Card 2: Student records */}
-            <div className="p-6 rounded-card border border-border bg-surface shadow-xs flex flex-col justify-between min-h-[120px]">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-medium text-ink-600">Student records</span>
-                <div className="w-8 h-8 rounded-lg bg-page border border-border flex items-center justify-center text-ink-700">
-                  <Users className="w-4 h-4" />
-                </div>
-              </div>
-              <div className="text-3xl font-extrabold text-ink-900 font-sans tracking-tight">
-                {String(summary?.studentRecordsCount ?? 0).padStart(2, '0')}
-              </div>
-            </div>
-
-            {/* Card 3: Completed calls */}
-            <div className="p-6 rounded-card border border-border bg-surface shadow-xs flex flex-col justify-between min-h-[120px]">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-medium text-ink-600">Completed calls</span>
-                <div className="w-8 h-8 rounded-lg bg-page border border-border flex items-center justify-center text-ink-700">
-                  <PhoneCall className="w-4 h-4" />
-                </div>
-              </div>
-              <div>
-                <div className="text-3xl font-extrabold text-ink-900 font-sans tracking-tight">
-                  {String(summary?.callsCompleted ?? 0).padStart(2, '0')}
-                </div>
-                <div className="text-[11px] text-ink-400 mt-0.5">
-                  {(summary?.callsCompleted ?? 0) > 0 ? 'Connected with parents' : 'Calling not connected'}
-                </div>
-              </div>
-            </div>
-          </>
-        )}
+      {/* 3 Stat Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <StatCard
+          title="Prepared campaigns"
+          value={totalCampaigns}
+          icon={<Layers className="w-4 h-4" />}
+        />
+        <StatCard
+          title="Student records"
+          value={totalStudents}
+          icon={<Users className="w-4 h-4" />}
+        />
+        <StatCard
+          title="Completed calls"
+          value={completedCalls}
+          caption={completedCalls === 0 ? 'Calling not connected' : undefined}
+          icon={<PhoneCall className="w-4 h-4" />}
+        />
       </div>
 
-      {/* Guide Panel: "From student list to ready-to-go" (matching frame_24s.jpg) */}
-      <div className="rounded-2xl bg-page border border-border p-6 sm:p-8 shadow-xs">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
-          {/* Left Hero Area */}
-          <div className="lg:col-span-5 space-y-4">
-            <div className="text-[10px] font-bold text-ink-400 uppercase tracking-[0.18em]">
-              A FEW STEPS. ALL SET.
-            </div>
-            <h2 className="text-2xl sm:text-3xl font-extrabold text-ink-900 tracking-tight leading-snug">
-              From student list<br />to ready-to-go.
-            </h2>
-            {canCreateCampaign && (
-              <div className="pt-2">
-                <Link
-                  to="/app/campaign/new"
-                  className="inline-flex items-center gap-2 px-6 py-2.5 rounded-full bg-brand-dark text-white text-xs font-semibold hover:bg-ink-900 transition-all shadow-card"
-                >
-                  <span>Create campaign</span>
-                  <span className="font-mono text-xs">↗</span>
-                </Link>
+      {/* Guide Card Container */}
+      <div className="p-8 sm:p-10 rounded-panel bg-gradient-to-br from-[#F5F6F8] via-[#F8F9FA] to-[#FFFFFF] border border-hairline shadow-soft grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+        <div className="lg:col-span-5 flex flex-col items-start">
+          <span className="text-[11px] font-bold tracking-eyebrow uppercase text-brand mb-2">
+            A Few Steps. All Set.
+          </span>
+          <h2 className="font-display text-3xl sm:text-4xl font-bold text-ink tracking-tight leading-snug">
+            From student list to ready-to-go.
+          </h2>
+          <p className="mt-3 text-sm text-muted leading-relaxed font-normal">
+            Set up departments, academic years, sections, and upload student rosters with automated phone verification.
+          </p>
+
+          <Link to="/app/campaign/new" className="mt-6">
+            <Button
+              size="md"
+              className="rounded-btn font-semibold"
+              icon={<ArrowRight className="w-4 h-4" />}
+            >
+              Create campaign ↗
+            </Button>
+          </Link>
+        </div>
+
+        <div className="lg:col-span-7 flex flex-col gap-3.5">
+          <div className="p-4 sm:p-5 bg-white rounded-card border border-hairline shadow-xs flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <span className="w-8 h-8 rounded-full bg-icon-box text-ink font-bold text-xs flex items-center justify-center shrink-0">
+                01
+              </span>
+              <div>
+                <div className="font-display font-bold text-sm sm:text-base text-ink">
+                  Select your class
+                </div>
+                <div className="text-xs sm:text-sm text-muted">
+                  Department · Year · Section
+                </div>
               </div>
-            )}
+            </div>
+            <div className="w-6 h-6 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center">
+              <Check className="w-3.5 h-3.5 stroke-[2.5]" />
+            </div>
           </div>
 
-          {/* Right 3 Stacked Cards */}
-          <div className="lg:col-span-7 space-y-3">
-            {/* Step 1 */}
-            <div className="p-4 rounded-xl border border-border bg-surface shadow-2xs flex items-center justify-between">
-              <div className="flex items-center gap-3.5">
-                <span className="font-mono text-xs font-bold text-ink-400">01</span>
-                <div className="w-8 h-8 rounded-lg bg-page border border-border flex items-center justify-center text-ink-700">
-                  <Layers className="w-4 h-4" />
+          <div className="p-4 sm:p-5 bg-white rounded-card border border-hairline shadow-xs flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <span className="w-8 h-8 rounded-full bg-icon-box text-ink font-bold text-xs flex items-center justify-center shrink-0">
+                02
+              </span>
+              <div>
+                <div className="font-display font-bold text-sm sm:text-base text-ink">
+                  Add your students
                 </div>
-                <div>
-                  <h4 className="text-xs font-bold text-ink-900">Select your class</h4>
-                  <p className="text-[11px] text-ink-500 mt-0.5">Department · Year · Section</p>
+                <div className="text-xs sm:text-sm text-muted">
+                  Upload · Validate · Confirm
                 </div>
               </div>
-              <Check className="w-4 h-4 text-ink-400" />
             </div>
-
-            {/* Step 2 */}
-            <div className="p-4 rounded-xl border border-border bg-surface shadow-2xs flex items-center justify-between">
-              <div className="flex items-center gap-3.5">
-                <span className="font-mono text-xs font-bold text-ink-400">02</span>
-                <div className="w-8 h-8 rounded-lg bg-page border border-border flex items-center justify-center text-ink-700">
-                  <FileText className="w-4 h-4" />
-                </div>
-                <div>
-                  <h4 className="text-xs font-bold text-ink-900">Add your students</h4>
-                  <p className="text-[11px] text-ink-500 mt-0.5">Upload · Validate · Confirm</p>
-                </div>
-              </div>
-              <Check className="w-4 h-4 text-ink-400" />
+            <div className="w-6 h-6 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center">
+              <Check className="w-3.5 h-3.5 stroke-[2.5]" />
             </div>
+          </div>
 
-            {/* Step 3 */}
-            <div className="p-4 rounded-xl border border-border bg-surface shadow-2xs flex items-center justify-between">
-              <div className="flex items-center gap-3.5">
-                <span className="font-mono text-xs font-bold text-ink-400">03</span>
-                <div className="w-8 h-8 rounded-lg bg-page border border-border flex items-center justify-center text-ink-700">
-                  <MessageSquare className="w-4 h-4" />
+          <div className="p-4 sm:p-5 bg-white rounded-card border border-hairline shadow-xs flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <span className="w-8 h-8 rounded-full bg-icon-box text-ink font-bold text-xs flex items-center justify-center shrink-0">
+                03
+              </span>
+              <div>
+                <div className="font-display font-bold text-sm sm:text-base text-ink">
+                  Make it yours
                 </div>
-                <div>
-                  <h4 className="text-xs font-bold text-ink-900">Make it yours</h4>
-                  <p className="text-[11px] text-ink-500 mt-0.5">Questions · Settings · Review</p>
+                <div className="text-xs sm:text-sm text-muted">
+                  Questions · Settings · Review
                 </div>
               </div>
-              <Check className="w-4 h-4 text-ink-400" />
+            </div>
+            <div className="w-6 h-6 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center">
+              <Check className="w-3.5 h-3.5 stroke-[2.5]" />
             </div>
           </div>
         </div>
       </div>
 
-      {/* Pending Approvals (For Admin / Principal) */}
-      {isAdminOrPrincipal && summary?.pendingApprovals && summary.pendingApprovals.length > 0 && (
-        <div className="space-y-4">
+      {/* Admin: Waiting for approval */}
+      {isAdminOrPrincipal && pendingApprovalCampaigns.length > 0 && (
+        <section className="flex flex-col gap-4">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <div className="w-2 h-2 rounded-full bg-brand animate-ping" />
-              <h3 className="text-base font-bold text-ink-900">Pending Campaign Approvals</h3>
-            </div>
-            <span className="text-xs font-semibold text-brand bg-brand-50 px-2 py-0.5 rounded-full border border-brand-100">
-              {summary.pendingApprovals.length} Require Admin Confirmation
+            <h3 className="font-display text-xl font-bold text-ink">
+              Waiting for your approval ({pendingApprovalCampaigns.length})
+            </h3>
+            <span className="text-xs text-muted">
+              Faculty submissions awaiting confirmation
             </span>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {summary.pendingApprovals.map(camp => (
-              <div key={camp.id} className="p-5 rounded-card border border-brand-200 bg-surface shadow-xs space-y-3">
-                <div className="flex items-start justify-between">
-                  <div>
-                    <h4 className="text-sm font-bold text-ink-900">{camp.title}</h4>
-                    <p className="text-xs text-ink-500 mt-0.5">
-                      Submitted by {camp.createdBy} · {camp.totalTargetCalls} target parents
-                    </p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {pendingApprovalCampaigns.map((camp: Campaign) => (
+              <div
+                key={camp.id}
+                className="p-5 bg-white rounded-card border border-hairline shadow-soft flex items-center justify-between"
+              >
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="font-display font-bold text-base text-ink">
+                      {camp.title}
+                    </span>
+                    <Badge variant="brand">{camp.status}</Badge>
                   </div>
-                  <Badge variant="brand" size="sm">Awaiting Start</Badge>
+                  <div className="text-xs text-muted mt-1">
+                    {camp.department} · Year {camp.year} · Section {camp.section} · {camp.totalTargetCalls || 0} students
+                  </div>
                 </div>
 
-                <div className="flex items-center justify-between pt-2 border-t border-border text-xs">
-                  <span className="text-ink-400">Date: {formatDate(camp.attendanceDate)}</span>
-                  <div className="flex items-center gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => {
-                        setSelectedPendingCampaignId(camp.id);
-                        setIsReturnModalOpen(true);
-                      }}
-                    >
-                      Return with Note
-                    </Button>
-                    <Button
-                      variant="primary"
-                      size="sm"
-                      className="bg-brand-dark"
-                      onClick={() => handleApprove(camp.id)}
-                    >
-                      Approve & Confirm
-                    </Button>
+                <Button
+                  size="sm"
+                  onClick={() => navigate(`/app/campaign/monitor/${camp.id}`)}
+                  icon={<Play className="w-3.5 h-3.5" />}
+                >
+                  Review
+                </Button>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* Open Issues */}
+      {openIssues.length > 0 && (
+        <section className="flex flex-col gap-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <span className="w-2.5 h-2.5 rounded-full bg-issue-icon" />
+              <h3 className="font-display text-xl font-bold text-ink">
+                Open Issues ({openIssues.length})
+              </h3>
+            </div>
+            <Link
+              to="/app/issues"
+              className="text-xs font-semibold text-issue hover:underline"
+            >
+              View issues board →
+            </Link>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {openIssues.slice(0, 4).map((issue: Issue) => (
+              <div
+                key={issue.id}
+                onClick={() => navigate('/app/issues')}
+                className="p-5 bg-white rounded-card border border-hairline shadow-soft hover:border-issue-border transition-all cursor-pointer flex flex-col justify-between"
+              >
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <Badge variant="alert">{issue.category}</Badge>
+                    <span className="text-xs text-muted">{issue.status}</span>
                   </div>
+                  <p className="text-sm font-semibold text-text-main line-clamp-2">
+                    {issue.parentFeedback}
+                  </p>
+                </div>
+                <div className="mt-3 pt-3 border-t border-hairline flex items-center justify-between text-xs text-muted">
+                  <span>Student: {issue.rollNumber || issue.studentName}</span>
+                  <span className="font-medium text-brand">Resolve →</span>
                 </div>
               </div>
             ))}
           </div>
-        </div>
+        </section>
       )}
 
-      {/* Recent Campaigns Section */}
-      <div className="space-y-4">
+      {/* Recent Campaigns */}
+      <section className="flex flex-col gap-4">
         <div className="flex items-center justify-between">
-          <h3 className="text-base font-bold text-ink-900">Recent Campaigns</h3>
-          <Link to="/app/reports" className="text-xs font-semibold text-ink-600 hover:text-ink-900 flex items-center gap-1">
-            <span>View all reports</span>
-            <span className="font-mono text-xs">↗</span>
+          <h3 className="font-display text-xl font-bold text-ink">
+            Recent campaigns
+          </h3>
+          <Link
+            to="/app/reports"
+            className="text-xs font-semibold text-muted hover:text-ink"
+          >
+            All campaigns →
           </Link>
         </div>
 
-        {summary?.recentCampaigns.length === 0 ? (
-          <div className="p-8 text-center bg-surface border border-dashed border-border rounded-card space-y-2">
-            <p className="text-sm font-medium text-ink-700">No campaigns yet.</p>
-            <p className="text-xs text-ink-400">Confirmed campaigns will appear here.</p>
+        {campaigns.length === 0 ? (
+          <div className="p-10 bg-white rounded-card border border-hairline text-center text-muted">
+            <FileSpreadsheet className="w-8 h-8 mx-auto text-neutral-300 mb-2" />
+            <p className="font-semibold text-sm">No campaigns prepared yet</p>
+            <p className="text-xs mt-1">Start by clicking "+ New campaign"</p>
           </div>
         ) : (
-          <div className="bg-surface rounded-card border border-border divide-y divide-border overflow-hidden shadow-xs">
-            {summary?.recentCampaigns.map(camp => (
-              <div key={camp.id} className="p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:bg-page/50 transition-colors">
-                <div className="space-y-1">
-                  <div className="flex items-center gap-2.5">
-                    <h4 className="text-sm font-bold text-ink-900">{camp.title}</h4>
-                    <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-page border border-border text-ink-600 capitalize">
-                      {camp.module}
-                    </span>
+          <div className="bg-white rounded-card border border-hairline overflow-hidden shadow-soft">
+            <div className="divide-y divide-hairline">
+              {campaigns.slice(0, 5).map((camp: Campaign) => (
+                <div
+                  key={camp.id}
+                  onClick={() => navigate(`/app/campaign/monitor/${camp.id}`)}
+                  className="p-4 sm:p-5 flex items-center justify-between hover:bg-page transition-colors cursor-pointer"
+                >
+                  <div className="flex items-center gap-4">
+                    <div className="w-10 h-10 rounded-icon-box bg-icon-box text-text-main flex items-center justify-center shrink-0">
+                      <Layers className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <div className="font-display font-bold text-sm text-ink">
+                        {camp.title}
+                      </div>
+                      <div className="text-xs text-muted mt-0.5">
+                        {camp.department} · Year {camp.year} · Section {camp.section} · {camp.totalTargetCalls} calls
+                      </div>
+                    </div>
                   </div>
-                  <p className="text-xs text-ink-400">
-                    Created on {formatDate(camp.createdAt)} · {camp.totalTargetCalls} targets
-                  </p>
-                </div>
 
-                <div className="flex items-center gap-3">
-                  <Badge
-                    variant={
-                      camp.status === 'completed'
-                        ? 'success'
-                        : camp.status === 'in_progress'
-                        ? 'brand'
-                        : 'default'
-                    }
-                    size="sm"
-                  >
-                    {camp.status.replace('_', ' ')}
-                  </Badge>
-
-                  {camp.status === 'in_progress' && (
-                    <Link
-                      to={`/app/campaign/${camp.id}/monitor`}
-                      className="text-xs font-semibold text-brand hover:underline"
+                  <div className="flex items-center gap-3">
+                    <Badge
+                      variant={
+                        camp.status === 'completed'
+                          ? 'success'
+                          : camp.status === 'in_progress'
+                          ? 'brand'
+                          : 'neutral'
+                      }
+                      dot
                     >
-                      Open Monitor →
-                    </Link>
-                  )}
+                      {camp.status}
+                    </Badge>
+                    <ArrowRight className="w-4 h-4 text-muted" />
+                  </div>
                 </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
         )}
-      </div>
-
-      {/* Return Note Modal */}
-      <Modal
-        isOpen={isReturnModalOpen}
-        onClose={() => setIsReturnModalOpen(false)}
-        title="Return Campaign to Faculty"
-        description="Provide a note explaining what needs revision before approval."
-        footer={
-          <>
-            <Button variant="outline" size="sm" onClick={() => setIsReturnModalOpen(false)}>
-              Cancel
-            </Button>
-            <Button variant="primary" size="sm" onClick={handleReturn}>
-              Send Return Note
-            </Button>
-          </>
-        }
-      >
-        <div className="space-y-3 text-xs">
-          <textarea
-            value={returnNote}
-            onChange={e => setReturnNote(e.target.value)}
-            placeholder="e.g. Please verify student absent list for Section A..."
-            className="w-full h-24 p-3 border border-border rounded-lg bg-surface text-ink-900 text-xs focus:ring-1 focus:ring-brand"
-          />
-        </div>
-      </Modal>
+      </section>
     </div>
   );
 };

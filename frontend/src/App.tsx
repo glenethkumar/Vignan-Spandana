@@ -1,10 +1,10 @@
-import React, { useState, useEffect } from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { ToastProvider } from './components/common/Toast';
+import React from 'react';
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { PublicLayout } from './layouts/PublicLayout';
 import { AppLayout } from './layouts/AppLayout';
 import { HomePage } from './pages/public/HomePage';
 import { LoginPage } from './pages/public/LoginPage';
+import { StyleguidePage } from './pages/public/StyleguidePage';
 import { DashboardPage } from './pages/dashboard/DashboardPage';
 import { WizardPage } from './pages/campaign/WizardPage';
 import { LiveMonitorPage } from './pages/campaign/LiveMonitorPage';
@@ -12,30 +12,35 @@ import { ReportsPage } from './pages/reports/ReportsPage';
 import { IssuesPage } from './pages/issues/IssuesPage';
 import { UsersClassesPage } from './pages/admin/UsersClassesPage';
 import { SettingsPage } from './pages/admin/SettingsPage';
-import { ForbiddenPage } from './pages/error/ForbiddenPage';
 import { NotFoundPage } from './pages/error/NotFoundPage';
-import { getActiveUser } from './data/api';
-import { User, UserRole } from './data/types';
+import { ForbiddenPage } from './pages/error/ForbiddenPage';
+import { ToastProvider } from './components/common/Toast';
+import { useAuth, AuthProvider } from './data/api';
 
-// Protected Route Guard Component
-const RoleGuard: React.FC<{
-  allowedRoles: UserRole[];
+const IS_DEMO_MODE = import.meta.env.VITE_DEMO_MODE === 'true';
+
+// Route guard for authenticated staff
+const RequireAuth: React.FC<{
   children: React.ReactNode;
-}> = ({ allowedRoles, children }) => {
-  const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
+  allowedRoles?: string[];
+}> = ({ children, allowedRoles }) => {
+  const { currentUser, isLoading } = useAuth();
+  const location = useLocation();
 
-  useEffect(() => {
-    getActiveUser().then(u => {
-      setUser(u);
-      setLoading(false);
-    });
-  }, []);
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-page flex items-center justify-center">
+        <div className="w-6 h-6 border-2 border-brand border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
 
-  if (loading) return <div className="p-8 text-center text-xs text-ink-400">Verifying session...</div>;
+  if (!currentUser) {
+    return <Navigate to="/login" state={{ from: location }} replace />;
+  }
 
-  if (!user || !allowedRoles.includes(user.role)) {
-    return <Navigate to="/app/forbidden" replace />;
+  if (allowedRoles && !allowedRoles.includes(currentUser.role)) {
+    return <Navigate to="/forbidden" replace />;
   }
 
   return <>{children}</>;
@@ -43,89 +48,170 @@ const RoleGuard: React.FC<{
 
 export const App: React.FC = () => {
   return (
-    <ToastProvider>
-      <BrowserRouter>
-        <Routes>
-          {/* Public Marketing Route */}
-          <Route element={<PublicLayout />}>
-            <Route path="/" element={<HomePage />} />
-          </Route>
+    <AuthProvider>
+      <ToastProvider>
+        <BrowserRouter>
+          <Routes>
+            {/* Public Website */}
+            <Route element={<PublicLayout />}>
+              <Route path="/" element={<HomePage />} />
+            </Route>
 
-          {/* Login Route */}
-          <Route path="/login" element={<LoginPage />} />
+            {/* Login Routes */}
+            <Route path="/login" element={<LoginPage />} />
+            <Route path="/admin" element={<LoginPage />} />
 
-          {/* Authenticated Workspace Routes */}
-          <Route path="/app" element={<AppLayout />}>
-            <Route index element={<DashboardPage />} />
-            
+            {/* Dev Styleguide (Only accessible in Demo Mode) */}
+            {IS_DEMO_MODE && (
+              <Route path="/dev/styleguide" element={<StyleguidePage />} />
+            )}
+
+            {/* Authenticated Application Workspace */}
             <Route
-              path="campaign/new"
+              path="/app"
               element={
-                <RoleGuard allowedRoles={['admin', 'principal', 'faculty']}>
-                  <WizardPage />
-                </RoleGuard>
+                <RequireAuth>
+                  <AppLayout />
+                </RequireAuth>
+              }
+            >
+              <Route index element={<Navigate to="/app/dashboard" replace />} />
+              <Route path="dashboard" element={<DashboardPage />} />
+
+              {/* Campaign Wizard */}
+              <Route
+                path="campaign/new"
+                element={
+                  <RequireAuth allowedRoles={['admin', 'principal', 'faculty']}>
+                    <WizardPage />
+                  </RequireAuth>
+                }
+              />
+              <Route
+                path="new"
+                element={
+                  <RequireAuth allowedRoles={['admin', 'principal', 'faculty']}>
+                    <WizardPage />
+                  </RequireAuth>
+                }
+              />
+
+              {/* Live Monitor */}
+              <Route path="campaign/monitor/:id" element={<LiveMonitorPage />} />
+
+              {/* Reports & History */}
+              <Route
+                path="reports"
+                element={
+                  <RequireAuth allowedRoles={['admin', 'principal', 'faculty']}>
+                    <ReportsPage />
+                  </RequireAuth>
+                }
+              />
+
+              {/* Issues Board */}
+              <Route
+                path="issues"
+                element={
+                  <RequireAuth
+                    allowedRoles={[
+                      'admin',
+                      'principal',
+                      'college_coordinator',
+                      'hostel_dean',
+                      'bus_correspondent',
+                    ]}
+                  >
+                    <IssuesPage />
+                  </RequireAuth>
+                }
+              />
+
+              {/* Admin Management Pages */}
+              <Route
+                path="users-classes"
+                element={
+                  <RequireAuth allowedRoles={['admin', 'principal']}>
+                    <UsersClassesPage />
+                  </RequireAuth>
+                }
+              />
+              <Route
+                path="settings"
+                element={
+                  <RequireAuth allowedRoles={['admin', 'principal']}>
+                    <SettingsPage />
+                  </RequireAuth>
+                }
+              />
+            </Route>
+
+            {/* Legacy URL Redirects with Login Guard */}
+            <Route
+              path="/attendance/daily"
+              element={
+                <RequireAuth>
+                  <Navigate to="/app/reports" replace />
+                </RequireAuth>
               }
             />
-            <Route path="campaigns/new" element={<Navigate to="/app/campaign/new" replace />} />
-            <Route path="campaigns" element={<Navigate to="/app/reports" replace />} />
-
             <Route
-              path="campaign/:id/monitor"
+              path="/attendance/mark"
               element={
-                <RoleGuard allowedRoles={['admin', 'principal', 'faculty']}>
-                  <LiveMonitorPage />
-                </RoleGuard>
+                <RequireAuth allowedRoles={['admin', 'principal', 'faculty']}>
+                  <Navigate to="/app/campaign/new" replace />
+                </RequireAuth>
+              }
+            />
+            <Route
+              path="/attendance/queue"
+              element={
+                <RequireAuth>
+                  <Navigate to="/app/dashboard" replace />
+                </RequireAuth>
+              }
+            />
+            <Route
+              path="/voice-assistant"
+              element={
+                <RequireAuth>
+                  <Navigate to="/app/dashboard" replace />
+                </RequireAuth>
+              }
+            />
+            <Route
+              path="/assistant"
+              element={
+                <RequireAuth>
+                  <Navigate to="/app/dashboard" replace />
+                </RequireAuth>
+              }
+            />
+            <Route
+              path="/telugu-speech-lab"
+              element={
+                <RequireAuth>
+                  <Navigate to="/app/dashboard" replace />
+                </RequireAuth>
+              }
+            />
+            <Route
+              path="/follow-ups"
+              element={
+                <RequireAuth>
+                  <Navigate to="/app/issues" replace />
+                </RequireAuth>
               }
             />
 
-            <Route
-              path="reports"
-              element={
-                <RoleGuard allowedRoles={['admin', 'principal', 'faculty']}>
-                  <ReportsPage />
-                </RoleGuard>
-              }
-            />
-
-            <Route
-              path="issues"
-              element={
-                <RoleGuard allowedRoles={['admin', 'principal', 'college_coordinator', 'hostel_dean', 'bus_correspondent']}>
-                  <IssuesPage />
-                </RoleGuard>
-              }
-            />
-
-            <Route
-              path="users-classes"
-              element={
-                <RoleGuard allowedRoles={['admin', 'principal']}>
-                  <UsersClassesPage />
-                </RoleGuard>
-              }
-            />
-            <Route path="admin/users-classes" element={<Navigate to="/app/users-classes" replace />} />
-
-            <Route
-              path="settings"
-              element={
-                <RoleGuard allowedRoles={['admin', 'principal']}>
-                  <SettingsPage />
-                </RoleGuard>
-              }
-            />
-            <Route path="admin/settings" element={<Navigate to="/app/settings" replace />} />
-
-            <Route path="forbidden" element={<ForbiddenPage />} />
-          </Route>
-
-          {/* Fallback 404 */}
-          <Route path="*" element={<NotFoundPage />} />
-        </Routes>
-      </BrowserRouter>
-    </ToastProvider>
+            {/* Error Pages */}
+            <Route path="/forbidden" element={<ForbiddenPage />} />
+            <Route path="*" element={<NotFoundPage />} />
+          </Routes>
+        </BrowserRouter>
+      </ToastProvider>
+    </AuthProvider>
   );
 };
 
 export default App;
-

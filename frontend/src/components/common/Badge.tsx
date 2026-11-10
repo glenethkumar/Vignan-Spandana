@@ -1,39 +1,40 @@
 import React from 'react';
-import { cn } from '../../lib/utils';
 
-export interface BadgeProps extends React.HTMLAttributes<HTMLSpanElement> {
-  variant?: 'default' | 'success' | 'warning' | 'danger' | 'issue' | 'brand';
-  size?: 'sm' | 'md';
+interface BadgeProps {
+  children: React.ReactNode;
+  variant?: 'neutral' | 'success' | 'alert' | 'brand' | 'outline';
+  dot?: boolean;
+  className?: string;
 }
 
 export const Badge: React.FC<BadgeProps> = ({
   children,
-  className,
-  variant = 'default',
-  size = 'md',
-  ...props
+  variant = 'neutral',
+  dot = false,
+  className = '',
 }) => {
-  const sizeStyles = {
-    sm: 'px-2 py-0.5 text-xs',
-    md: 'px-2.5 py-1 text-xs font-semibold',
-  };
-
   const variantStyles = {
-    default: 'bg-page text-ink-700 border border-border',
-    brand: 'bg-brand-50 text-brand border border-brand-100',
-    success: 'bg-success-tint text-success-text border border-success-border',
-    warning: 'bg-warning-tint text-warning-text border border-warning-border',
-    danger: 'bg-danger-tint text-danger-text border border-danger-border',
-    issue: 'bg-issue-tint text-issue-text border border-issue-border',
-  };
+    neutral: 'bg-neutral-100 text-neutral-700 border-transparent',
+    success: 'bg-emerald-50 text-emerald-700 border-emerald-200/60',
+    alert: 'bg-issue-tint text-issue border-issue-border/50',
+    brand: 'bg-brand-50 text-brand border-brand-100',
+    outline: 'bg-white text-muted border-hairline',
+  }[variant];
+
+  const dotColors = {
+    neutral: 'bg-neutral-500',
+    success: 'bg-emerald-500',
+    alert: 'bg-issue-icon',
+    brand: 'bg-brand',
+    outline: 'bg-neutral-400',
+  }[variant];
 
   return (
     <span
-      className={cn('inline-flex items-center rounded-full font-medium tracking-wide', sizeStyles[size], variantStyles[variant], className)}
-      {...props}
+      className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold border ${variantStyles} ${className}`}
     >
-      {children}
+      {dot && <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${dotColors}`} />}
+      <span>{children}</span>
     </span>
   );
 };
-

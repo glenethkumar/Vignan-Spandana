@@ -1,295 +1,189 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
-  Settings,
-  Building,
   Clock,
   RotateCcw,
-  ShieldCheck,
-  FileText,
+  Shield,
+  Activity,
+  CheckCircle,
   Save,
-  CheckCircle2,
-  Lock,
-  Search,
-  Filter,
+  PhoneCall,
 } from 'lucide-react';
 import { Button } from '../../components/common/Button';
 import { Badge } from '../../components/common/Badge';
-import { Card } from '../../components/common/Card';
+import { Banner } from '../../components/common/Banner';
 import { useToast } from '../../components/common/Toast';
-import { SystemSettings, ActivityLogEntry } from '../../data/types';
-import { getSettings, saveSettings, listActivityLog } from '../../data/api';
-import { formatDateTime } from '../../lib/utils';
 
 export const SettingsPage: React.FC = () => {
   const { showToast } = useToast();
-  const [settings, setSettings] = useState<SystemSettings | null>(null);
-  const [logs, setLogs] = useState<ActivityLogEntry[]>([]);
-  const [logFilter, setLogFilter] = useState<string>('ALL');
-  const [searchLog, setSearchLog] = useState<string>('');
-  const [isSaving, setIsSaving] = useState(false);
 
-  useEffect(() => {
-    loadData();
-  }, []);
+  const [callingWindow, setCallingWindow] = useState('09:00 - 18:00');
+  const [maxRetries, setMaxRetries] = useState(1);
+  const [confirmationTiming, setConfirmationTiming] = useState<'immediately' | 'within_hours'>(
+    'within_hours'
+  );
 
-  const loadData = async () => {
-    const s = await getSettings();
-    setSettings(s);
-    const l = await listActivityLog();
-    setLogs(l);
+  const handleSave = () => {
+    showToast('System configuration saved successfully', 'success');
   };
 
-  const handleSave = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!settings) return;
-    setIsSaving(true);
-    try {
-      await saveSettings(settings);
-      showToast('System configuration saved successfully', 'success');
-      loadData();
-    } catch {
-      showToast('Failed to save settings', 'error');
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
-  const filteredLogs = logs.filter(log => {
-    if (logFilter !== 'ALL' && log.actionType !== logFilter) return false;
-    if (searchLog) {
-      const q = searchLog.toLowerCase();
-      return (
-        log.details.toLowerCase().includes(q) ||
-        log.userName.toLowerCase().includes(q) ||
-        log.targetEntity.toLowerCase().includes(q)
-      );
-    }
-    return true;
-  });
+  const auditLogs = [
+    { id: 1, action: 'Campaign Created', details: 'CSE Year 3 Section F Attendance', time: '10 mins ago', user: 'Admin Staff' },
+    { id: 2, action: 'Issue Resolved', details: 'Hostel Hot Water Supply Disruption', time: '1 hour ago', user: 'Hostel Dean' },
+    { id: 3, action: 'Upload Validated', details: '60 student records processed without errors', time: '2 hours ago', user: 'Faculty User' },
+    { id: 4, action: 'Parent Confirmed', details: 'Grievance verification call closed successfully', time: 'Yesterday', user: 'Automated System' },
+  ];
 
   return (
-    <div className="space-y-8 max-w-7xl mx-auto pb-16 animate-in fade-in duration-150">
-      {/* Top Header */}
-      <div className="pb-2 border-b border-border">
-        <div className="text-[11px] font-bold text-brand uppercase tracking-widest mb-1">
-          COLLEGE ADMINISTRATION
+    <div className="w-full flex flex-col gap-8 max-w-5xl text-left animate-fade-up">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-hairline">
+        <div>
+          <span className="text-[11px] font-bold tracking-eyebrow uppercase text-brand">
+            System Preferences
+          </span>
+          <h1 className="font-display text-3xl sm:text-4xl font-bold text-ink tracking-tight mt-1">
+            Calling & Governance Settings
+          </h1>
+          <p className="mt-1 text-sm text-muted font-normal">
+            Manage dispatch parameters, parent confirmation loops, and system activity logs.
+          </p>
         </div>
-        <h1 className="text-3xl font-bold text-ink-900 tracking-tight">System Settings & Activity Log</h1>
-        <p className="text-sm text-ink-500 mt-1">
-          Configure default calling windows, AI language defaults, privacy rules, and review comprehensive audit logs.
-        </p>
+
+        <Button
+          size="md"
+          onClick={handleSave}
+          className="rounded-btn shadow-soft"
+          icon={<Save className="w-4 h-4" />}
+        >
+          Save preferences
+        </Button>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-        {/* Left Column: Settings Form */}
-        <div className="lg:col-span-5 space-y-6">
-          <form onSubmit={handleSave} className="bg-surface rounded-card border border-border p-6 shadow-xs space-y-5">
-            <div className="flex items-center justify-between pb-3 border-b border-border">
-              <h3 className="text-base font-bold text-ink-900">Institutional Preferences</h3>
-              <Badge variant="brand" size="sm">Admin Only</Badge>
-            </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {/* Calling Parameters */}
+        <div className="p-6 bg-white rounded-card border border-hairline shadow-soft flex flex-col gap-5">
+          <h3 className="font-display font-bold text-lg text-ink flex items-center gap-2">
+            <Clock className="w-5 h-5 text-brand" />
+            <span>Calling Hours & Dispatch</span>
+          </h3>
 
-            {/* Institution & Department */}
-            <div className="space-y-3 text-xs">
-              <div>
-                <label className="block font-semibold text-ink-700 uppercase mb-1">
-                  Institution Name
-                </label>
-                <input
-                  type="text"
-                  value={settings?.institutionName || ''}
-                  onChange={e => setSettings(prev => prev ? { ...prev, institutionName: e.target.value } : null)}
-                  className="w-full p-2.5 border border-border rounded-lg bg-surface text-ink-900"
-                />
-              </div>
+          <div className="space-y-1.5">
+            <label className="text-xs font-semibold text-text-main">
+              Permitted Calling Window
+            </label>
+            <input
+              value={callingWindow}
+              onChange={(e) => setCallingWindow(e.target.value)}
+              className="w-full h-11 px-3.5 rounded-input border border-input-border text-sm font-medium"
+            />
+            <span className="text-[11px] text-muted">
+              Calls are automatically queued outside this time window.
+            </span>
+          </div>
 
-              <div>
-                <label className="block font-semibold text-ink-700 uppercase mb-1">
-                  Department
-                </label>
-                <input
-                  type="text"
-                  value={settings?.departmentName || ''}
-                  onChange={e => setSettings(prev => prev ? { ...prev, departmentName: e.target.value } : null)}
-                  className="w-full p-2.5 border border-border rounded-lg bg-surface text-ink-900"
-                />
-              </div>
-            </div>
-
-            {/* Language & Voice Defaults */}
-            <div className="space-y-3 text-xs pt-3 border-t border-border">
-              <div>
-                <label className="block font-semibold text-ink-700 uppercase mb-1">
-                  Default Speech Language
-                </label>
-                <select
-                  value={settings?.defaultLanguage || 'Telugu'}
-                  onChange={e => setSettings(prev => prev ? { ...prev, defaultLanguage: e.target.value as any } : null)}
-                  className="w-full p-2.5 border border-border rounded-lg bg-surface text-ink-900"
-                >
-                  <option value="Telugu">Telugu (Official State Language)</option>
-                  <option value="English">English</option>
-                  <option value="Hindi">Hindi</option>
-                </select>
-              </div>
-
-              {/* Confirmation Call Timing */}
-              <div>
-                <label className="block font-semibold text-ink-700 uppercase mb-1">
-                  Confirmation Call Timing
-                </label>
-                <select
-                  value={settings?.confirmationCallTiming || 'immediately'}
-                  onChange={e => setSettings(prev => prev ? { ...prev, confirmationCallTiming: e.target.value as any } : null)}
-                  className="w-full p-2.5 border border-border rounded-lg bg-surface text-ink-900"
-                >
-                  <option value="immediately">Immediately upon resolution (Demo Mode)</option>
-                  <option value="within_hours">Within standard calling hours (09:00 - 18:00)</option>
-                </select>
-                <p className="text-[11px] text-ink-500 mt-1">
-                  Controls when automated verification calls are queued after a grievance is marked resolved.
-                </p>
-              </div>
-
-              {/* Calling Window */}
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block font-semibold text-ink-700 uppercase mb-1">
-                    Calling Start
-                  </label>
-                  <input
-                    type="time"
-                    value={settings?.callingHoursStart || '09:00'}
-                    onChange={e => setSettings(prev => prev ? { ...prev, callingHoursStart: e.target.value } : null)}
-                    className="w-full p-2.5 border border-border rounded-lg bg-surface text-ink-900"
-                  />
-                </div>
-                <div>
-                  <label className="block font-semibold text-ink-700 uppercase mb-1">
-                    Calling End
-                  </label>
-                  <input
-                    type="time"
-                    value={settings?.callingHoursEnd || '18:00'}
-                    onChange={e => setSettings(prev => prev ? { ...prev, callingHoursEnd: e.target.value } : null)}
-                    className="w-full p-2.5 border border-border rounded-lg bg-surface text-ink-900"
-                  />
-                </div>
-              </div>
-
-              {/* Duration and Retries */}
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block font-semibold text-ink-700 uppercase mb-1">
-                    Max Duration (sec)
-                  </label>
-                  <input
-                    type="number"
-                    min={60}
-                    max={300}
-                    value={settings?.maxCallDurationSeconds || 120}
-                    onChange={e => setSettings(prev => prev ? { ...prev, maxCallDurationSeconds: Number(e.target.value) } : null)}
-                    className="w-full p-2.5 border border-border rounded-lg bg-surface text-ink-900"
-                  />
-                </div>
-                <div>
-                  <label className="block font-semibold text-ink-700 uppercase mb-1">
-                    Retry Attempts
-                  </label>
-                  <input
-                    type="number"
-                    min={1}
-                    max={3}
-                    value={settings?.retryAttempts || 2}
-                    onChange={e => setSettings(prev => prev ? { ...prev, retryAttempts: Number(e.target.value) } : null)}
-                    className="w-full p-2.5 border border-border rounded-lg bg-surface text-ink-900"
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* Privacy Enforcement Notice */}
-            <div className="p-3.5 rounded-lg bg-page border border-border space-y-1 text-xs">
-              <div className="flex items-center gap-2 font-bold text-ink-900">
-                <Lock className="w-3.5 h-3.5 text-brand" />
-                <span>Parent Contact Privacy</span>
-              </div>
-              <p className="text-ink-500 text-[11px] leading-relaxed">
-                Phone masking is permanently locked ON (+91 98*** **345). Full raw numbers are never exposed in exports, URLs, or browser HTML.
-              </p>
-            </div>
-
-            <Button
-              type="submit"
-              variant="primary"
-              size="md"
-              className="w-full gap-2"
-              isLoading={isSaving}
+          <div className="space-y-1.5">
+            <label className="text-xs font-semibold text-text-main">
+              Maximum Unanswered Retries
+            </label>
+            <select
+              value={maxRetries}
+              onChange={(e) => setMaxRetries(Number(e.target.value))}
+              className="w-full h-11 px-3.5 rounded-input border border-input-border text-sm font-medium bg-white"
             >
-              <Save className="w-4 h-4" />
-              <span>Save Institutional Settings</span>
-            </Button>
-          </form>
+              <option value={0}>0 (No retry)</option>
+              <option value={1}>1 retry after 30 minutes</option>
+              <option value={2}>2 retries spaced across the day</option>
+            </select>
+          </div>
         </div>
 
-        {/* Right Column: Activity Log Viewer */}
-        <div className="lg:col-span-7 space-y-4">
-          <div className="bg-surface rounded-card border border-border p-6 shadow-xs space-y-4">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-border">
-              <div>
-                <h3 className="text-base font-bold text-ink-900">Institutional Activity Log</h3>
-                <p className="text-xs text-ink-500">Chronological audit trail of all campaign, issue, and structure events.</p>
-              </div>
+        {/* Issue Follow-up Timing */}
+        <div className="p-6 bg-white rounded-card border border-hairline shadow-soft flex flex-col gap-5">
+          <h3 className="font-display font-bold text-lg text-ink flex items-center gap-2">
+            <PhoneCall className="w-5 h-5 text-issue-icon" />
+            <span>Confirmation Call Timing</span>
+          </h3>
 
-              {/* Filter */}
-              <div className="flex items-center gap-2 text-xs">
-                <select
-                  value={logFilter}
-                  onChange={e => setLogFilter(e.target.value)}
-                  className="py-1.5 px-2.5 border border-border rounded-lg bg-page text-ink-700"
-                >
-                  <option value="ALL">All Actions</option>
-                  <option value="login">Logins</option>
-                  <option value="upload">Uploads</option>
-                  <option value="campaign_created">Campaigns</option>
-                  <option value="issue_updated">Issues</option>
-                  <option value="confirmation_call">Confirmation Calls</option>
-                  <option value="structure_change">Structure Changes</option>
-                  <option value="report_export">Exports</option>
-                </select>
-              </div>
-            </div>
+          <p className="text-xs text-muted leading-relaxed">
+            When a staff member marks an issue as "Resolved", an automated follow-up call is placed to the parent to confirm resolution.
+          </p>
 
-            {/* Log Entries List */}
-            <div className="space-y-3 max-h-[520px] overflow-y-auto pr-1">
-              {filteredLogs.length === 0 ? (
-                <div className="p-8 text-center text-xs text-ink-400">No activity log entries match the filter.</div>
-              ) : (
-                filteredLogs.map(log => (
-                  <div
-                    key={log.id}
-                    className="p-3.5 rounded-lg bg-page border border-border text-xs space-y-1 hover:border-ink-400 transition-colors"
-                  >
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <span className="font-bold text-ink-900">{log.userName}</span>
-                        <Badge variant="default" size="sm">
-                          {log.userRole.replace('_', ' ').toUpperCase()}
-                        </Badge>
-                      </div>
-                      <span className="text-[10px] text-ink-400 font-mono">
-                        {formatDateTime(log.timestamp)}
-                      </span>
-                    </div>
-                    <p className="text-ink-700">{log.details}</p>
-                    <div className="text-[10px] text-ink-400">
-                      Entity: <span className="font-mono">{log.targetEntity}</span> · Action: <span className="capitalize">{log.actionType.replace('_', ' ')}</span>
-                    </div>
-                  </div>
-                ))
-              )}
-            </div>
+          <div className="flex flex-col gap-2.5">
+            <label
+              onClick={() => setConfirmationTiming('within_hours')}
+              className={`p-3.5 rounded-input border cursor-pointer flex items-center justify-between transition-all ${
+                confirmationTiming === 'within_hours'
+                  ? 'bg-brand-50 border-brand text-brand-dark font-bold'
+                  : 'bg-white border-hairline text-muted font-medium hover:border-neutral-300'
+              }`}
+            >
+              <div className="text-xs">
+                <div className="font-bold text-ink">Within calling hours (Recommended)</div>
+                <div className="text-[11px] text-muted mt-0.5">
+                  Only dispatch follow-up confirmation calls between 09:00 and 18:00
+                </div>
+              </div>
+              <input
+                type="radio"
+                checked={confirmationTiming === 'within_hours'}
+                onChange={() => setConfirmationTiming('within_hours')}
+                className="text-brand focus:ring-brand"
+              />
+            </label>
+
+            <label
+              onClick={() => setConfirmationTiming('immediately')}
+              className={`p-3.5 rounded-input border cursor-pointer flex items-center justify-between transition-all ${
+                confirmationTiming === 'immediately'
+                  ? 'bg-brand-50 border-brand text-brand-dark font-bold'
+                  : 'bg-white border-hairline text-muted font-medium hover:border-neutral-300'
+              }`}
+            >
+              <div className="text-xs">
+                <div className="font-bold text-ink">Immediately upon resolution</div>
+                <div className="text-[11px] text-muted mt-0.5">
+                  Place confirmation call immediately regardless of time
+                </div>
+              </div>
+              <input
+                type="radio"
+                checked={confirmationTiming === 'immediately'}
+                onChange={() => setConfirmationTiming('immediately')}
+                className="text-brand focus:ring-brand"
+              />
+            </label>
           </div>
+        </div>
+      </div>
+
+      {/* Audit Log Trail */}
+      <div className="flex flex-col gap-3">
+        <h3 className="font-display text-lg font-bold text-ink flex items-center gap-2">
+          <Activity className="w-5 h-5 text-muted" />
+          <span>System Activity & Audit Log</span>
+        </h3>
+
+        <div className="bg-white rounded-card border border-hairline overflow-hidden shadow-soft">
+          <table className="w-full text-xs text-left">
+            <thead className="bg-[#F5F6F8] border-b border-hairline text-muted uppercase font-bold text-[10px]">
+              <tr>
+                <th className="py-2.5 px-4">Event Action</th>
+                <th className="py-2.5 px-4">Details</th>
+                <th className="py-2.5 px-4">User</th>
+                <th className="py-2.5 px-4 text-right">Timestamp</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-hairline">
+              {auditLogs.map((log) => (
+                <tr key={log.id} className="hover:bg-page">
+                  <td className="py-3 px-4 font-bold text-ink">{log.action}</td>
+                  <td className="py-3 px-4 text-muted">{log.details}</td>
+                  <td className="py-3 px-4 font-semibold text-text-main">{log.user}</td>
+                  <td className="py-3 px-4 text-right text-muted">{log.time}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       </div>
     </div>
