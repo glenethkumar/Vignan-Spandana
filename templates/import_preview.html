@@ -1,6 +1,6 @@
-{% extends "base.html" %}
+﻿{% extends "base.html" %}
 
-{% block title %}Import Preview - Vignan Spandana{% endblock %}
+{% block title %}Import Preview - VIIT AI Feedback{% endblock %}
 
 {% block content %}
 <div class="card" style="margin-bottom: 1.25rem;">
@@ -121,7 +121,7 @@
                         {% if row['action'] == 'ADD' %}
                             <span class="badge badge-success">+ ADD</span>
                         {% elif row['action'] == 'UPDATE' %}
-                            <span class="badge badge-dept">⟳ UPDATE</span>
+                            <span class="badge badge-dept">âŸ³ UPDATE</span>
                         {% else %}
                             <span style="color: var(--text-muted); font-size: 0.8rem;">SKIP</span>
                         {% endif %}
@@ -130,19 +130,19 @@
                         {% if row['errors'] %}
                             <div style="color: var(--secondary-red); font-weight: 600;">
                                 {% for err in row['errors'] %}
-                                    ❌ {{ err }}<br>
+                                    âŒ {{ err }}<br>
                                 {% endfor %}
                             </div>
                         {% endif %}
                         {% if row['warnings'] %}
                             <div style="color: var(--warning-amber); font-weight: 500;">
                                 {% for w in row['warnings'] %}
-                                    ⚠️ {{ w }}<br>
+                                    âš ï¸ {{ w }}<br>
                                 {% endfor %}
                             </div>
                         {% endif %}
                         {% if not row['errors'] and not row['warnings'] %}
-                            <span style="color: var(--success-green);">✓ Ready for commit</span>
+                            <span style="color: var(--success-green);">âœ“ Ready for commit</span>
                         {% endif %}
                     </td>
                 </tr>

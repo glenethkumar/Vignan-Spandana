@@ -1,0 +1,82 @@
+﻿{% extends "base.html" %}
+
+{% block title %}{{ title or "Coming Soon" }} - VIIT AI Feedback{% endblock %}
+
+{% block content %}
+<div class="content-container">
+    <!-- Breadcrumb Header -->
+    <div class="page-header-row">
+        <div>
+            <nav class="breadcrumb-nav" aria-label="Breadcrumb">
+                <a href="{{ url_for('dashboard') }}">Dashboard</a>
+                <span class="breadcrumb-separator">/</span>
+                <span class="breadcrumb-current">{{ title }}</span>
+            </nav>
+            <h1 class="page-title">{{ title }}</h1>
+            <p class="page-subtitle">{{ description or "This module is scheduled for implementation in the upcoming development phase." }}</p>
+        </div>
+        <div>
+            <a href="{{ url_for('dashboard') }}" class="btn btn-secondary">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="19" y1="12" x2="5" y2="12"></line>
+                    <polyline points="12 19 5 12 12 5"></polyline>
+                </svg>
+                <span>Back to Dashboard</span>
+            </a>
+        </div>
+    </div>
+
+    <!-- Institutional Placeholder Card -->
+    <div class="panel-card" style="text-align: center; padding: 3.5rem 2rem; max-width: 760px; margin: 2rem auto;">
+        <div style="display: inline-flex; align-items: center; justify-content: center; width: 64px; height: 64px; border-radius: 50%; background-color: var(--blue-50); color: var(--navy-900); margin-bottom: 1.25rem;">
+            <svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"></circle>
+                <polyline points="12 6 12 12 16 14"></polyline>
+            </svg>
+        </div>
+
+        <div style="margin-bottom: 0.75rem;">
+            <span class="badge badge-completed" style="font-size: 0.78rem; padding: 4px 10px; letter-spacing: 0.04em;">
+                {{ phase_badge or "Next Phase" }}
+            </span>
+        </div>
+
+        <h2 style="font-size: 1.35rem; color: var(--navy-900); margin-bottom: 0.75rem;">
+            {{ title }}
+        </h2>
+
+        <p style="color: var(--text-600); max-width: 540px; margin: 0 auto 1.75rem; line-height: 1.6;">
+            {{ detail_text or "This module is currently part of the planned product roadmap. Its user interface workflow, validation rules, and backend integration will be activated in the next development phase." }}
+        </p>
+
+        {% if upcoming_features %}
+        <div style="background-color: var(--bg-page); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 1.25rem 1.5rem; text-align: left; margin: 0 auto 2rem; max-width: 520px;">
+            <div style="font-size: 0.82rem; font-weight: 700; color: var(--navy-900); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.75rem;">
+                Planned Capabilities
+            </div>
+            <ul style="list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 0.5rem;">
+                {% for feat in upcoming_features %}
+                <li style="display: flex; align-items: flex-start; gap: 8px; font-size: 0.88rem; color: var(--text-900);">
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="var(--blue-600)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0; margin-top: 2px;">
+                        <polyline points="20 6 9 17 4 12"></polyline>
+                    </svg>
+                    <span>{{ feat }}</span>
+                </li>
+                {% endfor %}
+            </ul>
+        </div>
+        {% endif %}
+
+        <div style="display: flex; justify-content: center; gap: 0.75rem;">
+            <a href="{{ url_for('dashboard') }}" class="btn btn-primary">
+                Return to Dashboard
+            </a>
+            {% if session.get('role') in ['Admin', 'Principal'] and demo_mode %}
+            <a href="{{ url_for('styleguide') }}" class="btn btn-secondary">
+                View Design System Style Guide
+            </a>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,350 @@
+﻿{% extends "base.html" %}
+
+{% block title %}Student Directory - VIIT AI Feedback{% endblock %}
+
+{% block content %}
+<div class="content-container">
+    <!-- Header Row -->
+    <div class="page-header-row">
+        <div>
+            <nav class="breadcrumb-nav" aria-label="Breadcrumb">
+                <a href="{{ url_for('dashboard') }}">Dashboard</a>
+                <span class="breadcrumb-separator">/</span>
+                <span class="breadcrumb-current">Student Directory</span>
+            </nav>
+            <h1 class="page-title">Student Directory &amp; Roster Management</h1>
+            <p class="page-subtitle">
+                Official institutional roster, attendance metrics, and privacy-protected parent contact directory.
+            </p>
+        </div>
+        <div>
+            {% if session.get('role') in ['Admin', 'Principal', 'Faculty'] %}
+            <a href="{{ url_for('new_campaign') }}" class="btn btn-primary">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <polygon points="10 8 16 12 10 16 10 8"></polygon>
+                </svg>
+                <span>Start New Campaign</span>
+            </a>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Filter Bar Card -->
+    <div class="panel-card" style="margin-bottom: 1.5rem; padding: 1.25rem 1.5rem;">
+        <form method="GET" action="{{ url_for('students_directory') }}" id="directoryFilterForm">
+            <div style="display: flex; gap: 1rem; align-items: flex-end; flex-wrap: wrap;">
+                
+                <!-- Search Query -->
+                <div style="flex: 1; min-width: 220px;">
+                    <label for="studentQueryInput" class="form-label" style="font-size: 0.8rem; font-weight: 600; color: var(--text-600); margin-bottom: 0.35rem; display: block;">
+                        Search Student
+                    </label>
+                    <div style="position: relative;">
+                        <input 
+                            type="text" 
+                            id="studentQueryInput" 
+                            name="query" 
+                            value="{{ current_query or '' }}" 
+                            class="form-control" 
+                            placeholder="Search by name or roll number..."
+                            style="padding-left: 2rem;"
+                        >
+                        <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="var(--text-600)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="position: absolute; left: 0.65rem; top: 50%; transform: translateY(-50%); pointer-events: none;">
+                            <circle cx="11" cy="11" r="8"></circle>
+                            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                        </svg>
+                    </div>
+                </div>
+
+                <!-- Department Selector -->
+                <div style="min-width: 160px;">
+                    <label for="deptSelect" class="form-label" style="font-size: 0.8rem; font-weight: 600; color: var(--text-600); margin-bottom: 0.35rem; display: block;">
+                        Department
+                    </label>
+                    {% if session.get('role') in ['Admin', 'Principal'] %}
+                    <select id="deptSelect" name="department" class="form-select" onchange="this.form.submit()">
+                        <option value="All" {% if current_dept == 'All' %}selected{% endif %}>All Departments</option>
+                        {% for d in departments %}
+                        <option value="{{ d.code }}" {% if current_dept == d.code %}selected{% endif %}>{{ d.code }}</option>
+                        {% endfor %}
+                    </select>
+                    {% else %}
+                    <div class="scope-chip" style="padding: 0.45rem 0.75rem; background: var(--blue-50); border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: 0.85rem; font-weight: 600; color: var(--navy-900);">
+                        {{ current_dept }} (Assigned Scope)
+                    </div>
+                    <input type="hidden" name="department" value="{{ current_dept }}">
+                    {% endif %}
+                </div>
+
+                <!-- Year Selector -->
+                <div style="min-width: 120px;">
+                    <label for="yearSelect" class="form-label" style="font-size: 0.8rem; font-weight: 600; color: var(--text-600); margin-bottom: 0.35rem; display: block;">
+                        Year
+                    </label>
+                    <select id="yearSelect" name="year" class="form-select" onchange="this.form.submit()">
+                        <option value="All" {% if current_year == 'All' %}selected{% endif %}>All Years</option>
+                        {% for y in years %}
+                        <option value="{{ y }}" {% if current_year == y %}selected{% endif %}>Year {{ y }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <!-- Section Selector -->
+                <div style="min-width: 120px;">
+                    <label for="sectionSelect" class="form-label" style="font-size: 0.8rem; font-weight: 600; color: var(--text-600); margin-bottom: 0.35rem; display: block;">
+                        Section
+                    </label>
+                    <select id="sectionSelect" name="section" class="form-select" onchange="this.form.submit()">
+                        <option value="All" {% if current_section == 'All' %}selected{% endif %}>All Sections</option>
+                        {% for s in sections %}
+                        <option value="{{ s }}" {% if current_section == s %}selected{% endif %}>Section {{ s }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <!-- Actions -->
+                <div style="display: flex; gap: 0.5rem; align-items: center;">
+                    <button type="submit" class="btn btn-secondary">
+                        Filter
+                    </button>
+                    {% if current_query or current_dept != (user_dept or 'All') or current_year != 'All' or current_section != 'All' or show_archived %}
+                    <a href="{{ url_for('students_directory') }}" class="btn btn-secondary" title="Clear all filters">
+                        Reset
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Admin Only: Active/Archived Toggle -->
+            {% if session.get('role') in ['Admin', 'Principal'] %}
+            <div style="margin-top: 1rem; padding-top: 0.85rem; border-top: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between;">
+                <label style="display: inline-flex; align-items: center; gap: 8px; font-size: 0.85rem; color: var(--text-900); cursor: pointer; user-select: none;">
+                    <input 
+                        type="checkbox" 
+                        name="show_archived" 
+                        value="1" 
+                        {% if show_archived %}checked{% endif %} 
+                        onchange="this.form.submit()"
+                        style="width: 16px; height: 16px; accent-color: var(--navy-900);"
+                    >
+                    <span>Show Deactivated / Archived Students</span>
+                </label>
+                <span style="font-size: 0.8rem; color: var(--text-600);">
+                    Showing {{ students|length }} of {{ total }} enrolled students
+                </span>
+            </div>
+            {% else %}
+            <div style="margin-top: 0.75rem; font-size: 0.8rem; color: var(--text-600); text-align: right;">
+                Showing {{ students|length }} of {{ total }} students in {{ current_dept }}
+            </div>
+            {% endif %}
+        </form>
+    </div>
+
+    <!-- Student Table Card -->
+    <div class="panel-card">
+        <div class="table-container">
+            <table class="data-table" id="studentsDirectoryTable">
+                <thead>
+                    <tr>
+                        <th style="width: 130px;">Roll Number</th>
+                        <th>Student Name</th>
+                        <th style="width: 110px;">Department</th>
+                        <th style="width: 100px;">Class</th>
+                        <th style="width: 120px;">Category</th>
+                        <th style="width: 130px;">Attendance</th>
+                        <th style="width: 160px;">Parent Contact</th>
+                        <th style="width: 90px;">Status</th>
+                        <th style="width: 140px; text-align: right;">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for student in students %}
+                    <tr>
+                        <!-- Roll Number (Monospace) -->
+                        <td>
+                            <a href="{{ url_for('student_detail', student_id=student.id) }}" style="font-family: var(--font-mono); font-weight: 700; color: var(--navy-900);">
+                                {{ student.roll_number }}
+                            </a>
+                        </td>
+
+                        <!-- Name -->
+                        <td>
+                            <div style="font-weight: 600; color: var(--text-900);">{{ student.name }}</div>
+                            <div style="font-size: 0.76rem; color: var(--text-600);">Mentor: {{ student.mentor_name }}</div>
+                        </td>
+
+                        <!-- Department -->
+                        <td>
+                            <span style="font-weight: 600; color: var(--navy-900);">{{ student.department }}</span>
+                        </td>
+
+                        <!-- Class -->
+                        <td>
+                            <span style="font-size: 0.82rem; color: var(--text-600);">Year {{ student.year }} &bull; Sec {{ student.section }}</span>
+                        </td>
+
+                        <!-- Category -->
+                        <td>
+                            <span style="font-size: 0.8rem; color: var(--text-900); background: var(--bg-page); border: 1px solid var(--border); padding: 2px 7px; border-radius: var(--radius-sm);">
+                                {{ student.category }}
+                            </span>
+                        </td>
+
+                        <!-- Attendance % -->
+                        <td>
+                            <div style="display: flex; align-items: center; gap: 6px;">
+                                {% if student.attendance_percentage is not none %}
+                                    {% if student.attendance_percentage < 75.0 %}
+                                        <span class="badge badge-alert" style="font-size: 0.75rem;">
+                                            {{ student.attendance_percentage }}%
+                                        </span>
+                                    {% else %}
+                                        <span class="badge badge-active" style="font-size: 0.75rem;">
+                                            {{ student.attendance_percentage }}%
+                                        </span>
+                                    {% endif %}
+                                {% else %}
+                                    <span style="color: var(--text-600); font-size: 0.8rem;">Pending</span>
+                                {% endif %}
+                            </div>
+                        </td>
+
+                        <!-- Parent Contact (Privacy Masked) -->
+                        <td>
+                            <div style="font-size: 0.82rem; font-weight: 500; color: var(--text-900);">{{ student.parent_name }}</div>
+                            <div style="font-family: var(--font-mono); font-size: 0.78rem; color: var(--text-600); margin-top: 2px;">
+                                {{ student.parent_phone_masked }}
+                            </div>
+                        </td>
+
+                        <!-- Status Badge -->
+                        <td>
+                            {% if student.is_active == 1 %}
+                                <span class="badge badge-active">Active</span>
+                            {% else %}
+                                <span class="badge badge-archived">Archived</span>
+                            {% endif %}
+                        </td>
+
+                        <!-- Actions -->
+                        <td style="text-align: right; white-space: nowrap;">
+                            <a href="{{ url_for('student_detail', student_id=student.id) }}" class="btn btn-secondary btn-sm" title="View Student Academic Profile">
+                                View
+                            </a>
+                            {% if session.get('role') in ['Admin', 'Principal'] and student.is_active == 1 %}
+                            <button 
+                                type="button" 
+                                class="btn btn-secondary btn-sm" 
+                                style="color: var(--error-700);" 
+                                onclick="confirmArchiveStudent({{ student.id }}, '{{ student.name|escape }}', '{{ student.roll_number|escape }}')"
+                                title="Deactivate and archive student"
+                            >
+                                Archive
+                            </button>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="9" style="padding: 3rem 1rem;">
+                            <div class="empty-state">
+                                <div class="empty-state-icon">
+                                    <svg viewBox="0 0 24 24" width="36" height="36" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                                        <circle cx="9" cy="7" r="4"></circle>
+                                        <line x1="18" y1="8" x2="23" y2="13"></line>
+                                        <line x1="23" y1="8" x2="18" y2="13"></line>
+                                    </svg>
+                                </div>
+                                <div class="empty-state-title">No Students Found</div>
+                                <div class="empty-state-text">No student records match your query or class filters.</div>
+                                <a href="{{ url_for('students_directory') }}" class="btn btn-secondary btn-sm" style="margin-top: 0.75rem;">
+                                    Clear Filters
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Pagination Controls -->
+        {% if total_pages > 1 %}
+        <div class="pagination-bar" style="display: flex; justify-content: space-between; align-items: center; padding: 1rem 1.25rem; border-top: 1px solid var(--border);">
+            <div style="font-size: 0.82rem; color: var(--text-600);">
+                Showing page <strong>{{ current_page }}</strong> of <strong>{{ total_pages }}</strong> ({{ total }} total)
+            </div>
+            <div style="display: flex; gap: 0.35rem;">
+                {% if current_page > 1 %}
+                <a href="{{ url_for('students_directory', page=current_page-1, query=current_query, department=current_dept, year=current_year, section=current_section, show_archived=show_archived) }}" class="btn btn-secondary btn-sm">
+                    &larr; Previous
+                </a>
+                {% endif %}
+
+                {% for p in range(1, total_pages + 1) %}
+                <a 
+                    href="{{ url_for('students_directory', page=p, query=current_query, department=current_dept, year=current_year, section=current_section, show_archived=show_archived) }}" 
+                    class="btn {% if p == current_page %}btn-primary{% else %}btn-secondary{% endif %} btn-sm"
+                    style="min-width: 32px; text-align: center;"
+                >
+                    {{ p }}
+                </a>
+                {% endfor %}
+
+                {% if current_page < total_pages %}
+                <a href="{{ url_for('students_directory', page=current_page+1, query=current_query, department=current_dept, year=current_year, section=current_section, show_archived=show_archived) }}" class="btn btn-secondary btn-sm">
+                    Next &rarr;
+                </a>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Archive Confirmation Modal Dialog -->
+<div class="modal-backdrop" id="archiveStudentModal" style="display: none;" onclick="closeArchiveModal(event)">
+    <div class="modal-dialog" onclick="event.stopPropagation()">
+        <div class="modal-header">
+            <h3 class="modal-title">Confirm Student Deactivation</h3>
+            <button type="button" class="modal-close-btn" onclick="closeArchiveModal()" aria-label="Close dialog">&times;</button>
+        </div>
+        <form method="POST" id="archiveStudentForm" action="">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <div class="modal-body">
+                <p style="color: var(--text-900); font-size: 0.92rem; line-height: 1.5; margin-bottom: 0.75rem;">
+                    Are you sure you want to deactivate and archive <strong id="archiveStudentName"></strong> (<span id="archiveStudentRoll" style="font-family: var(--font-mono);"></span>)?
+                </p>
+                <div class="alert alert-warning" style="margin-bottom: 0;">
+                    <div class="alert-title">Non-Destructive Deactivation</div>
+                    <div class="alert-body">
+                        The student record will NOT be deleted from the database. Previous call records and campaign audit logs remain fully preserved.
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="closeArchiveModal()">Cancel</button>
+                <button type="submit" class="btn btn-danger">Deactivate &amp; Archive</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+function confirmArchiveStudent(id, name, roll) {
+    document.getElementById('archiveStudentName').textContent = name;
+    document.getElementById('archiveStudentRoll').textContent = roll;
+    document.getElementById('archiveStudentForm').action = '/student/' + id + '/delete';
+    document.getElementById('archiveStudentModal').style.display = 'flex';
+}
+function closeArchiveModal(e) {
+    document.getElementById('archiveStudentModal').style.display = 'none';
+}
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') closeArchiveModal();
+});
+</script>
+{% endblock %}

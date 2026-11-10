@@ -1,405 +1,246 @@
-{% extends "base.html" %}
+﻿{% extends "base.html" %}
 
-{% block title %}{{ student['name'] }} ({{ student['roll_number'] }}) - Vignan Spandana{% endblock %}
+{% block title %}{{ student['name'] }} ({{ student['roll_number'] }}) - VIIT AI Feedback{% endblock %}
 
 {% block content %}
-<!-- Breadcrumb Header -->
-<div class="card" style="margin-bottom: 1.25rem;">
-    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+<div class="content-container">
+    <!-- Header with Breadcrumbs & Actions -->
+    <div class="page-header-row">
         <div>
-            <div style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 4px;">
-                <a href="{{ url_for('dashboard') }}" style="color: var(--primary-navy); font-weight: 600; text-decoration: none;">
-                    &larr; Student Directory
-                </a>
-                <span style="margin: 0 6px;">/</span>
-                <span>{{ student['department'] }}</span>
-                <span style="margin: 0 6px;">/</span>
-                <span style="font-family: var(--font-mono); font-weight: 600;">{{ student['roll_number'] }}</span>
-            </div>
-            <h2 style="margin: 0; font-size: 1.6rem; color: var(--primary-navy); font-family: var(--font-serif);">
-                {{ student['name'] }}
-            </h2>
-            <div style="font-size: 0.85rem; color: var(--text-muted); margin-top: 4px;">
-                Roll No: <strong style="font-family: var(--font-mono); color: var(--primary-navy);">{{ student['roll_number'] }}</strong> &bull;
-                Department: <strong style="color: var(--primary-navy);">{{ student['department'] }}</strong> &bull;
-                Class: <strong>{{ student['year_semester'] }} (Sec {{ student['section'] }})</strong>
-            </div>
+            <nav class="breadcrumb-nav" aria-label="Breadcrumb">
+                <a href="{{ url_for('dashboard') }}">Dashboard</a>
+                <span class="breadcrumb-separator">/</span>
+                <a href="{{ url_for('students_directory') }}">Students</a>
+                <span class="breadcrumb-separator">/</span>
+                <span class="breadcrumb-current">{{ student['roll_number'] }}</span>
+            </nav>
+            <h1 class="page-title">{{ student['name'] }}</h1>
+            <p class="page-subtitle">
+                Roll Number: <strong style="font-family: var(--font-mono); color: var(--navy-900);">{{ student['roll_number'] }}</strong> &bull;
+                Class: <strong>{{ student['department'] }} {% if student['year'] %}Year {{ student['year'] }}{% else %}{{ student['year_semester'] }}{% endif %} Section {{ student['section'] }}</strong>
+            </p>
         </div>
 
         <div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
-            {% if session.get('role') != 'Principal' %}
-            <a href="{{ url_for('edit_student', student_id=student['id']) }}" class="btn btn-secondary btn-sm" id="btnEditStudent">
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
-                Edit Student
+            <a href="{{ url_for('students_directory') }}" class="btn btn-secondary btn-sm">
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="19" y1="12" x2="5" y2="12"></line>
+                    <polyline points="12 19 5 12 12 5"></polyline>
+                </svg>
+                <span>Back to Directory</span>
             </a>
-            <form action="{{ url_for('delete_student', student_id=student['id']) }}" method="POST" style="margin: 0;" onsubmit="return confirm('Are you sure you want to archive student {{ student['name']|escape }} ({{ student['roll_number']|escape }})? Historical records will be safely preserved.');">
+
+            {% if session.get('role') in ['Admin', 'Principal'] and student['is_active'] != 0 %}
+            <form action="{{ url_for('delete_student', student_id=student['id']) }}" method="POST" style="margin: 0;" onsubmit="return confirm('Confirm deactivation: Archive student {{ student['name']|escape }} ({{ student['roll_number']|escape }})? All history will remain intact.');">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                <button type="submit" class="btn btn-secondary btn-sm" style="color: var(--secondary-red); border-color: var(--danger-border);" id="btnDeleteStudent">
-                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
-                    Archive
+                <button type="submit" class="btn btn-secondary btn-sm" style="color: var(--error-700);">
+                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="3 6 5 6 21 6"></polyline>
+                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                    </svg>
+                    <span>Archive Student</span>
                 </button>
             </form>
-            <button 
-                type="button" 
-                class="btn btn-call btn-sm" 
-                onclick="triggerCallParent({{ student['id'] }}, '{{ student['name']|escape }}', '{{ student['roll_number']|escape }}', '{{ student['department']|escape }}', '{{ student['parent_phone']|mask_phone|escape }}', '{{ student['attendance_percentage'] }}', '{{ student['preferred_language']|escape }}')"
-            >
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>
-                Call Parent (AI)
-            </button>
-            <a href="#followUpForm" class="btn btn-secondary btn-sm">
-                Follow-Up Note
-            </a>
-            {% else %}
-            <span class="badge badge-dept" style="padding: 6px 12px;">
-                Principal Administrative Inspection View
-            </span>
             {% endif %}
         </div>
     </div>
-</div>
 
-<div class="profile-grid">
-    <!-- Left Column: Student Academic & Parent Info -->
-    <div>
-        <!-- Academic Profile Card -->
-        <div class="card" style="border-top: 3px solid var(--primary-navy); margin-bottom: 1.5rem;">
-            <div class="card-header">
-                <h3 class="card-title">Student Academic Profile</h3>
-                {% if student['attendance_percentage'] < 75.0 %}
-                    <span class="badge badge-danger">Attendance Alert: {{ student['attendance_percentage'] }}%</span>
-                {% else %}
-                    <span class="badge badge-success">Good Attendance: {{ student['attendance_percentage'] }}%</span>
-                {% endif %}
-            </div>
-
-            <div class="info-list">
-                <div class="info-item">
-                    <div class="info-label">Full Name</div>
-                    <div class="info-value"><strong>{{ student['name'] }}</strong></div>
-                </div>
-                <div class="info-item">
-                    <div class="info-label">Roll Number</div>
-                    <div class="info-value" style="font-family: var(--font-mono); font-weight: 600; color: var(--primary-navy);">{{ student['roll_number'] }}</div>
-                </div>
-                <div class="info-item">
-                    <div class="info-label">Department / Branch</div>
-                    <div class="info-value">{{ student['department'] }}</div>
-                </div>
-                <div class="info-item">
-                    <div class="info-label">Year & Semester</div>
-                    <div class="info-value">{{ student['year_semester'] }}</div>
-                </div>
-                <div class="info-item">
-                    <div class="info-label">Section</div>
-                    <div class="info-value">Section {{ student['section'] }}</div>
-                </div>
-                <div class="info-item">
-                    <div class="info-label">Student Phone</div>
-                    <div class="info-value" style="font-family: var(--font-mono);">
-                        {% if student['student_phone'] %}
-                            {{ student['student_phone'] }}
-                        {% else %}
-                            <span style="color: var(--text-muted); font-size: 0.85rem; font-style: italic;">Not registered</span>
-                        {% endif %}
-                    </div>
-                </div>
-                {% if student['student_email'] %}
-                <div class="info-item">
-                    <div class="info-label">Student Email</div>
-                    <div class="info-value">{{ student['student_email'] }}</div>
-                </div>
-                {% endif %}
-                {% if student['marks_info'] %}
-                <div class="info-item">
-                    <div class="info-label">Academic / Internal Marks</div>
-                    <div class="info-value">{{ student['marks_info'] }}</div>
-                </div>
-                {% endif %}
-                <div class="info-item">
-                    <div class="info-label">Overall Attendance</div>
-                    <div class="info-value">
-                        {% if student['attendance_percentage'] is not none %}
-                            <strong style="font-size: 1.05rem;">{{ student['attendance_percentage'] }}%</strong>
-                            {% if student['attendance_percentage'] < 75.0 %}
-                                <span style="font-size: 0.8rem; color: var(--secondary-red); font-weight: 600;">(Shortage Warning)</span>
-                            {% endif %}
-                        {% else %}
-                            <span style="color: var(--text-muted); font-size: 0.9rem;">Unavailable (Pending)</span>
-                        {% endif %}
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Daily Attendance History Card -->
-        <div class="card" style="margin-bottom: 1.5rem; border-top: 3px solid var(--muted-gold);">
-            <div class="card-header">
-                <div>
-                    <h3 class="card-title">Daily Attendance Session History</h3>
-                    <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 2px;">
-                        Date-wise classroom attendance recorded in SQLite
-                    </div>
-                </div>
-                {% if session.get('role') != 'Principal' %}
-                <a href="{{ url_for('attendance_mark', dept=student['department'], section=student['section']) }}" class="btn btn-secondary btn-sm" style="font-size: 0.78rem;">
-                    Mark / Correct Attendance
-                </a>
-                {% endif %}
-            </div>
-
-            {% if attendance_records and attendance_records|length > 0 %}
-            <div class="table-responsive">
-                <table class="data-table">
-                    <thead>
-                        <tr>
-                            <th>Date</th>
-                            <th>Status</th>
-                            <th>Recorded By</th>
-                            <th>Updated</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for att in attendance_records %}
-                        <tr>
-                            <td style="font-family: var(--font-mono); font-weight: 600; color: var(--primary-navy);">{{ att['attendance_date'] }}</td>
-                            <td>
-                                {% if att['status'] == 'Present' %}
-                                    <span class="badge badge-success">Present</span>
-                                {% else %}
-                                    <span class="badge badge-danger">Absent</span>
-                                {% endif %}
-                            </td>
-                            <td>{{ att['marked_by'] }}</td>
-                            <td style="font-size: 0.82rem; color: var(--text-muted);">{{ att['updated_at'] }}</td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-            {% else %}
-            <div style="text-align: center; padding: 1.5rem; color: var(--text-muted); font-size: 0.88rem;">
-                No itemized daily attendance sessions logged yet for this student.
-                {% if student['attendance_percentage'] is not none %}
-                    <br/><span style="font-size: 0.8rem;">(Current aggregate: <strong>{{ student['attendance_percentage'] }}%</strong>)</span>
-                {% endif %}
-            </div>
-            {% endif %}
-        </div>
-
-        <!-- Call History Section -->
-        <div class="card" style="margin-bottom: 1.5rem; border-top: 3px solid var(--primary-navy);">
-            <div class="card-header">
-                <div>
-                    <h3 class="card-title">Parent AI Call History</h3>
-                    <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 2px;">
-                        Automated AI voice calls made to registered guardian
-                    </div>
-                </div>
-                {% if session.get('role') != 'Principal' %}
-                <form action="{{ url_for('simulate_call', student_id=student['id']) }}" method="POST" style="margin: 0;">
-                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                    <button type="submit" class="btn btn-secondary btn-sm" title="Adds a mock call record to database for faculty demonstration">
-                        + Simulate Mock Record
-                    </button>
-                </form>
-                {% endif %}
-            </div>
-
-            {% if call_records and call_records|length > 0 %}
-            <div class="table-responsive">
-                <table class="data-table">
-                    <thead>
-                        <tr>
-                            <th>Call Time</th>
-                            <th>Status</th>
-                            <th>Language</th>
-                            <th>Duration</th>
-                            <th>Summary / Notes</th>
-                            <th>Initiated By</th>
-                            <th style="text-align: right;">Action</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for call in call_records %}
-                        <tr>
-                            <td style="white-space: nowrap; font-size: 0.85rem; font-family: var(--font-mono);">
-                                {{ call['call_time'] }}
-                            </td>
-                            <td>
-                                {% if call['status'] == 'Completed' %}
-                                    <span class="badge badge-success">Completed</span>
-                                {% elif call['status'] == 'No Answer' %}
-                                    <span class="badge badge-warning">No Answer</span>
-                                {% else %}
-                                    <span class="badge badge-dept">{{ call['status'] }}</span>
-                                {% endif %}
-                            </td>
-                            <td>
-                                <span class="badge badge-lang">{{ call['language'] }}</span>
-                            </td>
-                            <td style="font-size: 0.85rem; font-family: var(--font-mono);">{{ call['duration_seconds'] }}s</td>
-                            <td style="max-width: 250px;">
-                                <div style="font-size: 0.82rem; color: var(--text-main); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="{{ call['summary'] or call['notes'] }}">
-                                    {{ call['summary'] or call['notes'] or 'No summary recorded.' }}
-                                </div>
-                            </td>
-                            <td style="font-size: 0.82rem; color: var(--text-muted);">
-                                {{ call['initiated_by'] or 'System' }}
-                            </td>
-                            <td style="text-align: right; white-space: nowrap;">
-                                <a href="{{ url_for('call_detail', call_id=call['id']) }}" class="btn btn-secondary btn-sm" style="padding: 2px 8px; font-size: 0.78rem;">
-                                    View Call
-                                </a>
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-            {% else %}
-            <div class="empty-state">
-                <div class="empty-state-icon" style="color: var(--muted-gold);">
-                    <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" style="margin: 0 auto; display: block;" aria-hidden="true"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>
-                </div>
-                <h3>No Call Records Yet</h3>
-                <p style="max-width: 420px; margin: 0 auto; font-size: 0.9rem;">
-                    There is currently no parent call history for this student. When the automated AI voice system contacts the guardian, transcripts and triage notes will be archived here.
-                </p>
-                {% if session.get('role') != 'Principal' %}
-                <div style="margin-top: 1rem;">
-                    <button 
-                        type="button" 
-                        class="btn btn-call btn-sm" 
-                        onclick="triggerCallParent({{ student['id'] }}, '{{ student['name']|escape }}', '{{ student['roll_number']|escape }}', '{{ student['department']|escape }}', '{{ student['parent_phone']|mask_phone|escape }}', '{{ student['attendance_percentage'] }}', '{{ student['preferred_language']|escape }}')"
-                    >
-                        Test "Call Parent" Action
-                    </button>
-                </div>
-                {% endif %}
-            </div>
-            {% endif %}
-        </div>
-
-        <!-- Follow-Up Notes Section -->
-        <div class="card" id="followUpSection" style="border-top: 3px solid var(--border-dark);">
-            <div class="card-header">
-                <h3 class="card-title">Staff / Faculty Follow-Up Notes</h3>
-            </div>
-
-            {% if follow_ups and follow_ups|length > 0 %}
-            <div style="display: flex; flex-direction: column; gap: 0.75rem; margin-bottom: 1.5rem;">
-                {% for note in follow_ups %}
-                <div style="background: #FAF9F5; border: 1px solid var(--border-color); border-left: 3px solid var(--muted-gold); border-radius: 4px; padding: 0.85rem 1rem;">
-                    <div style="display: flex; justify-content: space-between; font-size: 0.82rem; color: var(--text-muted); margin-bottom: 4px;">
-                        <span><strong style="color: var(--primary-navy);">{{ note['teacher_name'] }}</strong></span>
-                        <span style="font-family: var(--font-mono);">{{ note['created_at'] }}</span>
-                    </div>
-                    <div style="font-size: 0.92rem; color: var(--text-main);">
-                        {{ note['notes'] }}
-                    </div>
-                    {% if note['action_required'] %}
-                    <div style="margin-top: 6px;">
-                        <span class="badge badge-warning">{{ note['action_required'] }}</span>
-                    </div>
+    <!-- Two-Column Layout -->
+    <div style="display: grid; grid-template-columns: 1fr 1.6fr; gap: 1.5rem; align-items: start;">
+        
+        <!-- Left Column: Student Academic Profile -->
+        <div style="display: flex; flex-direction: column; gap: 1.5rem;">
+            <!-- Profile Card -->
+            <div class="panel-card">
+                <div class="panel-header">
+                    <h2 class="panel-title">Academic Profile</h2>
+                    {% if student['is_active'] == 0 %}
+                        <span class="badge badge-archived">Archived</span>
+                    {% else %}
+                        <span class="badge badge-active">Active Roster</span>
                     {% endif %}
                 </div>
-                {% endfor %}
-            </div>
-            {% else %}
-            <div style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 1.5rem; text-align: center; padding: 1rem 0;">
-                No follow-up notes recorded yet for this student.
-            </div>
-            {% endif %}
+                <div class="panel-body">
+                    <div style="display: flex; flex-direction: column; gap: 0.85rem;">
+                        <div style="display: flex; justify-content: space-between; border-bottom: 1px solid var(--border-subtle); padding-bottom: 0.5rem;">
+                            <span style="font-size: 0.85rem; color: var(--text-600);">Full Name</span>
+                            <span style="font-size: 0.9rem; font-weight: 600; color: var(--text-900);">{{ student['name'] }}</span>
+                        </div>
 
-            {% if session.get('role') != 'Principal' %}
-            <div id="followUpForm" style="border-top: 1px solid var(--border-color); padding-top: 1rem;">
-                <h4 style="font-size: 0.95rem; margin-bottom: 0.75rem; color: var(--primary-navy);">Record New Follow-Up Note</h4>
-                <form action="{{ url_for('add_followup', student_id=student['id']) }}" method="POST">
-                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                    <div class="form-group">
-                        <label for="notes" class="form-label">Counseling / Follow-up Observation</label>
-                        <textarea id="notes" name="notes" class="form-control" rows="3" placeholder="Enter notes regarding attendance shortage, parent feedback, or remedial guidance..." required></textarea>
+                        <div style="display: flex; justify-content: space-between; border-bottom: 1px solid var(--border-subtle); padding-bottom: 0.5rem;">
+                            <span style="font-size: 0.85rem; color: var(--text-600);">Roll Number</span>
+                            <span style="font-family: var(--font-mono); font-size: 0.9rem; font-weight: 700; color: var(--navy-900);">{{ student['roll_number'] }}</span>
+                        </div>
+
+                        <div style="display: flex; justify-content: space-between; border-bottom: 1px solid var(--border-subtle); padding-bottom: 0.5rem;">
+                            <span style="font-size: 0.85rem; color: var(--text-600);">Department</span>
+                            <span style="font-size: 0.9rem; font-weight: 600; color: var(--text-900);">{{ student['department'] }}</span>
+                        </div>
+
+                        <div style="display: flex; justify-content: space-between; border-bottom: 1px solid var(--border-subtle); padding-bottom: 0.5rem;">
+                            <span style="font-size: 0.85rem; color: var(--text-600);">Year &amp; Section</span>
+                            <span style="font-size: 0.9rem; color: var(--text-900);">{% if student['year'] %}Year {{ student['year'] }}{% else %}{{ student['year_semester'] }}{% endif %}, Sec {{ student['section'] }}</span>
+                        </div>
+
+                        <div style="display: flex; justify-content: space-between; border-bottom: 1px solid var(--border-subtle); padding-bottom: 0.5rem;">
+                            <span style="font-size: 0.85rem; color: var(--text-600);">Living Category</span>
+                            <span style="font-size: 0.85rem; font-weight: 600; color: var(--navy-900); background: var(--bg-page); border: 1px solid var(--border); padding: 2px 8px; border-radius: var(--radius-sm);">
+                                {{ student['category'] or 'Day Scholar' }}
+                            </span>
+                        </div>
+
+                        <div style="display: flex; justify-content: space-between; border-bottom: 1px solid var(--border-subtle); padding-bottom: 0.5rem;">
+                            <span style="font-size: 0.85rem; color: var(--text-600);">Faculty Mentor</span>
+                            <span style="font-size: 0.88rem; color: var(--text-900);">{{ student['mentor_name'] or 'Department Faculty' }}</span>
+                        </div>
+
+                        <!-- Attendance Metric -->
+                        <div style="margin-top: 0.5rem; padding: 0.85rem; background-color: var(--bg-page); border-radius: var(--radius-sm); border: 1px solid var(--border);">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.4rem;">
+                                <span style="font-size: 0.8rem; font-weight: 700; color: var(--navy-900); text-transform: uppercase; letter-spacing: 0.04em;">Cumulative Attendance</span>
+                                {% if student['attendance_percentage'] is not none %}
+                                    {% if student['attendance_percentage'] < 75.0 %}
+                                        <span class="badge badge-alert" style="font-size: 0.75rem;">
+                                            {{ student['attendance_percentage'] }}% (Shortage)
+                                        </span>
+                                    {% else %}
+                                        <span class="badge badge-active" style="font-size: 0.75rem;">
+                                            {{ student['attendance_percentage'] }}% (Compliant)
+                                        </span>
+                                    {% endif %}
+                                {% else %}
+                                    <span style="font-size: 0.78rem; color: var(--text-600);">Pending</span>
+                                {% endif %}
+                            </div>
+                            {% if student['attendance_percentage'] is not none %}
+                            <div style="height: 6px; width: 100%; background: #D9E0E8; border-radius: 3px; overflow: hidden;">
+                                <div style="height: 100%; width: {{ student['attendance_percentage'] }}%; background-color: {% if student['attendance_percentage'] < 75.0 %}var(--alert-500){% else %}var(--success-700){% endif %};"></div>
+                            </div>
+                            {% endif %}
+                        </div>
                     </div>
-                    <div class="form-group">
-                        <label for="action_required" class="form-label">Next Action / Status</label>
-                        <select id="action_required" name="action_required" class="form-select">
-                            <option value="Attendance Warning Issued">Attendance Warning Issued</option>
-                            <option value="Parent Meeting Scheduled">Parent Meeting Scheduled</option>
-                            <option value="Call Back Next Week">Call Back Next Week</option>
-                            <option value="Counseling Completed">Counseling Completed</option>
-                            <option value="Issue Resolved">Issue Resolved</option>
-                        </select>
-                    </div>
-                    <button type="submit" class="btn btn-primary btn-sm">
-                        Save Note to Database
-                    </button>
-                </form>
+                </div>
             </div>
-            {% endif %}
+
+            <!-- Parent Contact Card (with Privacy Notice) -->
+            <div class="panel-card">
+                <div class="panel-header">
+                    <h2 class="panel-title">Parent Contact Information</h2>
+                </div>
+                <div class="panel-body">
+                    <!-- Privacy Notice Banner -->
+                    <div style="display: flex; align-items: center; gap: 8px; background: var(--blue-50); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 0.5rem 0.75rem; margin-bottom: 1rem;">
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="var(--blue-600)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0;">
+                            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                            <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                        </svg>
+                        <span style="font-size: 0.78rem; font-weight: 600; color: var(--navy-900);">
+                            Parent Phone Masked for Institutional Privacy
+                        </span>
+                    </div>
+
+                    <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+                        <div>
+                            <div style="font-size: 0.78rem; color: var(--text-600); margin-bottom: 2px;">Parent / Guardian Name</div>
+                            <div style="font-size: 0.95rem; font-weight: 600; color: var(--text-900);">{{ student['parent_name'] }}</div>
+                        </div>
+
+                        <div>
+                            <div style="font-size: 0.78rem; color: var(--text-600); margin-bottom: 2px;">Masked Contact Number</div>
+                            <div style="font-family: var(--font-mono); font-size: 0.95rem; font-weight: 700; color: var(--navy-900);">
+                                {{ student['parent_phone_masked'] or (student['parent_phone']|mask_phone) }}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
-    </div>
 
-    <!-- Right Column: Parent Contact Card & Access Scoping -->
-    <div>
-        <div class="card" style="border-top: 3px solid var(--muted-gold); margin-bottom: 1.5rem;">
-            <div class="card-header">
-                <h3 class="card-title">Parent Contact Information</h3>
-            </div>
-
-            <div style="margin-bottom: 1rem;">
-                <div class="info-label">Parent / Guardian Name</div>
-                <div class="info-value" style="font-size: 1.05rem; font-weight: 600; color: var(--primary-navy);">
-                    {{ student['parent_name'] }}
-                    <span class="badge badge-dept" style="font-size: 0.75rem; margin-left: 6px;">{{ student['parent_relationship'] or 'Parent' }}</span>
-                </div>
-            </div>
-
-            <div style="margin-bottom: 1rem;">
-                <div class="info-label">Mobile Phone Number</div>
-                <div class="info-value" style="font-family: var(--font-mono); font-size: 1.05rem; font-weight: 600;">
-                    {{ student['parent_phone']|mask_phone }}
-                </div>
-            </div>
-
-            <div style="margin-bottom: 1.25rem;">
-                <div class="info-label">Preferred Voice Language</div>
-                <div style="margin-top: 4px;">
-                    <span class="badge badge-lang" style="font-size: 0.88rem; padding: 4px 10px;">
-                        {{ student['preferred_language'] }}
+        <!-- Right Column: Call Records & Transcripts -->
+        <div style="display: flex; flex-direction: column; gap: 1.5rem;">
+            <!-- Calling History -->
+            <div class="panel-card">
+                <div class="panel-header">
+                    <h2 class="panel-title">AI Parent Communication History</h2>
+                    <span style="font-size: 0.8rem; color: var(--text-600);">
+                        {{ (call_records or student['call_history'] or [])|length }} Recorded Sessions
                     </span>
                 </div>
-                <div class="form-text" style="margin-top: 4px; font-size: 0.8rem;">
-                    AI outbound calls will synthesize dialogue in {{ student['preferred_language'] }}.
+                <div class="panel-body">
+                    {% set calls = call_records or student['call_history'] or [] %}
+                    {% if calls and calls|length > 0 %}
+                        <div style="display: flex; flex-direction: column; gap: 1.25rem;">
+                            {% for call in calls %}
+                            <div style="border: 1px solid var(--border); border-radius: var(--radius-md); overflow: hidden; background: var(--surface);">
+                                <!-- Call Header -->
+                                <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem 1rem; background-color: var(--blue-50); border-bottom: 1px solid var(--border);">
+                                    <div style="display: flex; align-items: center; gap: 8px;">
+                                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                            <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
+                                        </svg>
+                                        <span style="font-weight: 700; font-size: 0.88rem; color: var(--navy-900);">
+                                            {{ call['call_time'] }}
+                                        </span>
+                                        <span style="font-size: 0.78rem; color: var(--text-600);">&bull; {{ call['duration_seconds'] }}s &bull; Language: {{ call['language'] }}</span>
+                                    </div>
+                                    <div style="display: flex; align-items: center; gap: 8px;">
+                                        <span class="badge badge-completed">{{ call['status'] }}</span>
+                                        <a href="{{ url_for('call_detail', call_id=call['id']) }}" class="btn btn-secondary btn-sm" style="font-size: 0.75rem; padding: 2px 8px;">
+                                            Details #{{ call['id'] }}
+                                        </a>
+                                    </div>
+                                </div>
+
+                                <!-- Call Summary -->
+                                <div style="padding: 1rem;">
+                                    <div style="font-size: 0.82rem; font-weight: 700; color: var(--text-600); text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 0.35rem;">
+                                        Call Summary
+                                    </div>
+                                    <p style="font-size: 0.9rem; color: var(--text-900); line-height: 1.5; margin-bottom: 1rem;">
+                                        {{ call['summary'] }}
+                                    </p>
+
+                                    <!-- Issue Alert Chip if Raised -->
+                                    {% if call['issue_raised'] %}
+                                    <div class="alert alert-issue" style="margin-bottom: 1rem; padding: 0.65rem 0.85rem;">
+                                        <div class="alert-title" style="display: flex; align-items: center; gap: 6px;">
+                                            <span style="width: 7px; height: 7px; border-radius: 50%; background-color: var(--alert-500); display: inline-block;"></span>
+                                            <span>Issue Registered During This Call</span>
+                                        </div>
+                                        <div class="alert-body" style="font-size: 0.82rem;">
+                                            An issue was automatically created and dispatched to the designated institutional owner.
+                                        </div>
+                                    </div>
+                                    {% endif %}
+
+                                    <!-- Transcript Box -->
+                                    <details style="border-top: 1px solid var(--border-subtle); padding-top: 0.75rem;">
+                                        <summary style="font-size: 0.82rem; font-weight: 600; color: var(--blue-600); cursor: pointer; user-select: none;">
+                                            View Full Speaker-Labelled Conversation Transcript
+                                        </summary>
+                                        <div style="background-color: var(--bg-page); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 0.85rem; margin-top: 0.5rem; font-family: var(--font-mono); font-size: 0.82rem; white-space: pre-wrap; line-height: 1.55; color: var(--text-900);">
+{{ call['transcript'] }}
+                                        </div>
+                                    </details>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="empty-state" style="padding: 2.5rem 1rem;">
+                            <div class="empty-state-icon">
+                                <svg viewBox="0 0 24 24" width="36" height="36" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+                                    <circle cx="12" cy="12" r="10"></circle>
+                                    <polyline points="12 6 12 12 16 14"></polyline>
+                                </svg>
+                            </div>
+                            <div class="empty-state-title">No Prior Calls Recorded</div>
+                            <div class="empty-state-text">This student has not been contacted in any completed AI communication campaigns.</div>
+                        </div>
+                    {% endif %}
                 </div>
-            </div>
-
-            {% if session.get('role') != 'Principal' %}
-            <button 
-                type="button" 
-                class="btn btn-call btn-block"
-                style="padding: 0.65rem;"
-                onclick="triggerCallParent({{ student['id'] }}, '{{ student['name']|escape }}', '{{ student['roll_number']|escape }}', '{{ student['department']|escape }}', '{{ student['parent_phone']|mask_phone|escape }}', '{{ student['attendance_percentage'] }}', '{{ student['preferred_language']|escape }}')"
-            >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>
-                Dispatch AI Voice Call
-            </button>
-            {% endif %}
-        </div>
-
-        <div class="card" style="background-color: #FAF9F5; border-color: var(--border-color);">
-            <h4 style="font-size: 0.92rem; margin-bottom: 0.5rem; color: var(--primary-navy); letter-spacing: 0.02em;">
-                Access Control Status
-            </h4>
-            <div style="font-size: 0.85rem; color: var(--text-muted); line-height: 1.55;">
-                Student Department: <strong style="color: var(--primary-navy);">{{ student['department'] }}</strong><br>
-                User Scope: <strong>{{ session.get('department') }}</strong><br>
-                User Role: <strong>{{ session.get('role') }}</strong>
             </div>
         </div>
     </div>
 </div>
-
-<!-- Modal Includes -->
-{% include "call_modal.html" %}
 {% endblock %}

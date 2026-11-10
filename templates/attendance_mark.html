@@ -1,6 +1,6 @@
-{% extends "base.html" %}
+﻿{% extends "base.html" %}
 
-{% block title %}Mark Daily Attendance - Vignan Spandana{% endblock %}
+{% block title %}Mark Daily Attendance - VIIT AI Feedback{% endblock %}
 
 {% block content %}
 <!-- Page Header -->
@@ -199,7 +199,7 @@
                     <td>
                         {% if abs.call_record_id %}
                             <span class="badge badge-success" title="Simulated parent call placed">
-                                ✓ Called (#{{ abs.call_record_id }})
+                                âœ“ Called (#{{ abs.call_record_id }})
                             </span>
                         {% else %}
                             <span class="badge badge-warning" title="No call placed yet for this date">
@@ -225,7 +225,7 @@
                             onclick="triggerCallParent({{ abs.id }}, '{{ abs.name|escape }}', '{{ abs.roll_number|escape }}', '{{ abs.department|escape }}', '{{ abs.parent_phone|mask_phone|escape }}', '{{ abs.attendance_percentage }}', '{{ abs.preferred_language|escape }}', '{{ selected_date }}')"
                             title="Launch simulated AI parent communication"
                         >
-                            📞 Call Parent
+                            ðŸ“ž Call Parent
                         </button>
                     </td>
                 </tr>

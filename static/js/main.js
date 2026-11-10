@@ -944,3 +944,64 @@ function finishQueue(success, message) {
     document.getElementById('queueStatusProgressText').textContent = message || (success ? 'Queue processing completed.' : 'Queue halted.');
 }
 
+// ==============================================================================
+// Global Toast Notification System
+// ==============================================================================
+window.showToast = function(message, type = 'info', durationMs = 4000) {
+    let container = document.getElementById('globalToastContainer');
+    if (!container) {
+        container = document.createElement('div');
+        container.id = 'globalToastContainer';
+        container.className = 'global-toast-container';
+        container.setAttribute('aria-live', 'polite');
+        document.body.appendChild(container);
+    }
+    const toast = document.createElement('div');
+    toast.className = `global-toast toast-${type}`;
+    toast.innerHTML = `
+        <div class="toast-content">${message}</div>
+        <button type="button" class="toast-close" onclick="this.parentElement.remove()" aria-label="Close">&times;</button>
+    `;
+    container.appendChild(toast);
+    setTimeout(() => {
+        toast.classList.add('toast-show');
+    }, 10);
+    setTimeout(() => {
+        toast.classList.remove('toast-show');
+        setTimeout(() => toast.remove(), 300);
+    }, durationMs);
+};
+
+// ==============================================================================
+// Global Modal Handlers
+// ==============================================================================
+window.openModal = function(modalId) {
+    const modal = document.getElementById(modalId);
+    if (modal) {
+        modal.style.display = 'flex';
+        modal.classList.add('active');
+        document.body.style.overflow = 'hidden';
+    }
+};
+
+window.closeModal = function(modalId) {
+    const modal = document.getElementById(modalId);
+    if (modal) {
+        modal.style.display = 'none';
+        modal.classList.remove('active');
+        document.body.style.overflow = '';
+    }
+};
+
+// ESC key listener to dismiss active modals
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        const activeModals = document.querySelectorAll('.modal-overlay.active, .modal-overlay[style*="display: flex"]');
+        activeModals.forEach(modal => {
+            modal.style.display = 'none';
+            modal.classList.remove('active');
+        });
+        document.body.style.overflow = '';
+    }
+});
+

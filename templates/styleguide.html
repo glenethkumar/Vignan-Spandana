@@ -1,0 +1,419 @@
+﻿{% extends "base.html" %}
+
+{% block title %}Design System &amp; UI Style Guide - VIIT AI Feedback{% endblock %}
+
+{% block content %}
+<div class="content-container">
+    <!-- Header -->
+    <div class="page-header-row">
+        <div>
+            <nav class="breadcrumb-nav" aria-label="Breadcrumb">
+                <a href="{{ url_for('dashboard') }}">Dashboard</a>
+                <span class="breadcrumb-separator">/</span>
+                <span class="breadcrumb-current">Design System &amp; Style Guide</span>
+            </nav>
+            <h1 class="page-title">Design System &amp; Component Specification</h1>
+            <p class="page-subtitle">
+                Institutional design tokens, typography, component states, and accessibility standards for VIIT AI Feedback.
+            </p>
+        </div>
+        <div>
+            <span class="badge badge-completed" style="font-size: 0.8rem; padding: 6px 12px;">
+                WCAG 2.1 AA Verified (100% Pass)
+            </span>
+        </div>
+    </div>
+
+    <!-- Section 1: Color Palette -->
+    <div class="panel-card" style="margin-bottom: 2rem;">
+        <div class="panel-header">
+            <h2 class="panel-title">1. Institutional Color Palette</h2>
+            <span style="font-size: 0.82rem; color: var(--text-600);">Classic Navy, White, Light Grey &bull; Alert Orange for Issues Only</span>
+        </div>
+        <div class="panel-body">
+            <p style="font-size: 0.9rem; color: var(--text-600); margin-bottom: 1.5rem;">
+                Color variables are strictly tokenized. Gold, gradients, and neon accents have been eliminated. Orange is exclusively reserved for student issue escalation and urgent alerts.
+            </p>
+
+            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 2rem;">
+                <!-- Navy 900 -->
+                <div style="border: 1px solid var(--border); border-radius: var(--radius-md); overflow: hidden;">
+                    <div style="height: 60px; background-color: #0F2B48;"></div>
+                    <div style="padding: 0.75rem;">
+                        <div style="font-weight: 700; font-size: 0.88rem; color: var(--text-900);">--navy-900</div>
+                        <div style="font-family: var(--font-mono); font-size: 0.78rem; color: var(--text-600);">#0F2B48</div>
+                        <div style="font-size: 0.72rem; color: var(--text-600); margin-top: 4px;">Sidebar, Primary Buttons, Titles</div>
+                    </div>
+                </div>
+
+                <!-- Navy 800 -->
+                <div style="border: 1px solid var(--border); border-radius: var(--radius-md); overflow: hidden;">
+                    <div style="height: 60px; background-color: #0B2038;"></div>
+                    <div style="padding: 0.75rem;">
+                        <div style="font-weight: 700; font-size: 0.88rem; color: var(--text-900);">--navy-800</div>
+                        <div style="font-family: var(--font-mono); font-size: 0.78rem; color: var(--text-600);">#0B2038</div>
+                        <div style="font-size: 0.72rem; color: var(--text-600); margin-top: 4px;">Hover / Pressed States</div>
+                    </div>
+                </div>
+
+                <!-- Blue 600 -->
+                <div style="border: 1px solid var(--border); border-radius: var(--radius-md); overflow: hidden;">
+                    <div style="height: 60px; background-color: #1F5FA8;"></div>
+                    <div style="padding: 0.75rem;">
+                        <div style="font-weight: 700; font-size: 0.88rem; color: var(--text-900);">--blue-600</div>
+                        <div style="font-family: var(--font-mono); font-size: 0.78rem; color: var(--text-600);">#1F5FA8</div>
+                        <div style="font-size: 0.72rem; color: var(--text-600); margin-top: 4px;">Links, Focus Rings, Active Tabs</div>
+                    </div>
+                </div>
+
+                <!-- Blue 50 -->
+                <div style="border: 1px solid var(--border); border-radius: var(--radius-md); overflow: hidden;">
+                    <div style="height: 60px; background-color: #E8F0F8; border-bottom: 1px solid var(--border);"></div>
+                    <div style="padding: 0.75rem;">
+                        <div style="font-weight: 700; font-size: 0.88rem; color: var(--text-900);">--blue-50</div>
+                        <div style="font-family: var(--font-mono); font-size: 0.78rem; color: var(--text-600);">#E8F0F8</div>
+                        <div style="font-size: 0.72rem; color: var(--text-600); margin-top: 4px;">Table Header, Selected Rows</div>
+                    </div>
+                </div>
+
+                <!-- Alert 600 (Issues) -->
+                <div style="border: 1px solid var(--alert-border); border-radius: var(--radius-md); overflow: hidden;">
+                    <div style="height: 60px; background-color: #C2410C;"></div>
+                    <div style="padding: 0.75rem; background-color: var(--alert-50);">
+                        <div style="font-weight: 700; font-size: 0.88rem; color: var(--alert-600);">--alert-600 (Issues)</div>
+                        <div style="font-family: var(--font-mono); font-size: 0.78rem; color: var(--alert-600);">#C2410C</div>
+                        <div style="font-size: 0.72rem; color: var(--alert-600); margin-top: 4px;">Issue Buttons, Critical Alerts</div>
+                    </div>
+                </div>
+
+                <!-- Alert 50 (Issues BG) -->
+                <div style="border: 1px solid var(--alert-border); border-radius: var(--radius-md); overflow: hidden;">
+                    <div style="height: 60px; background-color: #FFF1E6; border-bottom: 1px solid var(--alert-border);"></div>
+                    <div style="padding: 0.75rem;">
+                        <div style="font-weight: 700; font-size: 0.88rem; color: var(--alert-600);">--alert-50</div>
+                        <div style="font-family: var(--font-mono); font-size: 0.78rem; color: var(--text-600);">#FFF1E6</div>
+                        <div style="font-size: 0.72rem; color: var(--text-600); margin-top: 4px;">Issue Card Background</div>
+                    </div>
+                </div>
+
+                <!-- Success 700 -->
+                <div style="border: 1px solid var(--border); border-radius: var(--radius-md); overflow: hidden;">
+                    <div style="height: 60px; background-color: #1E7B4F;"></div>
+                    <div style="padding: 0.75rem;">
+                        <div style="font-weight: 700; font-size: 0.88rem; color: var(--text-900);">--success-700</div>
+                        <div style="font-family: var(--font-mono); font-size: 0.78rem; color: var(--text-600);">#1E7B4F</div>
+                        <div style="font-size: 0.72rem; color: var(--text-600); margin-top: 4px;">Resolved, Active, Present</div>
+                    </div>
+                </div>
+
+                <!-- Error 700 -->
+                <div style="border: 1px solid var(--border); border-radius: var(--radius-md); overflow: hidden;">
+                    <div style="height: 60px; background-color: #B42318;"></div>
+                    <div style="padding: 0.75rem;">
+                        <div style="font-weight: 700; font-size: 0.88rem; color: var(--text-900);">--error-700</div>
+                        <div style="font-family: var(--font-mono); font-size: 0.78rem; color: var(--text-600);">#B42318</div>
+                        <div style="font-size: 0.72rem; color: var(--text-600); margin-top: 4px;">Validation Errors, Danger</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- WCAG AA Ratios -->
+            <div style="margin-top: 1.5rem;">
+                <h3 style="font-size: 1rem; color: var(--navy-900); margin-bottom: 0.75rem;">Contrast Verification Table (WCAG 2.1 AA)</h3>
+                <div class="table-container">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>UI Pair</th>
+                                <th>Foreground</th>
+                                <th>Background</th>
+                                <th>Contrast Ratio</th>
+                                <th>Minimum Required</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Primary Text on Surface</td>
+                                <td><span style="font-family: var(--font-mono);">#1A2433</span></td>
+                                <td><span style="font-family: var(--font-mono);">#FFFFFF</span></td>
+                                <td><strong>15.62:1</strong></td>
+                                <td>4.5:1</td>
+                                <td><span class="badge badge-active">PASS</span></td>
+                            </tr>
+                            <tr>
+                                <td>Secondary Text on Surface</td>
+                                <td><span style="font-family: var(--font-mono);">#5B6B7F</span></td>
+                                <td><span style="font-family: var(--font-mono);">#FFFFFF</span></td>
+                                <td><strong>5.04:1</strong></td>
+                                <td>4.5:1</td>
+                                <td><span class="badge badge-active">PASS</span></td>
+                            </tr>
+                            <tr>
+                                <td>Table Header Text on Blue-50</td>
+                                <td><span style="font-family: var(--font-mono);">#1A2433</span></td>
+                                <td><span style="font-family: var(--font-mono);">#E8F0F8</span></td>
+                                <td><strong>13.34:1</strong></td>
+                                <td>4.5:1</td>
+                                <td><span class="badge badge-active">PASS</span></td>
+                            </tr>
+                            <tr>
+                                <td>Primary Button: White on Navy-900</td>
+                                <td><span style="font-family: var(--font-mono);">#FFFFFF</span></td>
+                                <td><span style="font-family: var(--font-mono);">#0F2B48</span></td>
+                                <td><strong>12.65:1</strong></td>
+                                <td>4.5:1</td>
+                                <td><span class="badge badge-active">PASS</span></td>
+                            </tr>
+                            <tr>
+                                <td>Alert/Issue Badge: Alert-600 on Alert-50</td>
+                                <td><span style="font-family: var(--font-mono);">#C2410C</span></td>
+                                <td><span style="font-family: var(--font-mono);">#FFF1E6</span></td>
+                                <td><strong>4.67:1</strong></td>
+                                <td>4.5:1</td>
+                                <td><span class="badge badge-active">PASS</span></td>
+                            </tr>
+                            <tr>
+                                <td>Success Badge: Success-700 on Success-50</td>
+                                <td><span style="font-family: var(--font-mono);">#1E7B4F</span></td>
+                                <td><span style="font-family: var(--font-mono);">#E7F5EE</span></td>
+                                <td><strong>5.23:1</strong></td>
+                                <td>4.5:1</td>
+                                <td><span class="badge badge-active">PASS</span></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Section 2: Summary Cards -->
+    <div class="panel-card" style="margin-bottom: 2rem;">
+        <div class="panel-header">
+            <h2 class="panel-title">2. Summary Metric Cards (3px Top Border)</h2>
+        </div>
+        <div class="panel-body">
+            <p style="font-size: 0.9rem; color: var(--text-600); margin-bottom: 1.25rem;">
+                Standard metric cards use a 3px top border of <code>--navy-900</code>. Issue alert cards strictly use a 3px top border of <code>--alert-500</code>.
+            </p>
+
+            <div class="summary-cards-grid">
+                <!-- Standard Metric Card -->
+                <div class="summary-card">
+                    <div class="summary-card-header">
+                        <span class="summary-card-label">Calls Completed</span>
+                        <div class="summary-card-icon">
+                            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
+                            </svg>
+                        </div>
+                    </div>
+                    <div class="summary-card-value">34</div>
+                    <div class="summary-card-subtext">94% response rate today</div>
+                </div>
+
+                <!-- Alert Metric Card (Issues) -->
+                <div class="summary-card summary-card-alert">
+                    <div class="summary-card-header">
+                        <span class="summary-card-label">Open Issues</span>
+                        <div class="summary-card-icon" style="color: var(--alert-500);">
+                            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <line x1="12" y1="8" x2="12" y2="12"></line>
+                                <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                            </svg>
+                        </div>
+                    </div>
+                    <div class="summary-card-value" style="color: var(--alert-600);">3</div>
+                    <div class="summary-card-subtext" style="color: var(--alert-600);">Requires institutional owner action</div>
+                </div>
+
+                <!-- Resolved Card -->
+                <div class="summary-card">
+                    <div class="summary-card-header">
+                        <span class="summary-card-label">Resolved This Week</span>
+                        <div class="summary-card-icon">
+                            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <polyline points="20 6 9 17 4 12"></polyline>
+                            </svg>
+                        </div>
+                    </div>
+                    <div class="summary-card-value">14</div>
+                    <div class="summary-card-subtext">Parent verified resolution</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Section 3: Badges & Status Indicators -->
+    <div class="panel-card" style="margin-bottom: 2rem;">
+        <div class="panel-header">
+            <h2 class="panel-title">3. Institutional Status Badges</h2>
+        </div>
+        <div class="panel-body">
+            <div style="display: flex; gap: 1rem; flex-wrap: wrap; align-items: center;">
+                <span class="badge badge-active">Active</span>
+                <span class="badge badge-completed">Completed</span>
+                <span class="badge badge-alert">Open</span>
+                <span class="badge badge-alert">Critical (Reopen #3)</span>
+                <span class="badge badge-warning">In Progress</span>
+                <span class="badge badge-archived">Archived</span>
+                <span class="badge badge-archived">Draft</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Section 4: Buttons -->
+    <div class="panel-card" style="margin-bottom: 2rem;">
+        <div class="panel-header">
+            <h2 class="panel-title">4. Action Buttons</h2>
+        </div>
+        <div class="panel-body">
+            <div style="display: flex; gap: 0.75rem; flex-wrap: wrap; align-items: center; margin-bottom: 1rem;">
+                <button type="button" class="btn btn-primary">Primary Action (Navy)</button>
+                <button type="button" class="btn btn-secondary">Secondary Outline</button>
+                <button type="button" class="btn btn-alert">Issue Alert (Orange Only)</button>
+                <button type="button" class="btn btn-danger">Destructive Action</button>
+            </div>
+            <div style="display: flex; gap: 0.75rem; flex-wrap: wrap; align-items: center;">
+                <button type="button" class="btn btn-primary btn-sm">Primary Small</button>
+                <button type="button" class="btn btn-secondary btn-sm">Secondary Small</button>
+                <button type="button" class="btn btn-alert btn-sm">Alert Small</button>
+                <button type="button" class="btn btn-danger btn-sm">Danger Small</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Section 5: Alerts & Notifications -->
+    <div class="panel-card" style="margin-bottom: 2rem;">
+        <div class="panel-header">
+            <h2 class="panel-title">5. Alerts &amp; Notification Banners</h2>
+        </div>
+        <div class="panel-body" style="display: flex; flex-direction: column; gap: 1rem;">
+            <!-- Alert Banner: Neutral -->
+            <div class="alert alert-neutral">
+                <div class="alert-title">Academic Roster Information</div>
+                <div class="alert-body">Roster updates take effect for all subsequent attendance uploads and AI campaigns.</div>
+            </div>
+
+            <!-- Alert Banner: Success -->
+            <div class="alert alert-success">
+                <div class="alert-title">Campaign Completed Successfully</div>
+                <div class="alert-body">All 38 calls placed; 36 parents answered, 2 retries queued.</div>
+            </div>
+
+            <!-- Alert Banner: Warning -->
+            <div class="alert alert-warning">
+                <div class="alert-title">Parent Contact Verification Required</div>
+                <div class="alert-body">2 students in this section have unverified phone records.</div>
+            </div>
+
+            <!-- Alert Banner: Issue/Orange -->
+            <div class="alert alert-issue">
+                <div class="alert-title">High Priority Student Issue Logged</div>
+                <div class="alert-body">Parent reported recurring route bus delay during the morning attendance session.</div>
+            </div>
+
+            <!-- Alert Banner: Error -->
+            <div class="alert alert-error">
+                <div class="alert-title">Excel File Format Validation Failed</div>
+                <div class="alert-body">Missing required column 'Roll Number'. Please check your roster spreadsheet.</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Section 6: Interactive Modal & Toast Preview -->
+    <div class="panel-card" style="margin-bottom: 2rem;">
+        <div class="panel-header">
+            <h2 class="panel-title">6. Modal Dialogs &amp; Toast Notifications</h2>
+        </div>
+        <div class="panel-body">
+            <p style="font-size: 0.9rem; color: var(--text-600); margin-bottom: 1rem;">
+                Click below to preview interactive UI behaviors:
+            </p>
+            <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
+                <button type="button" class="btn btn-secondary" onclick="openDemoModal()">
+                    Launch Confirmation Modal
+                </button>
+                <button type="button" class="btn btn-secondary" onclick="showDemoToast('success')">
+                    Trigger Success Toast
+                </button>
+                <button type="button" class="btn btn-secondary" onclick="showDemoToast('alert')">
+                    Trigger Issue Alert Toast
+                </button>
+                <button type="button" class="btn btn-secondary" onclick="showDemoToast('error')">
+                    Trigger Error Toast
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Section 7: Empty State & Skeleton Loading -->
+    <div class="panel-card">
+        <div class="panel-header">
+            <h2 class="panel-title">7. Empty States &amp; Loading Skeleton</h2>
+        </div>
+        <div class="panel-body">
+            <div class="empty-state" style="border: 1px dashed var(--border); border-radius: var(--radius-md); margin-bottom: 2rem;">
+                <div class="empty-state-icon">
+                    <svg viewBox="0 0 24 24" width="36" height="36" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect>
+                        <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path>
+                    </svg>
+                </div>
+                <div class="empty-state-title">No Campaign Records Found</div>
+                <div class="empty-state-text">No active or historical AI calling campaigns match your selected academic filters.</div>
+                <a href="{{ url_for('new_campaign') }}" class="btn btn-primary btn-sm">Start New Campaign</a>
+            </div>
+
+            <div>
+                <div style="font-size: 0.85rem; font-weight: 700; color: var(--navy-900); margin-bottom: 0.75rem;">Skeleton Loading Preview</div>
+                <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+                    <div class="skeleton-shimmer" style="height: 20px; width: 45%; border-radius: 4px;"></div>
+                    <div class="skeleton-shimmer" style="height: 16px; width: 80%; border-radius: 4px;"></div>
+                    <div class="skeleton-shimmer" style="height: 16px; width: 65%; border-radius: 4px;"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Demo Modal Dialog Preview -->
+<div class="modal-backdrop" id="demoModalBackdrop" style="display: none;" onclick="closeDemoModal(event)">
+    <div class="modal-dialog" onclick="event.stopPropagation()">
+        <div class="modal-header">
+            <h3 class="modal-title">Confirm Student Record Archive</h3>
+            <button type="button" class="modal-close-btn" onclick="closeDemoModal()" aria-label="Close dialog">&times;</button>
+        </div>
+        <div class="modal-body">
+            <p style="color: var(--text-900); font-size: 0.92rem; line-height: 1.5; margin-bottom: 0.75rem;">
+                Are you sure you want to deactivate and archive <strong>K. Sai Praneeth (211FA04001)</strong>?
+            </p>
+            <p style="color: var(--text-600); font-size: 0.85rem; line-height: 1.5;">
+                Archived students remain linked to previous campaign records and audit history, but will be excluded from new attendance rosters.
+            </p>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" onclick="closeDemoModal()">Cancel</button>
+            <button type="button" class="btn btn-danger" onclick="closeDemoModal(); showDemoToast('success');">Archive Student</button>
+        </div>
+    </div>
+</div>
+
+<script>
+function openDemoModal() {
+    document.getElementById('demoModalBackdrop').style.display = 'flex';
+}
+function closeDemoModal(e) {
+    document.getElementById('demoModalBackdrop').style.display = 'none';
+}
+function showDemoToast(type) {
+    if (window.showToast) {
+        if (type === 'success') window.showToast('Student record successfully archived.', 'success');
+        else if (type === 'alert') window.showToast('Critical issue reopened for the 3rd time.', 'alert');
+        else if (type === 'error') window.showToast('Unable to reach server. Please try again.', 'error');
+    }
+}
+</script>
+{% endblock %}

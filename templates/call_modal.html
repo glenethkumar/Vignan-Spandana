@@ -1,4 +1,4 @@
-<!-- Simulated Call Demo Interactive Popup Modal -->
+﻿<!-- Simulated Call Demo Interactive Popup Modal -->
 <div id="simCallModalOverlay" class="modal-overlay" style="display: none;" onclick="handleModalOverlayClick(event)">
     <div class="modal-card" onclick="event.stopPropagation()">
         <!-- Modal Header -->
@@ -29,7 +29,7 @@
                     Voice Script Language:
                 </label>
                 <select id="simModalLang" class="form-select" style="width: auto; padding: 4px 10px; font-size: 0.85rem; height: 32px;">
-                    <option value="Telugu">Telugu (తెలుగు)</option>
+                    <option value="Telugu">Telugu (à°¤à±†à°²à±à°—à±)</option>
                     <option value="English">English</option>
                 </select>
             </div>
@@ -88,7 +88,7 @@
         <!-- Post-Call Summary Card (Revealed upon call completion) -->
         <div id="simCallSummaryCard" class="call-summary-card" style="display: none; background: #FFFFFF; border-top: 1px solid var(--border-color);">
             <div style="font-weight: 700; color: var(--success-green); display: flex; align-items: center; justify-content: space-between;">
-                <span>✓ Call Completed & Saved to Database</span>
+                <span>âœ“ Call Completed & Saved to Database</span>
                 <span id="simCallSavedBadge" class="badge badge-success" style="font-size: 0.72rem;">CallRecord #<span id="simSavedRecordId"></span></span>
             </div>
             <div style="font-size: 0.85rem; margin-top: 6px; color: var(--text-main);" id="simSummaryText">

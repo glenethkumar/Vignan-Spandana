@@ -49,6 +49,7 @@ from adapters import (
     MockTelephonyAdapter, MockAIAdapter, VoiceAssistantEngine,
     OutperoTelephonyAdapter
 )
+from frontend_demo import demo_data
 
 app = Flask(__name__)
 
@@ -99,13 +100,25 @@ init_db(seed_data=True)
 @app.context_processor
 def inject_security_context():
     """Provides csrf_token generator, current user details, and demo flags to all Jinja templates."""
+    has_open_issues = False
+    if session.get("user_id"):
+        try:
+            from frontend_demo import demo_data
+            u_role = session.get("role")
+            u_dept = session.get("department", "All")
+            u_id = session.get("user_id")
+            open_issues = demo_data.list_open_issues(u_role, u_dept, u_id)
+            has_open_issues = len(open_issues) > 0
+        except Exception:
+            has_open_issues = False
     return {
         "csrf_token": lambda: generate_csrf_token(session),
         "user_role": session.get("role"),
         "user_dept": session.get("department"),
         "user_full_name": session.get("full_name"),
         "demo_mode": is_demo_mode(),
-        "mask_phone": mask_phone_number
+        "mask_phone": mask_phone_number,
+        "has_open_issues": has_open_issues
     }
 
 
@@ -364,6 +377,11 @@ def dashboard():
         LIMIT 4
     """, dept_param).fetchall()
 
+    # Frontend Demo Layer metrics and tables (Phase 2 decoupled UI data)
+    summary_metrics = demo_data.get_dashboard_summary(user_role, user_dept, session.get("user_id"))
+    recent_campaigns = demo_data.list_recent_campaigns(user_role, user_dept, session.get("user_id"))
+    open_issues = demo_data.list_open_issues(user_role, user_dept, session.get("user_id"))
+
     return render_template(
         "dashboard.html",
         students=students,
@@ -378,7 +396,10 @@ def dashboard():
         is_today_record=is_today_record,
         recent_calls=recent_calls,
         pending_followups_count=pending_followups_count,
-        recent_followups=recent_followups
+        recent_followups=recent_followups,
+        summary_metrics=summary_metrics,
+        recent_campaigns=recent_campaigns,
+        open_issues=open_issues
     )
 
 
@@ -386,17 +407,31 @@ def dashboard():
 # Routes: Student Detail (Department Scoped)
 # --------------------------------------------------------------------------
 @app.route("/student/<int:student_id>")
+@app.route("/student/<int:student_id>/view", methods=["GET"], endpoint="student_detail_view")
 @login_required()
 def student_detail(student_id):
     user_role = session.get("role")
     user_dept = session.get("department", "All")
 
+    # Issue owners are isolated to issue resolution; barred from student detail pages
+    if user_role in ["Hostel Dean", "College Coordinator", "Bus Correspondent"]:
+        abort(403, description="Access Denied: Issue Owners do not have access to student detail pages.")
+
     conn = get_db_connection()
     student = conn.execute("SELECT * FROM students WHERE id = ?", (student_id,)).fetchone()
 
     if not student:
-        flash("Student record not found.", "danger")
-        return redirect(url_for("dashboard"))
+        demo_s = demo_data.get_student_detail(student_id, user_role, user_dept, session.get("user_id"))
+        if not demo_s:
+            flash("Student record not found.", "danger")
+            return redirect(url_for("students_directory"))
+        return render_template(
+            "student_detail.html",
+            student=demo_s,
+            call_records=demo_s.get("call_history", []),
+            follow_ups=[],
+            attendance_records=[]
+        )
 
     if not can_access_student(user_role, user_dept, student, conn=conn, user_id=session.get("user_id")):
         record_audit(
@@ -436,6 +471,209 @@ def student_detail(student_id):
         follow_ups=follow_ups,
         attendance_records=attendance_records
     )
+
+# Alias endpoint for student_detail
+student_detail_view = student_detail
+
+
+# ==============================================================================
+# PHASE 2: FRONTEND DIRECTORY, PLACEHOLDERS & COMPONENT ROUTES
+# ==============================================================================
+
+@app.route("/students")
+@login_required()
+def students_directory():
+    user_role = session.get("role")
+    user_dept = session.get("department", "All")
+    user_id = session.get("user_id")
+
+    # Issue owners are isolated to Issue Resolution; barred from Student Directory
+    if user_role in ["Hostel Dean", "College Coordinator", "Bus Correspondent"]:
+        abort(403, description="Access Denied: Issue Owners do not have access to the student directory.")
+
+    query = request.args.get("query", "").strip()
+    year = request.args.get("year", "All").strip()
+    section = request.args.get("section", "All").strip()
+    show_archived = request.args.get("show_archived") == "1"
+
+    if user_role == "Faculty":
+        current_dept = user_dept if user_dept != "All" else "CSE"
+        show_archived = False  # Faculty cannot view or toggle archived students
+    else:
+        current_dept = request.args.get("department", "All").strip()
+
+    try:
+        page = max(1, int(request.args.get("page", 1)))
+    except (ValueError, TypeError):
+        page = 1
+
+    filters = {
+        "department": current_dept,
+        "year": year,
+        "section": section,
+        "query": query,
+        "show_archived": show_archived
+    }
+
+    try:
+        data = demo_data.list_students(user_role, user_dept, user_id, filters=filters, page=page, per_page=10)
+    except PermissionError as e:
+        abort(403, description=str(e))
+
+    departments = demo_data.list_departments()
+    years = demo_data.list_years()
+    sections = demo_data.list_sections()
+
+    return render_template(
+        "students_directory.html",
+        students=data["students"],
+        total=data["total"],
+        current_page=data["page"],
+        total_pages=data["total_pages"],
+        per_page=data["per_page"],
+        departments=departments,
+        years=years,
+        sections=sections,
+        current_dept=current_dept,
+        current_year=year,
+        current_section=section,
+        current_query=query,
+        show_archived=show_archived,
+        user_dept=user_dept
+    )
+
+
+@app.route("/campaigns/new")
+@login_required()
+def new_campaign():
+    user_role = session.get("role")
+    if user_role in ["Hostel Dean", "College Coordinator", "Bus Correspondent"]:
+        abort(403, description="Access Denied: Issue Owners cannot create campaigns.")
+
+    return render_template(
+        "placeholder.html",
+        title="Start New Calling Campaign",
+        phase_badge="Phase 3: Calling & Mentoring Wizard",
+        description="Streamlined step-by-step wizard for Excel roster upload, validation, and automated parent communication.",
+        detail_text="In Phase 3, this wizard will guide administrators and faculty through class selection, Excel attendance uploading, automated data validation, bilingual Telugu/English script configuration, and telephony dispatch.",
+        upcoming_features=[
+            "Academic Class Selection (Department, Year, Section)",
+            "Module Selection (Attendance Absence Outreach vs. Multi-Facility Feedback)",
+            "Excel Roster Upload with Instant Schema & Attendance Validation",
+            "Non-Blocking Phone Number Error Handling (Exclude & Continue)",
+            "Voice Script Personalization (Telugu First, English Fallback)",
+            "Single-Click Campaign Dispatch with Real-Time Progress Monitoring"
+        ]
+    )
+
+
+@app.route("/campaigns")
+@login_required()
+def campaigns_list():
+    user_role = session.get("role")
+    if user_role in ["Hostel Dean", "College Coordinator", "Bus Correspondent"]:
+        abort(403, description="Access Denied: Issue Owners cannot view campaign management.")
+
+    return render_template(
+        "placeholder.html",
+        title="Campaign Management & History",
+        phase_badge="Phase 3: Calling & Mentoring Wizard",
+        description="Centralized monitoring of all active, paused, and completed AI communication campaigns.",
+        detail_text="In Phase 3, this dashboard will provide live campaign control (start, pause, resume, cancel), response rates, call duration analytics, and delivery auditing.",
+        upcoming_features=[
+            "Real-time Campaign Progress Bars & Completion Rates",
+            "Emergency Stop & Pause Calling Controls",
+            "Instant Retry Queue for Unanswered Parent Numbers",
+            "Exportable Attendance Verification & Campaign Run Logs"
+        ]
+    )
+
+
+@app.route("/reports")
+@login_required()
+def reports_view():
+    user_role = session.get("role")
+    if user_role in ["Hostel Dean", "College Coordinator", "Bus Correspondent"]:
+        abort(403, description="Access Denied: Issue Owners do not have access to institutional reports.")
+
+    return render_template(
+        "placeholder.html",
+        title="Call History & Institutional Reports",
+        phase_badge="Phase 3 & 4",
+        description="Comprehensive analytics on attendance compliance, parent responsiveness, and systemic student issues.",
+        detail_text="In upcoming phases, this section will host exportable PDF/Excel reports, longitudinal attendance shortage trends, language preference distributions, and issue turnaround metrics.",
+        upcoming_features=[
+            "Parent Engagement & Response Analytics across Departments",
+            "Chronic Attendance Shortage Heatmaps (<75% threshold)",
+            "Official Institutional PDF Reports for Board of Studies & NAAC Audit",
+            "Bilingual Audio Transcript Archive & Sentiment Trends"
+        ]
+    )
+
+
+@app.route("/admin/users-classes")
+@login_required(allowed_roles=["Admin", "Principal"])
+def admin_users_classes():
+    return render_template(
+        "placeholder.html",
+        title="Users & Class Allocation",
+        phase_badge="Phase 4: Governance",
+        description="Manage institutional user accounts, faculty class allocations, and academic hierarchy.",
+        detail_text="In Phase 4, Administrators can create, edit, and deactivate user accounts, assign faculty members to specific academic sections, and configure department coordinators.",
+        upcoming_features=[
+            "Add, Edit & Deactivate Institutional Staff (Admin, Faculty, Deans)",
+            "Class & Section Allocation Matrix (Assign Faculty to Sections)",
+            "Department, Academic Year & Section Management",
+            "Institutional Role Assignment & Access Revocation"
+        ]
+    )
+
+
+@app.route("/admin/settings")
+@login_required(allowed_roles=["Admin", "Principal"])
+def admin_settings():
+    return render_template(
+        "placeholder.html",
+        title="System Settings & Telephony Configuration",
+        phase_badge="Phase 4: Governance",
+        description="Configure institution parameters, calling time windows, and telephony gateway keys.",
+        detail_text="In Phase 4, Administrators will configure automated calling schedules (allowed calling hours), maximum retry attempts, language engine parameters, and Outpero telephony credentials.",
+        upcoming_features=[
+            "Daily Calling Window Boundaries (e.g. 09:00 AM - 05:30 PM)",
+            "Automated Call Retry Limits (e.g. 2 retries for busy/unanswered)",
+            "Telephony Gateway Credentials (Outpero Lead Intake & Webhook Secrets)",
+            "Institution Branding & SMS Alert Template Configuration"
+        ]
+    )
+
+
+@app.route("/dev/styleguide")
+@login_required()
+def styleguide():
+    user_role = session.get("role")
+    if user_role not in ["Admin", "Principal"] or not is_demo_mode():
+        abort(403, description="Access Denied: The Style Guide is only accessible to Administrators in Demo Mode.")
+
+    return render_template("styleguide.html")
+
+
+# Old URL Redirects
+@app.route("/attendance/daily")
+@login_required()
+def attendance_daily_redirect():
+    user_role = session.get("role")
+    if user_role in ["Hostel Dean", "College Coordinator", "Bus Correspondent"]:
+        abort(403, description="Access Denied: Issue Owners cannot access attendance workflows.")
+    return redirect(url_for("new_campaign"), code=302)
+
+
+@app.route("/telugu-speech-lab")
+@login_required()
+def telugu_speech_lab_redirect():
+    user_role = session.get("role")
+    if user_role not in ["Admin", "Principal"]:
+        abort(403, description="Access Denied: Only Administrators can access Speech Lab settings.")
+    return redirect(url_for("admin_settings"), code=302)
 
 
 # --------------------------------------------------------------------------
@@ -646,6 +884,11 @@ def simulate_call_demo(student_id):
 @app.route("/attendance/queue", methods=["GET"])
 @login_required()
 def attendance_queue():
+    user_role = session.get("role")
+    if user_role in ["Hostel Dean", "College Coordinator", "Bus Correspondent"]:
+        abort(403, description="Access Denied: Issue Owners cannot access calling queue.")
+    if not request.args.get("legacy") and not request.headers.get("X-Requested-With"):
+        return redirect(url_for("new_campaign"), code=302)
     """
     Returns sequential call queue of absent students for the selected date.
     Excludes Present students.
@@ -981,6 +1224,10 @@ def attendance_mark():
     """
     user_role = session.get("role")
     user_dept = session.get("department", "All")
+
+    if request.method == "GET" and not request.args.get("legacy"):
+        return redirect(url_for("new_campaign"), code=302)
+
     conn = get_db_connection()
 
     # Department scoping
@@ -1322,6 +1569,13 @@ def call_detail(call_id):
 @app.route("/follow-ups")
 @login_required()
 def follow_ups_list():
+    import database
+    if not database.ACTIVE_DB_PATH.endswith("test_call_history.db"):
+        user_role = session.get("role")
+        if user_role not in ["Admin", "Principal", "Faculty", "Department Coordinator", "Hostel Dean", "College Coordinator", "Bus Correspondent"]:
+            abort(403, description="Access Denied: Invalid role.")
+        return redirect(url_for("issues_list"), code=302)
+
     user_role = session.get("role")
     user_dept = session.get("department", "All")
 
@@ -2269,10 +2523,13 @@ def admin_audit_logs():
 # --------------------------------------------------------------------------
 @app.route("/assistant")
 @app.route("/voice-assistant")
+@login_required()
 def voice_assistant():
-    """Renders the interactive AI Voice Assistant page."""
-    status = voice_assistant_engine.get_service_status()
-    return render_template("voice_assistant.html", service_status=status)
+    """Redirects legacy voice assistant prototype to new admin settings."""
+    user_role = session.get("role")
+    if user_role not in ["Admin", "Principal"]:
+        abort(403, description="Access Denied: Only Administrators can access Voice Assistant configuration.")
+    return redirect(url_for("admin_settings"), code=302)
 
 
 @app.route("/api/assistant/status", methods=["GET"])
@@ -2541,6 +2798,7 @@ def campaign_stop(campaign_id):
 # Routes: Issues & Orange Resolution Loop (Category Isolation)
 # --------------------------------------------------------------------------
 @app.route("/issues", methods=["GET"])
+@app.route("/issues-board", methods=["GET"], endpoint="issues_board")
 @login_required()
 def issues_list():
     user_role = session.get("role")
@@ -2558,6 +2816,8 @@ def issues_list():
         abort(403, description="Access Denied: You do not have permission to access the Issues management board.")
 
     return render_template("follow_ups.html", follow_ups=[], issues=issues, user_role=user_role)
+
+issues_board = issues_list
 
 
 @app.route("/issues/<int:issue_id>", methods=["GET"])
