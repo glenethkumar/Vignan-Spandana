@@ -66,6 +66,8 @@ export const App: React.FC = () => {
                 </RoleGuard>
               }
             />
+            <Route path="campaigns/new" element={<Navigate to="/app/campaign/new" replace />} />
+            <Route path="campaigns" element={<Navigate to="/app/reports" replace />} />
 
             <Route
               path="campaign/:id/monitor"
@@ -102,6 +104,7 @@ export const App: React.FC = () => {
                 </RoleGuard>
               }
             />
+            <Route path="admin/users-classes" element={<Navigate to="/app/users-classes" replace />} />
 
             <Route
               path="settings"
@@ -111,6 +114,7 @@ export const App: React.FC = () => {
                 </RoleGuard>
               }
             />
+            <Route path="admin/settings" element={<Navigate to="/app/settings" replace />} />
 
             <Route path="forbidden" element={<ForbiddenPage />} />
           </Route>
@@ -124,3 +128,4 @@ export const App: React.FC = () => {
 };
 
 export default App;
+

@@ -133,6 +133,24 @@ export const SettingsPage: React.FC = () => {
                 </select>
               </div>
 
+              {/* Confirmation Call Timing */}
+              <div>
+                <label className="block font-semibold text-ink-700 uppercase mb-1">
+                  Confirmation Call Timing
+                </label>
+                <select
+                  value={settings?.confirmationCallTiming || 'immediately'}
+                  onChange={e => setSettings(prev => prev ? { ...prev, confirmationCallTiming: e.target.value as any } : null)}
+                  className="w-full p-2.5 border border-border rounded-lg bg-surface text-ink-900"
+                >
+                  <option value="immediately">Immediately upon resolution (Demo Mode)</option>
+                  <option value="within_hours">Within standard calling hours (09:00 - 18:00)</option>
+                </select>
+                <p className="text-[11px] text-ink-500 mt-1">
+                  Controls when automated verification calls are queued after a grievance is marked resolved.
+                </p>
+              </div>
+
               {/* Calling Window */}
               <div className="grid grid-cols-2 gap-3">
                 <div>

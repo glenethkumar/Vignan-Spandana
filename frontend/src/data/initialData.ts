@@ -81,8 +81,13 @@ export const INITIAL_USERS: User[] = [
 ];
 
 export const INITIAL_DEPARTMENTS: Department[] = [
-  { id: 1, name: 'Computer Science and Engineering', code: 'CSE', isActive: true },
-  { id: 2, name: 'Electronics and Communication Engineering', code: 'ECE', isActive: true },
+  { id: 1, name: 'Computer Science', code: 'CSE', isActive: true },
+  { id: 2, name: 'Artificial Intelligence', code: 'CSE-AI', isActive: true },
+  { id: 3, name: 'Information Technology', code: 'IT', isActive: true },
+  { id: 4, name: 'Electronics & Communication', code: 'ECE', isActive: true },
+  { id: 5, name: 'Electrical & Electronics', code: 'EEE', isActive: true },
+  { id: 6, name: 'Mechanical Engineering', code: 'MECH', isActive: true },
+  { id: 7, name: 'Civil Engineering', code: 'CIVIL', isActive: true },
 ];
 
 export const INITIAL_YEARS: AcademicYear[] = [
@@ -94,12 +99,21 @@ export const INITIAL_YEARS: AcademicYear[] = [
   { id: 6, departmentId: 2, yearNumber: 2, isActive: true },
   { id: 7, departmentId: 2, yearNumber: 3, isActive: true },
   { id: 8, departmentId: 2, yearNumber: 4, isActive: true },
+  { id: 9, departmentId: 3, yearNumber: 3, isActive: true },
+  { id: 10, departmentId: 4, yearNumber: 3, isActive: true },
+  { id: 11, departmentId: 5, yearNumber: 3, isActive: true },
+  { id: 12, departmentId: 6, yearNumber: 3, isActive: true },
+  { id: 13, departmentId: 7, yearNumber: 3, isActive: true },
 ];
 
 export const INITIAL_SECTIONS: Section[] = [
-  { id: 1, departmentId: 1, yearId: 3, yearNumber: 3, name: 'Section A', studentCount: 20, isActive: true },
-  { id: 2, departmentId: 1, yearId: 3, yearNumber: 3, name: 'Section B', studentCount: 15, isActive: true },
-  { id: 3, departmentId: 2, yearId: 6, yearNumber: 2, name: 'Section A', studentCount: 10, isActive: true },
+  { id: 1, departmentId: 1, yearId: 3, yearNumber: 3, name: 'A', studentCount: 20, isActive: true },
+  { id: 2, departmentId: 1, yearId: 3, yearNumber: 3, name: 'B', studentCount: 15, isActive: true },
+  { id: 3, departmentId: 1, yearId: 3, yearNumber: 3, name: 'C', studentCount: 18, isActive: true },
+  { id: 4, departmentId: 1, yearId: 3, yearNumber: 3, name: 'D', studentCount: 16, isActive: true },
+  { id: 5, departmentId: 1, yearId: 3, yearNumber: 3, name: 'E', studentCount: 19, isActive: true },
+  { id: 6, departmentId: 1, yearId: 3, yearNumber: 3, name: 'F', studentCount: 20, isActive: true },
+  { id: 7, departmentId: 4, yearId: 10, yearNumber: 2, name: 'A', studentCount: 10, isActive: true },
 ];
 
 export const INITIAL_STUDENTS: Student[] = [
@@ -498,4 +512,6 @@ export const INITIAL_SETTINGS: SystemSettings = {
   retryAttempts: 2,
   phoneMaskingEnforced: true,
   demoMode: true,
+  confirmationCallTiming: 'immediately',
 };
+

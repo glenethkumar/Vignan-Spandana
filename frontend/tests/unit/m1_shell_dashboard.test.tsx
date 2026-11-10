@@ -56,3 +56,4 @@ describe('Milestone M1: Shell, Auth & Masking Utilities', () => {
     expect(collegeSummary.openIssues.every(i => i.category === 'College')).toBe(true);
   });
 });
+

@@ -230,9 +230,12 @@ export interface SystemSettings {
   retryAttempts: number;
   phoneMaskingEnforced: boolean;
   demoMode: boolean;
+  confirmationCallTiming: 'immediately' | 'within_hours';
 }
 
 export interface DashboardSummary {
+  preparedCampaignsCount: number;
+  studentRecordsCount: number;
   absentToday: number;
   callsCompleted: number;
   openIssuesCount: number;
@@ -241,3 +244,4 @@ export interface DashboardSummary {
   openIssues: Issue[];
   pendingApprovals: Campaign[];
 }
+

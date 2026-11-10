@@ -210,21 +210,54 @@ export const ReportsPage: React.FC = () => {
         </Button>
       </div>
 
+      {/* 3 Metric Stat Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
+        <div className="p-5 bg-surface rounded-card border border-border shadow-xs">
+          <div className="text-xs font-semibold text-ink-500 uppercase tracking-wider mb-1">
+            Campaigns prepared
+          </div>
+          <div className="text-3xl font-bold font-mono text-ink-900">
+            {String(campaigns.length).padStart(2, '0')}
+          </div>
+        </div>
+
+        <div className="p-5 bg-surface rounded-card border border-border shadow-xs">
+          <div className="text-xs font-semibold text-ink-500 uppercase tracking-wider mb-1">
+            Calls completed
+          </div>
+          <div className="text-3xl font-bold font-mono text-ink-900">
+            {String(calls.filter(c => c.status === 'completed').length).padStart(2, '0')}
+          </div>
+        </div>
+
+        <div className="p-5 bg-surface rounded-card border border-border shadow-xs">
+          <div className="text-xs font-semibold text-ink-500 uppercase tracking-wider mb-1">
+            Responses collected
+          </div>
+          <div className="text-3xl font-bold font-mono text-ink-900">
+            {String(calls.filter(c => c.status === 'completed' && c.transcriptTelugu).length).padStart(2, '0')}
+          </div>
+        </div>
+      </div>
+
       {/* Primary Tab Navigation */}
-      <div className="flex items-center gap-4 border-b border-border">
+      <div className="flex items-center gap-6 border-b border-border">
         <button
           onClick={() => {
             setActiveTab('campaigns');
             setCurrentPage(1);
           }}
-          className={`pb-3 text-sm font-bold flex items-center gap-2 border-b-2 transition-all ${
+          className={`pb-3 text-sm flex items-center gap-2 border-b-2 transition-all relative ${
             activeTab === 'campaigns'
-              ? 'border-brand text-brand font-bold'
-              : 'border-transparent text-ink-500 hover:text-ink-900'
+              ? 'border-ink-900 text-ink-900 font-bold'
+              : 'border-transparent text-ink-500 hover:text-ink-900 font-medium'
           }`}
         >
           <Layers className="w-4 h-4" />
-          <span>Outbound Campaigns ({campaigns.length})</span>
+          <span>Campaigns</span>
+          <span className="px-2 py-0.5 rounded-full bg-page border border-border text-xs font-mono">
+            {campaigns.length}
+          </span>
         </button>
 
         <button
@@ -232,14 +265,17 @@ export const ReportsPage: React.FC = () => {
             setActiveTab('calls');
             setCurrentPage(1);
           }}
-          className={`pb-3 text-sm font-bold flex items-center gap-2 border-b-2 transition-all ${
+          className={`pb-3 text-sm flex items-center gap-2 border-b-2 transition-all relative ${
             activeTab === 'calls'
-              ? 'border-brand text-brand font-bold'
-              : 'border-transparent text-ink-500 hover:text-ink-900'
+              ? 'border-ink-900 text-ink-900 font-bold'
+              : 'border-transparent text-ink-500 hover:text-ink-900 font-medium'
           }`}
         >
           <PhoneCall className="w-4 h-4" />
-          <span>Call Logs & Transcripts ({calls.length})</span>
+          <span>Call history</span>
+          <span className="px-2 py-0.5 rounded-full bg-page border border-border text-xs font-mono">
+            {calls.length}
+          </span>
         </button>
       </div>
 
@@ -334,8 +370,12 @@ export const ReportsPage: React.FC = () => {
         ) : paginatedItems.length === 0 ? (
           <EmptyState
             icon={<FileText className="w-8 h-8" />}
-            title="No records found"
-            description="No campaign or call data matches your current search filters."
+            title={activeTab === 'campaigns' ? 'No campaigns yet' : 'No call records found'}
+            description={
+              activeTab === 'campaigns'
+                ? 'Confirmed campaigns will appear here.'
+                : 'Calls placed by active campaigns will be listed here.'
+            }
           />
         ) : activeTab === 'campaigns' ? (
           /* Campaigns Tab Table */

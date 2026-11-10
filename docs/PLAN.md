@@ -106,3 +106,4 @@ frontend/
 - All functions are asynchronous and typed.
 - Storage is isolated per device in `localStorage`.
 - Phone numbers are masked in all returned entities (`+91 98*** **345`).
+

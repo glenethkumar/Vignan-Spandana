@@ -24,6 +24,10 @@ import {
   Send,
   Play,
   RotateCcw,
+  GraduationCap,
+  Users,
+  Trash2,
+  MessageSquare,
 } from 'lucide-react';
 import { Button } from '../../components/common/Button';
 import { Badge } from '../../components/common/Badge';
@@ -47,6 +51,7 @@ import {
   saveDraftCampaign,
   submitToAdmin,
   confirmCampaign,
+  discardDraftCampaign,
   checkDuplicateUpload,
   saveUpload,
   getSettings,
@@ -124,6 +129,7 @@ export const WizardPage: React.FC = () => {
 
   // Step 7: Launch Confirmation Modal (Admin)
   const [isConfirmLaunchModalOpen, setIsConfirmLaunchModalOpen] = useState(false);
+  const [isDiscardModalOpen, setIsDiscardModalOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Load user & academic structure
@@ -308,6 +314,15 @@ export const WizardPage: React.FC = () => {
     showToast('Downloaded errors Excel report', 'info');
   };
 
+  const handleDiscardDraft = async () => {
+    if (draftCampaignId) {
+      await discardDraftCampaign(draftCampaignId);
+    }
+    showToast('Draft campaign discarded successfully', 'info');
+    setIsDiscardModalOpen(false);
+    navigate('/app');
+  };
+
   // Launch / Submit Action
   const handleFacultySubmitToAdmin = async () => {
     if (!draftCampaignId) {
@@ -419,6 +434,22 @@ export const WizardPage: React.FC = () => {
     { num: 7, label: 'Review & Launch' },
   ];
 
+  const getCenterHint = (): string => {
+    if (currentStep === 1) return selectedDept ? 'Next: Year' : 'Select a department to continue';
+    if (currentStep === 2) return selectedYear ? 'Next: Section' : 'Select a year to continue';
+    if (currentStep === 3) return selectedSection ? 'Next: Module & Date' : 'Select a section to continue';
+    if (currentStep === 4) return 'Next: Student list';
+    if (currentStep === 5) {
+      if (!validationResult || !validationResult.isValid || validationResult.validRows.length === 0) {
+        return 'Confirm your student list to continue.';
+      }
+      return 'Next: Call settings';
+    }
+    if (currentStep === 6) return 'Next: Review & launch';
+    if (currentStep === 7) return isFaculty ? 'Ready to send to Admin' : 'Ready to start calls';
+    return '';
+  };
+
   return (
     <div className="space-y-6 max-w-5xl mx-auto pb-16 animate-in fade-in duration-150">
       {/* Top Header & Breadcrumb Chips */}
@@ -481,26 +512,35 @@ export const WizardPage: React.FC = () => {
                   <div
                     className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold transition-all ${
                       isCompleted
-                        ? 'bg-brand text-white shadow-xs'
+                        ? 'bg-emerald-600 text-white shadow-xs'
                         : isCurrent
-                        ? 'bg-brand text-white ring-4 ring-brand-100'
+                        ? 'bg-ink-900 text-white ring-4 ring-ink-100'
                         : 'bg-page text-ink-400 border border-border'
                     }`}
                   >
-                    {isCompleted ? <Check className="w-3.5 h-3.5" /> : s.num}
+                    {isCompleted ? <Check className="w-3.5 h-3.5 stroke-[3]" /> : s.num}
                   </div>
-                  <span
-                    className={`text-xs font-medium ${
-                      isCurrent ? 'text-ink-900 font-bold' : isCompleted ? 'text-ink-700' : 'text-ink-400'
-                    }`}
-                  >
-                    {s.label}
-                  </span>
+                  <div className="relative">
+                    <span
+                      className={`text-xs ${
+                        isCurrent
+                          ? 'text-ink-900 font-bold'
+                          : isCompleted
+                          ? 'text-ink-700 font-medium'
+                          : 'text-ink-400 font-medium'
+                      }`}
+                    >
+                      {s.label}
+                    </span>
+                    {isCurrent && (
+                      <div className="absolute -bottom-1.5 left-0 right-0 h-[2px] bg-ink-900 rounded-full" />
+                    )}
+                  </div>
                 </div>
                 {idx < steps.length - 1 && (
                   <div
                     className={`flex-1 h-[2px] mx-3 ${
-                      isCompleted ? 'bg-brand' : 'bg-border'
+                      isCompleted ? 'bg-emerald-600' : 'bg-border'
                     }`}
                   />
                 )}
@@ -516,12 +556,14 @@ export const WizardPage: React.FC = () => {
           <p className="text-sm text-ink-500">
             Select the engineering department for this outreach campaign. Faculty accounts only see assigned departments.
           </p>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {departments.map(dept => {
               const isSelected = selectedDept === dept.code;
               return (
                 <div
                   key={dept.id}
+                  role="button"
+                  data-testid={`dept-${dept.code}`}
                   onClick={() => setSelectedDept(dept.code)}
                   className={`p-6 rounded-card border transition-all cursor-pointer flex items-start justify-between ${
                     isSelected
@@ -566,18 +608,25 @@ export const WizardPage: React.FC = () => {
               return (
                 <div
                   key={yr}
+                  role="button"
+                  data-testid={`year-${yr}`}
                   onClick={() => {
                     setSelectedYear(yr);
                     setSelectedSection(''); // Reset section on year change
                   }}
-                  className={`p-6 rounded-card border transition-all cursor-pointer flex flex-col justify-between ${
+                  className={`p-6 rounded-card border transition-all cursor-pointer relative overflow-hidden flex flex-col justify-between min-h-[140px] ${
                     isSelected
                       ? 'bg-brand-50 border-brand ring-2 ring-brand/20 shadow-xs'
                       : 'bg-surface border-border hover:border-ink-400 hover:shadow-card'
                   }`}
                 >
-                  <div className="flex items-center justify-between mb-4">
-                    <span className="text-2xl font-extrabold text-ink-900 font-mono">0{yr}</span>
+                  <span className="absolute -bottom-3 -right-1 text-6xl font-black font-mono text-ink-200/40 select-none pointer-events-none">
+                    0{yr}
+                  </span>
+                  <div className="flex items-center justify-between mb-4 relative z-10">
+                    <div className="w-8 h-8 rounded-lg bg-surface border border-border flex items-center justify-center text-brand shadow-xs">
+                      <GraduationCap className="w-4 h-4" />
+                    </div>
                     <div
                       className={`w-5 h-5 rounded-full border flex items-center justify-center ${
                         isSelected ? 'border-brand bg-brand text-white' : 'border-ink-300 bg-surface'
@@ -586,9 +635,9 @@ export const WizardPage: React.FC = () => {
                       {isSelected && <Check className="w-3 h-3 stroke-[3]" />}
                     </div>
                   </div>
-                  <div>
-                    <h4 className="text-sm font-bold text-ink-900">Year {yr}</h4>
-                    <p className="text-[11px] text-ink-500 mt-0.5">{labels[yr - 1]}</p>
+                  <div className="relative z-10">
+                    <div className="text-[11px] font-mono font-bold text-brand uppercase">0{yr}</div>
+                    <h4 className="text-sm font-bold text-ink-900">{labels[yr - 1]}</h4>
                   </div>
                 </div>
               );
@@ -603,48 +652,42 @@ export const WizardPage: React.FC = () => {
           <p className="text-sm text-ink-500">
             Choose the specific section for {selectedDept} / Year {selectedYear}. Student roster will be configured in Step 5.
           </p>
-          {availableSections.length === 0 ? (
-            <div className="p-8 text-center bg-surface border border-dashed border-border rounded-card">
-              <p className="text-sm text-ink-500">No active sections configured for this year.</p>
-              <Button
-                variant="outline"
-                size="sm"
-                className="mt-3"
-                onClick={() => setSelectedSection('Section A')}
-              >
-                Use Default Section A
-              </Button>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              {availableSections.map(sec => {
-                const isSelected = selectedSection === sec.name;
-                return (
-                  <div
-                    key={sec.id}
-                    onClick={() => setSelectedSection(sec.name)}
-                    className={`p-5 rounded-card border transition-all cursor-pointer flex items-center justify-between ${
-                      isSelected
-                        ? 'bg-brand-50 border-brand ring-2 ring-brand/20 shadow-xs'
-                        : 'bg-surface border-border hover:border-ink-400 hover:shadow-card'
-                    }`}
-                  >
-                    <div className="space-y-1">
-                      <h4 className="text-base font-bold text-ink-900">{sec.name}</h4>
-                      <p className="text-xs text-ink-500">{sec.studentCount} Registered students</p>
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+            {['A', 'B', 'C', 'D', 'E', 'F'].map(letter => {
+              const secName = `Section ${letter}`;
+              const isSelected = selectedSection === secName || selectedSection === letter;
+              return (
+                <div
+                  key={letter}
+                  role="button"
+                  data-testid={`section-${letter}`}
+                  onClick={() => setSelectedSection(secName)}
+                  className={`p-5 rounded-card border transition-all cursor-pointer flex items-center justify-between ${
+                    isSelected
+                      ? 'bg-brand-50 border-brand ring-2 ring-brand/20 shadow-xs'
+                      : 'bg-surface border-border hover:border-ink-400 hover:shadow-card'
+                  }`}
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-9 h-9 rounded-lg bg-surface border border-border flex items-center justify-center text-brand shadow-xs">
+                      <Users className="w-4 h-4" />
                     </div>
-                    <div
-                      className={`w-5 h-5 rounded-full border flex items-center justify-center ${
-                        isSelected ? 'border-brand bg-brand text-white' : 'border-ink-300 bg-surface'
-                      }`}
-                    >
-                      {isSelected && <Check className="w-3 h-3 stroke-[3]" />}
+                    <div>
+                      <div className="text-[10px] font-bold text-ink-400 uppercase tracking-wider">SECTION</div>
+                      <h4 className="text-xl font-black font-mono text-ink-900">{letter}</h4>
                     </div>
                   </div>
-                );
-              })}
-            </div>
-          )}
+                  <div
+                    className={`w-5 h-5 rounded-full border flex items-center justify-center ${
+                      isSelected ? 'border-brand bg-brand text-white' : 'border-ink-300 bg-surface'
+                    }`}
+                  >
+                    {isSelected && <Check className="w-3 h-3 stroke-[3]" />}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
         </div>
       )}
 
@@ -661,6 +704,8 @@ export const WizardPage: React.FC = () => {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
             {/* Module A Card */}
             <div
+              role="button"
+              data-testid="module-mentoring"
               onClick={() => setSelectedModule('mentoring')}
               className={`p-6 rounded-card border transition-all cursor-pointer flex flex-col justify-between ${
                 selectedModule === 'mentoring'
@@ -670,7 +715,9 @@ export const WizardPage: React.FC = () => {
             >
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold text-brand uppercase tracking-wider font-mono">Module A</span>
+                  <div className="w-8 h-8 rounded-lg bg-brand-50 border border-brand-100 flex items-center justify-center text-brand">
+                    <GraduationCap className="w-4 h-4" />
+                  </div>
                   <div
                     className={`w-5 h-5 rounded-full border flex items-center justify-center ${
                       selectedModule === 'mentoring' ? 'border-brand bg-brand text-white' : 'border-ink-300 bg-surface'
@@ -679,9 +726,9 @@ export const WizardPage: React.FC = () => {
                     {selectedModule === 'mentoring' && <Check className="w-3 h-3 stroke-[3]" />}
                   </div>
                 </div>
-                <h4 className="text-lg font-bold text-ink-900">Mentoring & Attendance</h4>
+                <h4 className="text-lg font-bold text-ink-900">Mentoring & attendance</h4>
                 <p className="text-xs text-ink-600 leading-relaxed">
-                  Calls parents of students marked <strong>Absent</strong> on the selected date. Informs parents of attendance status, checks reason for absence, and shares mid-term marks.
+                  Attendance, academics, and student support. Calls parents of students marked <strong>Absent</strong> on the selected date to inform them, log absence reasons, and share progress.
                 </p>
               </div>
               <div className="pt-4 mt-4 border-t border-border/60 text-xs text-brand font-medium">
@@ -691,6 +738,8 @@ export const WizardPage: React.FC = () => {
 
             {/* Module B Card */}
             <div
+              role="button"
+              data-testid="module-feedback"
               onClick={() => setSelectedModule('feedback')}
               className={`p-6 rounded-card border transition-all cursor-pointer flex flex-col justify-between ${
                 selectedModule === 'feedback'
@@ -700,7 +749,9 @@ export const WizardPage: React.FC = () => {
             >
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold text-issue-text uppercase tracking-wider font-mono">Module B</span>
+                  <div className="w-8 h-8 rounded-lg bg-issue-tint border border-issue-border flex items-center justify-center text-issue-text">
+                    <MessageSquare className="w-4 h-4" />
+                  </div>
                   <div
                     className={`w-5 h-5 rounded-full border flex items-center justify-center ${
                       selectedModule === 'feedback' ? 'border-brand bg-brand text-white' : 'border-ink-300 bg-surface'
@@ -709,9 +760,9 @@ export const WizardPage: React.FC = () => {
                     {selectedModule === 'feedback' && <Check className="w-3 h-3 stroke-[3]" />}
                   </div>
                 </div>
-                <h4 className="text-lg font-bold text-ink-900">Parent Feedback Survey</h4>
+                <h4 className="text-lg font-bold text-ink-900">Feedback</h4>
                 <p className="text-xs text-ink-600 leading-relaxed">
-                  Calls parents of all students to collect ratings and qualitative grievances across <strong>College academics, Hostel food/hygiene, and Bus transport</strong>.
+                  Class, hostel, and transport experiences. Gathers parent ratings and qualitative feedback across <strong>College academics, Hostel facilities, and Bus transport</strong>.
                 </p>
               </div>
               <div className="pt-4 mt-4 border-t border-border/60 text-xs text-issue-text font-medium">
@@ -790,12 +841,33 @@ export const WizardPage: React.FC = () => {
             <div className="w-12 h-12 rounded-full bg-page group-hover:bg-brand-50 text-ink-400 group-hover:text-brand flex items-center justify-center mx-auto mb-3 transition-colors">
               <UploadCloud className="w-6 h-6" />
             </div>
-            <div className="text-sm font-bold text-ink-900 group-hover:text-brand transition-colors">
-              {uploadedFile ? uploadedFile.name : 'Click to upload or drag and drop spreadsheet'}
+            <div className="text-base font-bold text-ink-900 group-hover:text-brand transition-colors">
+              {uploadedFile ? uploadedFile.name : 'Drop your student list here.'}
             </div>
             <p className="text-xs text-ink-500 mt-1">
-              Supports .xlsx, .xls, .csv up to 5 MB (first sheet evaluated)
+              CSV or Excel · Up to 5 MB · 5,000 students
             </p>
+            <div className="mt-4 inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-ink-900 text-white text-xs font-semibold shadow-xs">
+              <span>Browse files →</span>
+            </div>
+            <div className="flex items-center justify-center gap-4 text-[11px] text-ink-400 mt-5 pt-4 border-t border-border/50">
+              <span className="flex items-center gap-1">
+                <FileText className="w-3.5 h-3.5" />
+                <span>First worksheet only</span>
+              </span>
+              <span>•</span>
+              <button
+                type="button"
+                onClick={e => {
+                  e.stopPropagation();
+                  handleTemplateDownload();
+                }}
+                className="flex items-center gap-1 text-brand hover:underline font-medium"
+              >
+                <Download className="w-3.5 h-3.5" />
+                <span>Download template</span>
+              </button>
+            </div>
           </div>
 
           {/* Validation Metrics & Error Banner */}
@@ -834,39 +906,46 @@ export const WizardPage: React.FC = () => {
                       : 'bg-danger-tint border-danger-border'
                   }`}
                 >
-                  <div className="flex items-center justify-between gap-4 mb-2">
-                    <div className="flex items-center gap-2">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-2">
+                    <div className="flex items-start gap-2">
                       {validationResult.isValid ? (
-                        <AlertTriangle className="w-5 h-5 text-warning-text" />
+                        <AlertTriangle className="w-5 h-5 text-warning-text shrink-0 mt-0.5" />
                       ) : (
-                        <AlertCircle className="w-5 h-5 text-danger-text" />
+                        <AlertCircle className="w-5 h-5 text-danger-text shrink-0 mt-0.5" />
                       )}
-                      <h4
-                        className={`text-sm font-bold ${
-                          validationResult.isValid ? 'text-warning-text' : 'text-danger-text'
-                        }`}
-                      >
-                        {validationResult.isValid
-                          ? 'Non-Blocking Warnings (Students Excluded)'
-                          : 'Blocking Errors Detected — Please correct file to continue'}
-                      </h4>
+                      <div>
+                        <h4
+                          className={`text-sm font-bold ${
+                            validationResult.isValid ? 'text-warning-text' : 'text-danger-text'
+                          }`}
+                        >
+                          {validationResult.isValid
+                            ? 'Non-Blocking Warnings (Students Excluded)'
+                            : 'Missing columns: student_id, student_name, parent_name, phone. Use the downloadable template.'}
+                        </h4>
+                        {!validationResult.isValid && (
+                          <p className="text-xs text-danger-text/90 mt-0.5">
+                            Please correct the required column headers or invalid data rows in your spreadsheet.
+                          </p>
+                        )}
+                      </div>
                     </div>
 
                     <Button
                       variant="outline"
                       size="sm"
                       onClick={handleDownloadErrorsExcel}
-                      className="bg-white text-xs gap-1.5"
+                      className="bg-white text-xs gap-1.5 shrink-0 self-start sm:self-auto"
                     >
                       <Download className="w-3.5 h-3.5" />
                       <span>Download Error Report (.xlsx)</span>
                     </Button>
                   </div>
 
-                  <ul className="space-y-1.5 text-xs text-ink-800 list-disc list-inside max-h-40 overflow-y-auto">
+                  <ul className="space-y-1.5 text-xs text-ink-800 list-disc list-inside max-h-40 overflow-y-auto mt-2 pt-2 border-t border-danger-border/30">
                     {validationResult.errors.map((err, i) => (
                       <li key={i}>
-                        <span className="font-semibold">Row {err.rowNumber}:</span> {err.message}
+                        <span className="font-semibold">{err.rowNumber ? `Row ${err.rowNumber}: ` : ''}</span> {err.message}
                       </li>
                     ))}
                   </ul>
@@ -1221,54 +1300,100 @@ export const WizardPage: React.FC = () => {
         </div>
       )}
 
-      {/* Navigation Footer (Back & Continue) */}
-      <div className="flex items-center justify-between pt-4 border-t border-border">
-        <Button
-          variant="outline"
-          size="md"
-          onClick={handleBack}
-          disabled={currentStep === 1}
-          className="gap-2"
-        >
-          <ChevronLeft className="w-4 h-4" />
-          <span>Back</span>
-        </Button>
-
-        {currentStep < 7 ? (
+      {/* Navigation Footer (Back, Hint, Discard, Continue) */}
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-4 border-t border-border">
+        <div className="flex items-center gap-2">
           <Button
-            variant="primary"
+            variant="outline"
             size="md"
-            onClick={handleNext}
-            disabled={!canProceed()}
+            onClick={handleBack}
+            disabled={currentStep === 1}
             className="gap-2"
           >
-            <span>Continue</span>
-            <ChevronRight className="w-4 h-4" />
+            <ChevronLeft className="w-4 h-4" />
+            <span>Back</span>
           </Button>
-        ) : isFaculty ? (
-          <Button
-            variant="primary"
-            size="md"
-            onClick={handleFacultySubmitToAdmin}
-            isLoading={isSubmitting}
-            className="gap-2 bg-brand"
-          >
-            <Send className="w-4 h-4" />
-            <span>Send to Admin for Approval</span>
-          </Button>
-        ) : (
-          <Button
-            variant="primary"
-            size="md"
-            onClick={() => setIsConfirmLaunchModalOpen(true)}
-            isLoading={isSubmitting}
-            className="gap-2 bg-brand-dark"
-          >
-            <Play className="w-4 h-4" />
-            <span>Confirm and Start Campaign</span>
-          </Button>
-        )}
+
+          {isFaculty && draftCampaignId && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setIsDiscardModalOpen(true)}
+              className="text-danger-text hover:bg-danger-tint gap-1.5 ml-2"
+            >
+              <Trash2 className="w-4 h-4" />
+              <span>Discard draft</span>
+            </Button>
+          )}
+        </div>
+
+        <div className="text-xs font-medium text-ink-500">
+          {getCenterHint()}
+        </div>
+
+        <div>
+          {currentStep < 7 ? (
+            <Button
+              variant="primary"
+              size="md"
+              onClick={handleNext}
+              disabled={!canProceed()}
+              className="gap-2 bg-ink-900 text-white hover:bg-black rounded-full px-6 shadow-xs"
+            >
+              <span>Continue</span>
+              <ChevronRight className="w-4 h-4" />
+            </Button>
+          ) : isFaculty ? (
+            <Button
+              variant="primary"
+              size="md"
+              onClick={handleFacultySubmitToAdmin}
+              isLoading={isSubmitting}
+              className="gap-2 bg-brand text-white hover:bg-brand-dark rounded-full px-6 shadow-xs"
+            >
+              <Send className="w-4 h-4" />
+              <span>Send to Admin for Approval</span>
+            </Button>
+          ) : (
+            <Button
+              variant="primary"
+              size="md"
+              onClick={() => setIsConfirmLaunchModalOpen(true)}
+              isLoading={isSubmitting}
+              className="gap-2 bg-ink-900 text-white hover:bg-black rounded-full px-6 shadow-xs"
+            >
+              <Play className="w-4 h-4" />
+              <span>Confirm and Start Campaign</span>
+            </Button>
+          )}
+        </div>
       </div>
+
+      {/* Discard Draft Modal for Faculty */}
+      <Modal
+        isOpen={isDiscardModalOpen}
+        onClose={() => setIsDiscardModalOpen(false)}
+        title="Discard Draft Campaign?"
+        description="Are you sure you want to discard this unsent draft campaign? All entered selections and uploaded student data will be removed."
+        footer={
+          <>
+            <Button variant="outline" size="sm" onClick={() => setIsDiscardModalOpen(false)}>
+              Keep Draft
+            </Button>
+            <Button
+              variant="danger"
+              size="sm"
+              onClick={handleDiscardDraft}
+            >
+              Discard Draft
+            </Button>
+          </>
+        }
+      >
+        <p className="text-xs text-ink-600">
+          This action will permanently delete your in-progress draft from your device. You can start a fresh campaign anytime.
+        </p>
+      </Modal>
 
       {/* Confirmation Modal for Replace Upload (Version N) */}
       <Modal

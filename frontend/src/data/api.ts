@@ -146,12 +146,16 @@ export async function getDashboardSummary(role: UserRole, department?: string): 
   const callsCompleted = calls.filter(c => c.status === 'completed').length;
   const openIssuesCount = scopedIssues.filter(i => i.status !== 'closed').length;
   const resolvedThisWeek = scopedIssues.filter(i => i.status === 'resolved' || i.status === 'closed').length;
+  const preparedCampaignsCount = scopedCampaigns.length;
+  const studentRecordsCount = students.length;
 
   const recentCampaigns = [...scopedCampaigns].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()).slice(0, 5);
   const openIssues = [...scopedIssues].filter(i => i.status !== 'closed').slice(0, 5);
   const pendingApprovals = campaigns.filter(c => c.status === 'pending_approval').slice(0, 5);
 
   return {
+    preparedCampaignsCount,
+    studentRecordsCount,
     absentToday,
     callsCompleted,
     openIssuesCount,
@@ -409,6 +413,19 @@ export async function saveDraftCampaign(draft: Partial<Campaign>): Promise<Campa
   save(STORAGE_KEYS.CAMPAIGNS, campaigns);
   await logActivity('campaign_created', `Draft campaign #${newId} saved`);
   return newCampaign;
+}
+
+export async function discardDraftCampaign(campaignId: number): Promise<void> {
+  initStorage();
+  const campaigns = load<Campaign[]>(STORAGE_KEYS.CAMPAIGNS, INITIAL_CAMPAIGNS);
+  const target = campaigns.find(c => c.id === campaignId);
+  if (!target) throw new Error('Campaign not found');
+  if (target.status !== 'draft') {
+    throw new Error('Only unsubmitted draft campaigns can be discarded.');
+  }
+  const filtered = campaigns.filter(c => c.id !== campaignId);
+  save(STORAGE_KEYS.CAMPAIGNS, filtered);
+  await logActivity('campaign_created', `Discarded unsent draft campaign #${campaignId}`);
 }
 
 export async function submitToAdmin(campaignId: number): Promise<Campaign> {
@@ -745,3 +762,4 @@ export async function exportReport(
   await logActivity('report_export', `Exported ${type} report as Excel`);
   return `Exported ${type} with strictly masked parent phone numbers.`;
 }
+

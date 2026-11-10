@@ -5,7 +5,7 @@ import {
   PhoneCall,
   AlertCircle,
   CheckCircle2,
-  PlusCircle,
+  Plus,
   ArrowRight,
   Clock,
   Sparkles,
@@ -13,6 +13,9 @@ import {
   Check,
   ChevronRight,
   ExternalLink,
+  Layers,
+  FileText,
+  MessageSquare,
 } from 'lucide-react';
 import { Button } from '../../components/common/Button';
 import { Badge } from '../../components/common/Badge';
@@ -32,7 +35,7 @@ export const DashboardPage: React.FC = () => {
   const [summary, setSummary] = useState<DashboardSummary | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // Approval modal state (for Admin)
+  // Approval modal state (for Admin/Principal)
   const [selectedPendingCampaignId, setSelectedPendingCampaignId] = useState<number | null>(null);
   const [returnNote, setReturnNote] = useState('');
   const [isReturnModalOpen, setIsReturnModalOpen] = useState(false);
@@ -77,190 +80,214 @@ export const DashboardPage: React.FC = () => {
   };
 
   const canCreateCampaign = user?.role === 'admin' || user?.role === 'principal' || user?.role === 'faculty';
-  const isAdmin = user?.role === 'admin' || user?.role === 'principal';
+  const isAdminOrPrincipal = user?.role === 'admin' || user?.role === 'principal';
 
   return (
     <div className="space-y-8 animate-in fade-in duration-150">
-      {/* Top Banner Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-border">
+      {/* Top Banner Header (matching frame_24s.jpg) */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-border">
         <div>
-          <div className="text-[11px] font-bold text-brand uppercase tracking-widest mb-1">
+          <div className="text-[10px] font-bold text-ink-400 uppercase tracking-[0.18em] mb-1">
             YOUR WORKSPACE, AT A GLANCE
           </div>
-          <h1 className="text-3xl font-bold text-ink-900 tracking-tight">Let's get connected.</h1>
+          <h1 className="text-3xl sm:text-4xl font-extrabold text-ink-900 tracking-tight">
+            Let's get connected.
+          </h1>
           <p className="text-sm text-ink-500 mt-1">
-            Welcome back, {user?.fullName}. Here is your live attendance and parent issue overview.
+            A new conversation starts with a well-prepared campaign.
           </p>
         </div>
 
         {canCreateCampaign && (
-          <Link to="/app/campaign/new">
-            <Button variant="primary" size="md" className="gap-2 shadow-sm w-full sm:w-auto">
-              <PlusCircle className="w-4 h-4" />
-              <span>New campaign</span>
-            </Button>
+          <Link
+            to="/app/campaign/new"
+            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-brand-dark text-white text-xs font-semibold hover:bg-ink-900 transition-all shadow-card self-start sm:self-auto"
+          >
+            <Plus className="w-3.5 h-3.5" />
+            <span>New campaign</span>
           </Link>
         )}
       </div>
 
-      {/* 4 Primary KPI Metric Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+      {/* 3 Primary Stat Cards (matching frame_24s.jpg) */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
         {loading ? (
           <>
-            <Skeleton className="h-28" />
             <Skeleton className="h-28" />
             <Skeleton className="h-28" />
             <Skeleton className="h-28" />
           </>
         ) : (
           <>
-            {/* 1. Absent Today */}
-            <Card className="flex items-center justify-between">
-              <div>
-                <p className="text-xs font-semibold text-ink-500 uppercase tracking-wider">Absent today</p>
-                <h3 className="text-3xl font-extrabold text-ink-900 mt-1">
-                  {summary?.absentToday.toString().padStart(2, '0') || '00'}
-                </h3>
-                <span className="text-[11px] text-ink-400">Recorded in today's uploads</span>
+            {/* Card 1: Prepared campaigns */}
+            <div className="p-6 rounded-card border border-border bg-surface shadow-xs flex flex-col justify-between min-h-[120px]">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-medium text-ink-600">Prepared campaigns</span>
+                <div className="w-8 h-8 rounded-lg bg-page border border-border flex items-center justify-center text-ink-700">
+                  <Layers className="w-4 h-4" />
+                </div>
               </div>
-              <div className="p-3 rounded-full bg-brand-50 text-brand">
-                <Users className="w-5 h-5" />
+              <div className="text-3xl font-extrabold text-ink-900 font-sans tracking-tight">
+                {String(summary?.preparedCampaignsCount ?? summary?.recentCampaigns.length ?? 0).padStart(2, '0')}
               </div>
-            </Card>
+            </div>
 
-            {/* 2. Calls Completed */}
-            <Card className="flex items-center justify-between">
-              <div>
-                <p className="text-xs font-semibold text-ink-500 uppercase tracking-wider">Calls completed</p>
-                <h3 className="text-3xl font-extrabold text-ink-900 mt-1">
-                  {summary?.callsCompleted.toString().padStart(2, '0') || '00'}
-                </h3>
-                <span className="text-[11px] text-success-text font-medium">98% connection rate</span>
+            {/* Card 2: Student records */}
+            <div className="p-6 rounded-card border border-border bg-surface shadow-xs flex flex-col justify-between min-h-[120px]">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-medium text-ink-600">Student records</span>
+                <div className="w-8 h-8 rounded-lg bg-page border border-border flex items-center justify-center text-ink-700">
+                  <Users className="w-4 h-4" />
+                </div>
               </div>
-              <div className="p-3 rounded-full bg-success-tint text-success-text">
-                <PhoneCall className="w-5 h-5" />
+              <div className="text-3xl font-extrabold text-ink-900 font-sans tracking-tight">
+                {String(summary?.studentRecordsCount ?? 0).padStart(2, '0')}
               </div>
-            </Card>
+            </div>
 
-            {/* 3. Open Issues (Orange Accent strictly) */}
-            <Card className="flex items-center justify-between border-issue-border/60 bg-issue-tint/20">
+            {/* Card 3: Completed calls */}
+            <div className="p-6 rounded-card border border-border bg-surface shadow-xs flex flex-col justify-between min-h-[120px]">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-medium text-ink-600">Completed calls</span>
+                <div className="w-8 h-8 rounded-lg bg-page border border-border flex items-center justify-center text-ink-700">
+                  <PhoneCall className="w-4 h-4" />
+                </div>
+              </div>
               <div>
-                <p className="text-xs font-semibold text-issue-text uppercase tracking-wider">Open issues</p>
-                <h3 className="text-3xl font-extrabold text-issue-text mt-1">
-                  {summary?.openIssuesCount.toString().padStart(2, '0') || '00'}
-                </h3>
-                <span className="text-[11px] text-issue-text/80 font-medium">Under active review</span>
+                <div className="text-3xl font-extrabold text-ink-900 font-sans tracking-tight">
+                  {String(summary?.callsCompleted ?? 0).padStart(2, '0')}
+                </div>
+                <div className="text-[11px] text-ink-400 mt-0.5">
+                  {(summary?.callsCompleted ?? 0) > 0 ? 'Connected with parents' : 'Calling not connected'}
+                </div>
               </div>
-              <div className="p-3 rounded-full bg-issue-tint text-issue-icon">
-                <AlertCircle className="w-5 h-5" />
-              </div>
-            </Card>
-
-            {/* 4. Resolved this week */}
-            <Card className="flex items-center justify-between">
-              <div>
-                <p className="text-xs font-semibold text-ink-500 uppercase tracking-wider">Resolved this week</p>
-                <h3 className="text-3xl font-extrabold text-ink-900 mt-1">
-                  {summary?.resolvedThisWeek.toString().padStart(2, '0') || '00'}
-                </h3>
-                <span className="text-[11px] text-ink-400">Verified by parent call</span>
-              </div>
-              <div className="p-3 rounded-full bg-page text-ink-600">
-                <CheckCircle2 className="w-5 h-5 text-success-text" />
-              </div>
-            </Card>
+            </div>
           </>
         )}
       </div>
 
-      {/* Soft Grey Guide Panel: "From student list to ready-to-go" */}
-      <div className="rounded-card bg-page border border-border p-6 shadow-xs">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-5">
-          <div className="flex items-center gap-2.5">
-            <Sparkles className="w-5 h-5 text-brand" />
-            <h3 className="text-base font-bold text-ink-900">From student list to ready-to-go</h3>
-          </div>
-          <span className="text-xs text-ink-500">Fast 3-minute guided workflow</span>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="bg-surface rounded-xl p-4 border border-border space-y-1.5">
-            <div className="flex items-center gap-2">
-              <span className="w-5 h-5 rounded-full bg-brand-50 text-brand flex items-center justify-center text-xs font-bold">1</span>
-              <h4 className="text-sm font-semibold text-ink-900">Select class & date</h4>
+      {/* Guide Panel: "From student list to ready-to-go" (matching frame_24s.jpg) */}
+      <div className="rounded-2xl bg-page border border-border p-6 sm:p-8 shadow-xs">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+          {/* Left Hero Area */}
+          <div className="lg:col-span-5 space-y-4">
+            <div className="text-[10px] font-bold text-ink-400 uppercase tracking-[0.18em]">
+              A FEW STEPS. ALL SET.
             </div>
-            <p className="text-xs text-ink-500">Pick academic section and choose between Attendance or Feedback mode.</p>
-          </div>
-
-          <div className="bg-surface rounded-xl p-4 border border-border space-y-1.5">
-            <div className="flex items-center gap-2">
-              <span className="w-5 h-5 rounded-full bg-brand-50 text-brand flex items-center justify-center text-xs font-bold">2</span>
-              <h4 className="text-sm font-semibold text-ink-900">Drop your spreadsheet</h4>
-            </div>
-            <p className="text-xs text-ink-500">System checks duplicate rolls, missing columns, and phone number formats.</p>
+            <h2 className="text-2xl sm:text-3xl font-extrabold text-ink-900 tracking-tight leading-snug">
+              From student list<br />to ready-to-go.
+            </h2>
+            {canCreateCampaign && (
+              <div className="pt-2">
+                <Link
+                  to="/app/campaign/new"
+                  className="inline-flex items-center gap-2 px-6 py-2.5 rounded-full bg-brand-dark text-white text-xs font-semibold hover:bg-ink-900 transition-all shadow-card"
+                >
+                  <span>Create campaign</span>
+                  <span className="font-mono text-xs">↗</span>
+                </Link>
+              </div>
+            )}
           </div>
 
-          <div className="bg-surface rounded-xl p-4 border border-border space-y-1.5">
-            <div className="flex items-center gap-2">
-              <span className="w-5 h-5 rounded-full bg-brand-50 text-brand flex items-center justify-center text-xs font-bold">3</span>
-              <h4 className="text-sm font-semibold text-ink-900">Launch or submit</h4>
+          {/* Right 3 Stacked Cards */}
+          <div className="lg:col-span-7 space-y-3">
+            {/* Step 1 */}
+            <div className="p-4 rounded-xl border border-border bg-surface shadow-2xs flex items-center justify-between">
+              <div className="flex items-center gap-3.5">
+                <span className="font-mono text-xs font-bold text-ink-400">01</span>
+                <div className="w-8 h-8 rounded-lg bg-page border border-border flex items-center justify-center text-ink-700">
+                  <Layers className="w-4 h-4" />
+                </div>
+                <div>
+                  <h4 className="text-xs font-bold text-ink-900">Select your class</h4>
+                  <p className="text-[11px] text-ink-500 mt-0.5">Department · Year · Section</p>
+                </div>
+              </div>
+              <Check className="w-4 h-4 text-ink-400" />
             </div>
-            <p className="text-xs text-ink-500">Faculty sends for approval; Admin reviews and triggers live outbound calls.</p>
+
+            {/* Step 2 */}
+            <div className="p-4 rounded-xl border border-border bg-surface shadow-2xs flex items-center justify-between">
+              <div className="flex items-center gap-3.5">
+                <span className="font-mono text-xs font-bold text-ink-400">02</span>
+                <div className="w-8 h-8 rounded-lg bg-page border border-border flex items-center justify-center text-ink-700">
+                  <FileText className="w-4 h-4" />
+                </div>
+                <div>
+                  <h4 className="text-xs font-bold text-ink-900">Add your students</h4>
+                  <p className="text-[11px] text-ink-500 mt-0.5">Upload · Validate · Confirm</p>
+                </div>
+              </div>
+              <Check className="w-4 h-4 text-ink-400" />
+            </div>
+
+            {/* Step 3 */}
+            <div className="p-4 rounded-xl border border-border bg-surface shadow-2xs flex items-center justify-between">
+              <div className="flex items-center gap-3.5">
+                <span className="font-mono text-xs font-bold text-ink-400">03</span>
+                <div className="w-8 h-8 rounded-lg bg-page border border-border flex items-center justify-center text-ink-700">
+                  <MessageSquare className="w-4 h-4" />
+                </div>
+                <div>
+                  <h4 className="text-xs font-bold text-ink-900">Make it yours</h4>
+                  <p className="text-[11px] text-ink-500 mt-0.5">Questions · Settings · Review</p>
+                </div>
+              </div>
+              <Check className="w-4 h-4 text-ink-400" />
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Admin: "Waiting for your approval" Section */}
-      {isAdmin && summary && summary.pendingApprovals.length > 0 && (
-        <div className="space-y-3">
+      {/* Pending Approvals (For Admin / Principal) */}
+      {isAdminOrPrincipal && summary?.pendingApprovals && summary.pendingApprovals.length > 0 && (
+        <div className="space-y-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-warning-text" />
-              <h3 className="text-base font-bold text-ink-900">Waiting for your approval</h3>
-              <Badge variant="warning" size="sm">{summary.pendingApprovals.length}</Badge>
+              <div className="w-2 h-2 rounded-full bg-brand animate-ping" />
+              <h3 className="text-base font-bold text-ink-900">Pending Campaign Approvals</h3>
             </div>
+            <span className="text-xs font-semibold text-brand bg-brand-50 px-2 py-0.5 rounded-full border border-brand-100">
+              {summary.pendingApprovals.length} Require Admin Confirmation
+            </span>
           </div>
 
-          <div className="grid grid-cols-1 gap-3">
-            {summary.pendingApprovals.map(campaign => (
-              <div
-                key={campaign.id}
-                className="bg-surface rounded-card p-4 border border-border flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-card"
-              >
-                <div className="space-y-1">
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm font-bold text-ink-900">{campaign.title}</span>
-                    <Badge variant="brand" size="sm">{campaign.department} / Year {campaign.year} / {campaign.section}</Badge>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {summary.pendingApprovals.map(camp => (
+              <div key={camp.id} className="p-5 rounded-card border border-brand-200 bg-surface shadow-xs space-y-3">
+                <div className="flex items-start justify-between">
+                  <div>
+                    <h4 className="text-sm font-bold text-ink-900">{camp.title}</h4>
+                    <p className="text-xs text-ink-500 mt-0.5">
+                      Submitted by {camp.createdBy} · {camp.totalTargetCalls} target parents
+                    </p>
                   </div>
-                  <div className="text-xs text-ink-500 flex items-center gap-3">
-                    <span>Submitted by {campaign.createdBy}</span>
-                    <span>•</span>
-                    <span>Target calls: {campaign.totalTargetCalls}</span>
-                    <span>•</span>
-                    <span>Date: {formatDate(campaign.attendanceDate)}</span>
-                  </div>
+                  <Badge variant="brand" size="sm">Awaiting Start</Badge>
                 </div>
 
-                <div className="flex items-center gap-2 self-end sm:self-center">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => {
-                      setSelectedPendingCampaignId(campaign.id);
-                      setIsReturnModalOpen(true);
-                    }}
-                  >
-                    Return with note
-                  </Button>
-                  <Button
-                    variant="primary"
-                    size="sm"
-                    className="gap-1.5"
-                    onClick={() => handleApprove(campaign.id)}
-                  >
-                    <Check className="w-3.5 h-3.5" />
-                    <span>Approve campaign</span>
-                  </Button>
+                <div className="flex items-center justify-between pt-2 border-t border-border text-xs">
+                  <span className="text-ink-400">Date: {formatDate(camp.attendanceDate)}</span>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        setSelectedPendingCampaignId(camp.id);
+                        setIsReturnModalOpen(true);
+                      }}
+                    >
+                      Return with Note
+                    </Button>
+                    <Button
+                      variant="primary"
+                      size="sm"
+                      className="bg-brand-dark"
+                      onClick={() => handleApprove(camp.id)}
+                    >
+                      Approve & Confirm
+                    </Button>
+                  </div>
                 </div>
               </div>
             ))}
@@ -268,146 +295,89 @@ export const DashboardPage: React.FC = () => {
         </div>
       )}
 
-      {/* Dual Column: Recent Campaigns & Open Issues */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        {/* Recent Campaigns Column */}
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h3 className="text-base font-bold text-ink-900">Recent campaigns</h3>
-            <Link to="/app/reports" className="text-xs font-semibold text-brand hover:underline flex items-center gap-1">
-              <span>View all</span>
-              <ChevronRight className="w-3.5 h-3.5" />
-            </Link>
-          </div>
-
-          {loading ? (
-            <div className="space-y-3">
-              <Skeleton className="h-16" />
-              <Skeleton className="h-16" />
-            </div>
-          ) : !summary || summary.recentCampaigns.length === 0 ? (
-            <EmptyState
-              icon={<FileSpreadsheet className="w-6 h-6" />}
-              title="No campaigns launched yet"
-              description="Start your first parent outreach campaign using the guided wizard."
-              actionLabel={canCreateCampaign ? "New campaign" : undefined}
-              onAction={canCreateCampaign ? () => navigate('/app/campaign/new') : undefined}
-            />
-          ) : (
-            <div className="space-y-3">
-              {summary.recentCampaigns.map(c => (
-                <div
-                  key={c.id}
-                  className="bg-surface rounded-card p-4 border border-border shadow-xs hover:border-ink-400 transition-colors flex items-center justify-between"
-                >
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm font-semibold text-ink-900">{c.title}</span>
-                      <Badge
-                        variant={c.status === 'completed' ? 'success' : c.status === 'in_progress' ? 'brand' : 'default'}
-                        size="sm"
-                      >
-                        {c.status.replace('_', ' ')}
-                      </Badge>
-                    </div>
-                    <p className="text-xs text-ink-500">
-                      {c.department} · {c.section} · {c.completedCalls} of {c.totalTargetCalls} calls finished
-                    </p>
-                  </div>
-                  <Link to="/app/reports">
-                    <Button variant="ghost" size="sm" className="p-2">
-                      <ChevronRight className="w-4 h-4 text-ink-400" />
-                    </Button>
-                  </Link>
-                </div>
-              ))}
-            </div>
-          )}
+      {/* Recent Campaigns Section */}
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <h3 className="text-base font-bold text-ink-900">Recent Campaigns</h3>
+          <Link to="/app/reports" className="text-xs font-semibold text-ink-600 hover:text-ink-900 flex items-center gap-1">
+            <span>View all reports</span>
+            <span className="font-mono text-xs">↗</span>
+          </Link>
         </div>
 
-        {/* Open Issues Column (Orange Alert Loop) */}
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <h3 className="text-base font-bold text-ink-900">Active student issues</h3>
-              {summary && summary.openIssuesCount > 0 && (
-                <Badge variant="issue" size="sm">{summary.openIssuesCount}</Badge>
-              )}
-            </div>
-            <Link to="/app/issues" className="text-xs font-semibold text-brand hover:underline flex items-center gap-1">
-              <span>View all</span>
-              <ChevronRight className="w-3.5 h-3.5" />
-            </Link>
+        {summary?.recentCampaigns.length === 0 ? (
+          <div className="p-8 text-center bg-surface border border-dashed border-border rounded-card space-y-2">
+            <p className="text-sm font-medium text-ink-700">No campaigns yet.</p>
+            <p className="text-xs text-ink-400">Confirmed campaigns will appear here.</p>
           </div>
-
-          {loading ? (
-            <div className="space-y-3">
-              <Skeleton className="h-16" />
-              <Skeleton className="h-16" />
-            </div>
-          ) : !summary || summary.openIssues.length === 0 ? (
-            <EmptyState
-              icon={<CheckCircle2 className="w-6 h-6 text-success-text" />}
-              title="All parent issues resolved"
-              description="No open student grievances currently pending verification or action."
-            />
-          ) : (
-            <div className="space-y-3">
-              {summary.openIssues.map(issue => (
-                <div
-                  key={issue.id}
-                  className="bg-surface rounded-card p-4 border border-border shadow-xs hover:border-issue-border transition-colors flex items-center justify-between"
-                >
-                  <div className="space-y-1 max-w-[80%]">
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm font-semibold text-ink-900 truncate">{issue.studentName}</span>
-                      <Badge variant="issue" size="sm">{issue.category}</Badge>
-                      {issue.isCritical && (
-                        <Badge variant="danger" size="sm">CRITICAL (3 Reopens)</Badge>
-                      )}
-                    </div>
-                    <p className="text-xs text-ink-600 line-clamp-1">{issue.parentFeedback}</p>
-                    <div className="text-[11px] text-ink-400">
-                      Owner: {issue.ownerName} · Status: <span className="capitalize">{issue.status.replace('_', ' ')}</span>
-                    </div>
+        ) : (
+          <div className="bg-surface rounded-card border border-border divide-y divide-border overflow-hidden shadow-xs">
+            {summary?.recentCampaigns.map(camp => (
+              <div key={camp.id} className="p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:bg-page/50 transition-colors">
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2.5">
+                    <h4 className="text-sm font-bold text-ink-900">{camp.title}</h4>
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-page border border-border text-ink-600 capitalize">
+                      {camp.module}
+                    </span>
                   </div>
-                  <Link to={`/app/issues`}>
-                    <Button variant="ghost" size="sm" className="p-2">
-                      <ChevronRight className="w-4 h-4 text-ink-400" />
-                    </Button>
-                  </Link>
+                  <p className="text-xs text-ink-400">
+                    Created on {formatDate(camp.createdAt)} · {camp.totalTargetCalls} targets
+                  </p>
                 </div>
-              ))}
-            </div>
-          )}
-        </div>
+
+                <div className="flex items-center gap-3">
+                  <Badge
+                    variant={
+                      camp.status === 'completed'
+                        ? 'success'
+                        : camp.status === 'in_progress'
+                        ? 'brand'
+                        : 'default'
+                    }
+                    size="sm"
+                  >
+                    {camp.status.replace('_', ' ')}
+                  </Badge>
+
+                  {camp.status === 'in_progress' && (
+                    <Link
+                      to={`/app/campaign/${camp.id}/monitor`}
+                      className="text-xs font-semibold text-brand hover:underline"
+                    >
+                      Open Monitor →
+                    </Link>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
-      {/* Return Note Modal (Admin only) */}
+      {/* Return Note Modal */}
       <Modal
         isOpen={isReturnModalOpen}
         onClose={() => setIsReturnModalOpen(false)}
         title="Return Campaign to Faculty"
-        description="Provide feedback to the faculty coordinator explaining what changes are needed."
+        description="Provide a note explaining what needs revision before approval."
         footer={
           <>
             <Button variant="outline" size="sm" onClick={() => setIsReturnModalOpen(false)}>
               Cancel
             </Button>
             <Button variant="primary" size="sm" onClick={handleReturn}>
-              Send Note & Return
+              Send Return Note
             </Button>
           </>
         }
       >
-        <div className="space-y-3">
-          <label className="block text-xs font-semibold text-ink-700 uppercase">Feedback Note</label>
+        <div className="space-y-3 text-xs">
           <textarea
-            rows={3}
             value={returnNote}
             onChange={e => setReturnNote(e.target.value)}
-            placeholder="e.g. Please verify the 4 students with missing parent mobile numbers and re-submit."
-            className="w-full p-3 text-sm border border-border rounded-lg bg-surface text-ink-900 focus:outline-none focus:ring-2 focus:ring-brand"
+            placeholder="e.g. Please verify student absent list for Section A..."
+            className="w-full h-24 p-3 border border-border rounded-lg bg-surface text-ink-900 text-xs focus:ring-1 focus:ring-brand"
           />
         </div>
       </Modal>

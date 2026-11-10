@@ -9,3 +9,4 @@ export const Skeleton: React.FC<React.HTMLAttributes<HTMLDivElement>> = ({ class
     />
   );
 };
+
