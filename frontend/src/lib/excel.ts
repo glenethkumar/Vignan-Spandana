@@ -122,7 +122,7 @@ export function generateExcelTemplate(): Uint8Array {
   const ws = XLSX.utils.aoa_to_sheet([headers, ...sampleRows]);
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, 'Attendance_Template');
-  return XLSX.write(wb, { type: 'array', bookType: 'xlsx' });
+  return new Uint8Array(XLSX.write(wb, { type: 'array', bookType: 'xlsx' }));
 }
 
 /**
@@ -394,5 +394,5 @@ export function generateErrorsExcel(errors: ValidationError[]): Uint8Array {
   const ws = XLSX.utils.aoa_to_sheet([headers, ...data]);
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, 'Validation_Errors');
-  return XLSX.write(wb, { type: 'array', bookType: 'xlsx' });
+  return new Uint8Array(XLSX.write(wb, { type: 'array', bookType: 'xlsx' }));
 }
